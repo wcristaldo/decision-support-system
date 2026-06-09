@@ -1,0 +1,98 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using DecisionSupportAPI.DTOs;
+using DecisionSupportAPI.Services;
+using DecisionSupportAPI.Data;
+using System.Security.Claims;
+
+namespace DecisionSupportAPI.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class AuthController : ControllerBase
+{
+    private readonly IAuthenticationService _authService;
+    private readonly ApplicationDbContext _context;
+
+    public AuthController(IAuthenticationService authService, ApplicationDbContext context)
+    {
+        _authService = authService;
+        _context = context;
+    }
+
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var result = await _authService.LoginAsync(request);
+        if (result == null)
+            return Unauthorized(new { message = "Credenciales inválidas" });
+
+        return Ok(result);
+    }
+
+    [HttpPost("debug/hash")]
+    public IActionResult GetHash([FromBody] LoginRequestDto request)
+    {
+        var hash = _authService.HashPassword(request.Password);
+        return Ok(new { password = request.Password, hash });
+    }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (request.NewPassword != request.ConfirmPassword)
+            return BadRequest(new { message = "Las nuevas contraseñas no coinciden" });
+
+        var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (usuarioIdClaim == null || !int.TryParse(usuarioIdClaim.Value, out var usuarioId))
+            return Unauthorized(new { message = "Usuario no identificado" });
+
+        var result = await _authService.ChangePasswordAsync(usuarioId, request.CurrentPassword, request.NewPassword);
+        if (!result)
+            return BadRequest(new { message = "Contraseña actual incorrecta" });
+
+        return Ok(new { message = "Contraseña actualizada correctamente" });
+    }
+
+    [Authorize]
+    [HttpPost("reset-password/{usuarioId}")]
+    public IActionResult ResetPassword(int usuarioId, [FromBody] Dictionary<string, string> request)
+    {
+        try
+        {
+            if (!User.IsInRole("ADMIN") && !User.IsInRole("Administrador"))
+                return Forbid("No eres administrador");
+
+            if (!request.ContainsKey("newPassword"))
+                return BadRequest(new { message = "newPassword requerido" });
+
+            var pwd = request["newPassword"];
+            if (string.IsNullOrWhiteSpace(pwd))
+                return BadRequest(new { message = "Contraseña vacía" });
+
+            using (var dbContext = _context)
+            {
+                var user = dbContext.Usuarios.FirstOrDefault(u => u.Id == usuarioId);
+                if (user == null)
+                    return NotFound(new { message = "Usuario no encontrado" });
+
+                user.ContrasenaHash = _authService.HashPassword(pwd);
+                user.FechaActualizacion = DateTime.UtcNow;
+                dbContext.SaveChanges();
+            }
+
+            return Ok(new { message = "Éxito" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message, stack = ex.StackTrace });
+        }
+    }
+}
