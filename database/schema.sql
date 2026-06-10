@@ -1,188 +1,244 @@
--- Crear base de datos
-CREATE DATABASE "DecisionSupport" ENCODING 'UTF8';
+-- =============================================================
+-- Decision Support System — DSS
+-- Schema basado en DER del anteproyecto (UNIDA, 2026)
+-- PostgreSQL 15+
+-- =============================================================
 
--- Conectar a la base de datos
-\c "DecisionSupport";
+-- -------------------------------------------------------------
+-- DROP: en orden inverso de dependencias
+-- -------------------------------------------------------------
+DROP TABLE IF EXISTS auditoria              CASCADE;
+DROP TABLE IF EXISTS decisiones_despliegue  CASCADE;
+DROP TABLE IF EXISTS evaluacion_regla       CASCADE;
+DROP TABLE IF EXISTS recomendaciones        CASCADE;
+DROP TABLE IF EXISTS evaluaciones           CASCADE;
+DROP TABLE IF EXISTS metricas               CASCADE;
+DROP TABLE IF EXISTS resultados_prueba      CASCADE;
+DROP TABLE IF EXISTS reglas_evaluacion      CASCADE;
+DROP TABLE IF EXISTS versiones              CASCADE;
+DROP TABLE IF EXISTS proyectos              CASCADE;
+DROP TABLE IF EXISTS usuario_rol            CASCADE;
+DROP TABLE IF EXISTS rol_permiso            CASCADE;
+DROP TABLE IF EXISTS permisos               CASCADE;
+DROP TABLE IF EXISTS roles                  CASCADE;
+DROP TABLE IF EXISTS usuarios               CASCADE;
 
--- Tabla de usuarios
+
+-- =============================================================
+-- 1. USUARIOS
+-- =============================================================
 CREATE TABLE usuarios (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    contrasena_hash VARCHAR(255) NOT NULL,
-    activo BOOLEAN DEFAULT true,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id_usuario          SERIAL          PRIMARY KEY,
+    nombre              VARCHAR(100)    NOT NULL,
+    apellido            VARCHAR(100),
+    email               VARCHAR(150)    UNIQUE NOT NULL,
+    password_hash       VARCHAR(255)    NOT NULL,
+    estado              VARCHAR(20)     NOT NULL DEFAULT 'activo'
+                            CHECK (estado IN ('activo','inactivo')),
+    fecha_creacion      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_ultimo_acceso TIMESTAMP
 );
 
--- Tabla de roles
+
+-- =============================================================
+-- 2. ROLES
+-- =============================================================
 CREATE TABLE roles (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(50) UNIQUE NOT NULL,
-    descripcion TEXT,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id_rol      SERIAL       PRIMARY KEY,
+    nombre_rol  VARCHAR(50)  UNIQUE NOT NULL,
+    descripcion VARCHAR(255),
+    estado      VARCHAR(20)  NOT NULL DEFAULT 'activo'
+                    CHECK (estado IN ('activo','inactivo'))
 );
 
--- Tabla de relación usuarios-roles
-CREATE TABLE usuarios_roles (
-    usuario_id INTEGER NOT NULL,
-    rol_id INTEGER NOT NULL,
-    PRIMARY KEY (usuario_id, rol_id),
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-    FOREIGN KEY (rol_id) REFERENCES roles(id) ON DELETE CASCADE
-);
 
--- Tabla de permisos
+-- =============================================================
+-- 3. PERMISOS
+-- =============================================================
 CREATE TABLE permisos (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) UNIQUE NOT NULL,
-    descripcion TEXT,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id_permiso      SERIAL       PRIMARY KEY,
+    nombre_permiso  VARCHAR(100) UNIQUE NOT NULL,
+    descripcion     VARCHAR(255),
+    modulo          VARCHAR(100)
 );
 
--- Tabla de relación roles-permisos
-CREATE TABLE roles_permisos (
-    rol_id INTEGER NOT NULL,
-    permiso_id INTEGER NOT NULL,
-    PRIMARY KEY (rol_id, permiso_id),
-    FOREIGN KEY (rol_id) REFERENCES roles(id) ON DELETE CASCADE,
-    FOREIGN KEY (permiso_id) REFERENCES permisos(id) ON DELETE CASCADE
+
+-- =============================================================
+-- 4. ROL_PERMISO  (roles <-> permisos)
+-- =============================================================
+CREATE TABLE rol_permiso (
+    id_rol_permiso  SERIAL  PRIMARY KEY,
+    id_rol          INTEGER NOT NULL REFERENCES roles(id_rol)        ON DELETE CASCADE,
+    id_permiso      INTEGER NOT NULL REFERENCES permisos(id_permiso) ON DELETE CASCADE,
+    UNIQUE (id_rol, id_permiso)
 );
 
--- Tabla de proyectos
+
+-- =============================================================
+-- 5. USUARIO_ROL  (usuarios <-> roles)
+-- =============================================================
+CREATE TABLE usuario_rol (
+    id_usuario_rol   SERIAL      PRIMARY KEY,
+    id_usuario       INTEGER     NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    id_rol           INTEGER     NOT NULL REFERENCES roles(id_rol)        ON DELETE CASCADE,
+    fecha_asignacion TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado           VARCHAR(20) NOT NULL DEFAULT 'activo'
+                         CHECK (estado IN ('activo','inactivo')),
+    UNIQUE (id_usuario, id_rol)
+);
+
+
+-- =============================================================
+-- 6. PROYECTOS
+-- =============================================================
 CREATE TABLE proyectos (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(200) NOT NULL,
-    descripcion TEXT,
-    estado VARCHAR(50) DEFAULT 'activo',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id_proyecto     SERIAL       PRIMARY KEY,
+    nombre_proyecto VARCHAR(150) NOT NULL,
+    descripcion     VARCHAR(255),
+    tipo_solucion   VARCHAR(100),
+    estado          VARCHAR(20)  NOT NULL DEFAULT 'activo'
+                        CHECK (estado IN ('activo','inactivo','archivado')),
+    fecha_creacion  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de versiones
+
+-- =============================================================
+-- 7. VERSIONES
+-- =============================================================
 CREATE TABLE versiones (
-    id SERIAL PRIMARY KEY,
-    proyecto_id INTEGER NOT NULL,
-    numero_version VARCHAR(50) NOT NULL,
-    descripcion TEXT,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (proyecto_id) REFERENCES proyectos(id) ON DELETE CASCADE,
-    UNIQUE(proyecto_id, numero_version)
+    id_version     SERIAL      PRIMARY KEY,
+    id_proyecto    INTEGER     NOT NULL REFERENCES proyectos(id_proyecto) ON DELETE CASCADE,
+    nombre_version VARCHAR(50) NOT NULL,
+    descripcion    VARCHAR(255),
+    fecha_version  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado_version VARCHAR(20) NOT NULL DEFAULT 'pendiente'
+                       CHECK (estado_version IN ('pendiente','en_evaluacion','aprobada','rechazada','desplegada'))
 );
 
--- Tabla de resultados de prueba
-CREATE TABLE resultados_prueba (
-    id SERIAL PRIMARY KEY,
-    version_id INTEGER NOT NULL,
-    nombre_prueba VARCHAR(200) NOT NULL,
-    tipo_prueba VARCHAR(50),
-    estado VARCHAR(50),
-    tiempo_ejecucion DECIMAL(10, 2),
-    fecha_ejecucion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (version_id) REFERENCES versiones(id) ON DELETE CASCADE
-);
 
--- Tabla de métricas
-CREATE TABLE metricas (
-    id SERIAL PRIMARY KEY,
-    version_id INTEGER NOT NULL,
-    nombre_metrica VARCHAR(100) NOT NULL,
-    valor DECIMAL(10, 4),
-    unidad VARCHAR(50),
-    fecha_calculo TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (version_id) REFERENCES versiones(id) ON DELETE CASCADE
-);
-
--- Tabla de evaluaciones
-CREATE TABLE evaluaciones (
-    id SERIAL PRIMARY KEY,
-    version_id INTEGER NOT NULL,
-    puntuacion_calidad DECIMAL(5, 2),
-    puntuacion_riesgo DECIMAL(5, 2),
-    observaciones TEXT,
-    fecha_evaluacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (version_id) REFERENCES versiones(id) ON DELETE CASCADE
-);
-
--- Tabla de reglas de evaluación
+-- =============================================================
+-- 8. REGLAS_EVALUACION
+-- =============================================================
 CREATE TABLE reglas_evaluacion (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    descripcion TEXT,
-    condicion_json JSONB,
-    activa BOOLEAN DEFAULT true,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id_regla            SERIAL        PRIMARY KEY,
+    nombre_regla        VARCHAR(100)  NOT NULL,
+    descripcion         VARCHAR(255),
+    criterio            VARCHAR(255)  NOT NULL,
+    umbral              DECIMAL(10,2),
+    estado              VARCHAR(20)   NOT NULL DEFAULT 'activo'
+                            CHECK (estado IN ('activo','inactivo')),
+    fecha_creacion      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id_usuario_creacion INTEGER       REFERENCES usuarios(id_usuario) ON DELETE SET NULL
 );
 
--- Tabla de recomendaciones
+
+-- =============================================================
+-- 9. RESULTADOS_PRUEBA
+-- =============================================================
+CREATE TABLE resultados_prueba (
+    id_resultado      SERIAL       PRIMARY KEY,
+    id_version        INTEGER      NOT NULL REFERENCES versiones(id_version)  ON DELETE CASCADE,
+    id_usuario_carga  INTEGER      REFERENCES usuarios(id_usuario)            ON DELETE SET NULL,
+    nombre_archivo    VARCHAR(255) NOT NULL,
+    formato_archivo   VARCHAR(20)  NOT NULL DEFAULT 'json',
+    ruta_archivo      VARCHAR(255),
+    fecha_carga       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado_validacion VARCHAR(30)  NOT NULL DEFAULT 'pendiente'
+                          CHECK (estado_validacion IN ('pendiente','valido','invalido')),
+    observaciones     VARCHAR(255)
+);
+
+
+-- =============================================================
+-- 10. METRICAS
+-- =============================================================
+CREATE TABLE metricas (
+    id_metrica     SERIAL        PRIMARY KEY,
+    id_resultado   INTEGER       NOT NULL REFERENCES resultados_prueba(id_resultado) ON DELETE CASCADE,
+    nombre_metrica VARCHAR(100)  NOT NULL,
+    valor_metrica  DECIMAL(10,2),
+    unidad         VARCHAR(50),
+    fecha_calculo  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- =============================================================
+-- 11. EVALUACIONES
+-- =============================================================
+CREATE TABLE evaluaciones (
+    id_evaluacion      SERIAL       PRIMARY KEY,
+    id_resultado       INTEGER      NOT NULL REFERENCES resultados_prueba(id_resultado) ON DELETE CASCADE,
+    fecha_evaluacion   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado_evaluacion  VARCHAR(30)  NOT NULL DEFAULT 'en_proceso'
+                           CHECK (estado_evaluacion IN ('en_proceso','completada','fallida')),
+    resumen_evaluacion VARCHAR(255)
+);
+
+
+-- =============================================================
+-- 12. EVALUACION_REGLA  (evaluaciones <-> reglas)
+-- =============================================================
+CREATE TABLE evaluacion_regla (
+    id_evaluacion_regla SERIAL       PRIMARY KEY,
+    id_evaluacion       INTEGER      NOT NULL REFERENCES evaluaciones(id_evaluacion)       ON DELETE CASCADE,
+    id_regla            INTEGER      NOT NULL REFERENCES reglas_evaluacion(id_regla)       ON DELETE CASCADE,
+    resultado_regla     VARCHAR(30)  CHECK (resultado_regla IN ('cumple','no_cumple','no_aplica')),
+    observacion         VARCHAR(255)
+);
+
+
+-- =============================================================
+-- 13. RECOMENDACIONES
+-- =============================================================
 CREATE TABLE recomendaciones (
-    id SERIAL PRIMARY KEY,
-    version_id INTEGER NOT NULL,
-    tipo_recomendacion VARCHAR(100),
-    descripcion TEXT,
-    confianza DECIMAL(5, 2),
-    fecha_generacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (version_id) REFERENCES versiones(id) ON DELETE CASCADE
+    id_recomendacion   SERIAL       PRIMARY KEY,
+    id_evaluacion      INTEGER      NOT NULL REFERENCES evaluaciones(id_evaluacion) ON DELETE CASCADE,
+    tipo_recomendacion VARCHAR(30)  NOT NULL
+                           CHECK (tipo_recomendacion IN ('desplegar','no_desplegar','desplegar_con_observaciones')),
+    justificacion      VARCHAR(255),
+    fecha_generacion   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de decisiones de despliegue
+
+-- =============================================================
+-- 14. DECISIONES_DESPLIEGUE
+-- =============================================================
 CREATE TABLE decisiones_despliegue (
-    id SERIAL PRIMARY KEY,
-    version_id INTEGER NOT NULL,
-    usuario_id INTEGER NOT NULL,
-    decision VARCHAR(50),
-    justificacion TEXT,
-    fecha_decision TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (version_id) REFERENCES versiones(id) ON DELETE CASCADE,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    id_decision        SERIAL       PRIMARY KEY,
+    id_recomendacion   INTEGER      REFERENCES recomendaciones(id_recomendacion) ON DELETE SET NULL,
+    id_usuario_decisor INTEGER      REFERENCES usuarios(id_usuario)              ON DELETE SET NULL,
+    decision_final     VARCHAR(30)  NOT NULL
+                           CHECK (decision_final IN ('aprobado','rechazado','postergado')),
+    comentario         VARCHAR(255),
+    fecha_decision     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de auditoría
+
+-- =============================================================
+-- 15. AUDITORIA
+-- =============================================================
 CREATE TABLE auditoria (
-    id SERIAL PRIMARY KEY,
-    usuario_id INTEGER,
-    entidad VARCHAR(50),
-    accion VARCHAR(50),
-    datos_anteriores JSONB,
-    datos_nuevos JSONB,
-    fecha_evento TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
+    id_auditoria         SERIAL       PRIMARY KEY,
+    id_usuario           INTEGER      REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
+    entidad_afectada     VARCHAR(100),
+    id_registro_afectado INTEGER,
+    accion               VARCHAR(50)  NOT NULL,
+    detalle              VARCHAR(255),
+    fecha_evento         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ip_origen            VARCHAR(45)
 );
 
--- Crear índices
-CREATE INDEX idx_usuarios_email ON usuarios(email);
-CREATE INDEX idx_versiones_proyecto ON versiones(proyecto_id);
-CREATE INDEX idx_resultados_version ON resultados_prueba(version_id);
-CREATE INDEX idx_metricas_version ON metricas(version_id);
-CREATE INDEX idx_evaluaciones_version ON evaluaciones(version_id);
-CREATE INDEX idx_recomendaciones_version ON recomendaciones(version_id);
-CREATE INDEX idx_decisiones_version ON decisiones_despliegue(version_id);
-CREATE INDEX idx_auditoria_usuario ON auditoria(usuario_id);
-CREATE INDEX idx_auditoria_fecha ON auditoria(fecha_evento);
 
--- Insertar roles iniciales
-INSERT INTO roles (nombre, descripcion) VALUES
-('Administrador', 'Acceso total al sistema'),
-('Analista', 'Puede analizar resultados y generar recomendaciones'),
-('Gerente', 'Puede tomar decisiones de despliegue'),
-('Visualizador', 'Acceso de solo lectura');
-
--- Insertar permisos iniciales
-INSERT INTO permisos (nombre, descripcion) VALUES
-('crear_proyecto', 'Crear nuevos proyectos'),
-('editar_proyecto', 'Editar proyectos existentes'),
-('eliminar_proyecto', 'Eliminar proyectos'),
-('cargar_pruebas', 'Cargar resultados de pruebas'),
-('generar_recomendaciones', 'Generar recomendaciones automáticas'),
-('tomar_decision_despliegue', 'Tomar decisiones sobre despliegues'),
-('ver_auditoria', 'Ver registro de auditoría'),
-('gestionar_usuarios', 'Crear y modificar usuarios');
-
--- Asignar permisos a roles
-INSERT INTO roles_permisos (rol_id, permiso_id) SELECT r.id, p.id FROM roles r, permisos p WHERE r.nombre = 'Administrador';
-INSERT INTO roles_permisos (rol_id, permiso_id)
-SELECT r.id, p.id FROM roles r, permisos p
-WHERE r.nombre = 'Analista' AND p.nombre IN ('cargar_pruebas', 'generar_recomendaciones');
-INSERT INTO roles_permisos (rol_id, permiso_id)
-SELECT r.id, p.id FROM roles r, permisos p
-WHERE r.nombre = 'Gerente' AND p.nombre IN ('generar_recomendaciones', 'tomar_decision_despliegue', 'ver_auditoria');
+-- =============================================================
+-- INDICES para rendimiento
+-- =============================================================
+CREATE INDEX idx_usuario_rol_usuario  ON usuario_rol(id_usuario);
+CREATE INDEX idx_usuario_rol_rol      ON usuario_rol(id_rol);
+CREATE INDEX idx_versiones_proyecto   ON versiones(id_proyecto);
+CREATE INDEX idx_resultados_version   ON resultados_prueba(id_version);
+CREATE INDEX idx_metricas_resultado   ON metricas(id_resultado);
+CREATE INDEX idx_evaluaciones_result  ON evaluaciones(id_resultado);
+CREATE INDEX idx_recomend_evaluacion  ON recomendaciones(id_evaluacion);
+CREATE INDEX idx_decisiones_recomend  ON decisiones_despliegue(id_recomendacion);
+CREATE INDEX idx_auditoria_usuario    ON auditoria(id_usuario);
+CREATE INDEX idx_auditoria_entidad    ON auditoria(entidad_afectada, id_registro_afectado);
