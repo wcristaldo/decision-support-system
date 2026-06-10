@@ -21,94 +21,62 @@ public class MetricsCalculationService : IMetricsCalculationService
 
     public async Task CalculateMetricsAsync(int versionId)
     {
-        var version = await _context.Versiones
-            .Include(v => v.ResultadosPrueba)
-            .FirstOrDefaultAsync(v => v.Id == versionId);
+        var resultados = await _context.ResultadosPrueba
+            .Where(r => r.VersionId == versionId)
+            .ToListAsync();
 
-        if (version == null || !version.ResultadosPrueba.Any())
+        if (!resultados.Any())
             return;
 
-        var resultados = version.ResultadosPrueba.ToList();
-
-        // Limpiar métricas anteriores
-        var metricasAnteriores = await _context.Metricas
-            .Where(m => m.VersionId == versionId)
-            .ToListAsync();
-        _context.Metricas.RemoveRange(metricasAnteriores);
-
-        // Calcular métricas
-        var totalPruebas = resultados.Count;
-        var pruebasExitosas = resultados.Count(r => r.Estado == "PASSED" || r.Estado == "passed");
-        var pruebasFallidas = resultados.Count(r => r.Estado == "FAILED" || r.Estado == "failed");
-        var pruebasSkipped = resultados.Count(r => r.Estado == "SKIPPED" || r.Estado == "skipped");
-
-        var tasaExito = (decimal)(pruebasExitosas * 100) / totalPruebas;
-        var tasaFallo = (decimal)(pruebasFallidas * 100) / totalPruebas;
-        var tiempoPromedio = resultados.Where(r => r.TiempoEjecucion.HasValue)
-            .Average(r => r.TiempoEjecucion) ?? 0;
-
-        // Guardar métricas
-        var metricas = new List<Metrica>
+        foreach (var resultado in resultados)
         {
-            new Metrica
-            {
-                VersionId = versionId,
-                NombreMetrica = "tasa_exito",
-                Valor = tasaExito,
-                Unidad = "%"
-            },
-            new Metrica
-            {
-                VersionId = versionId,
-                NombreMetrica = "tasa_fallo",
-                Valor = tasaFallo,
-                Unidad = "%"
-            },
-            new Metrica
-            {
-                VersionId = versionId,
-                NombreMetrica = "total_pruebas",
-                Valor = totalPruebas,
-                Unidad = "cantidad"
-            },
-            new Metrica
-            {
-                VersionId = versionId,
-                NombreMetrica = "pruebas_exitosas",
-                Valor = pruebasExitosas,
-                Unidad = "cantidad"
-            },
-            new Metrica
-            {
-                VersionId = versionId,
-                NombreMetrica = "pruebas_fallidas",
-                Valor = pruebasFallidas,
-                Unidad = "cantidad"
-            },
-            new Metrica
-            {
-                VersionId = versionId,
-                NombreMetrica = "pruebas_saltadas",
-                Valor = pruebasSkipped,
-                Unidad = "cantidad"
-            },
-            new Metrica
-            {
-                VersionId = versionId,
-                NombreMetrica = "tiempo_promedio_ejecucion",
-                Valor = (decimal)tiempoPromedio,
-                Unidad = "segundos"
-            }
-        };
+            // Eliminar métricas anteriores de este resultado
+            var metricasAnteriores = await _context.Metricas
+                .Where(m => m.ResultadoId == resultado.Id)
+                .ToListAsync();
+            _context.Metricas.RemoveRange(metricasAnteriores);
 
-        _context.Metricas.AddRange(metricas);
+            // Generar métricas basadas en estado de validación
+            var metricas = new List<Metrica>
+            {
+                new Metrica
+                {
+                    ResultadoId = resultado.Id,
+                    NombreMetrica = "archivo_validado",
+                    ValorMetrica = resultado.EstadoValidacion == "validado" ? 1 : 0,
+                    Unidad = "boolean",
+                    FechaCalculo = DateTime.UtcNow
+                },
+                new Metrica
+                {
+                    ResultadoId = resultado.Id,
+                    NombreMetrica = "estado_validacion",
+                    ValorMetrica = resultado.EstadoValidacion switch
+                    {
+                        "validado"  => 2,
+                        "pendiente" => 1,
+                        _           => 0  // rechazado
+                    },
+                    Unidad = "nivel",
+                    FechaCalculo = DateTime.UtcNow
+                }
+            };
+
+            _context.Metricas.AddRange(metricas);
+        }
+
         await _context.SaveChangesAsync();
     }
 
     public async Task<List<Metrica>> GetMetricsByVersionAsync(int versionId)
     {
+        var resultadoIds = await _context.ResultadosPrueba
+            .Where(r => r.VersionId == versionId)
+            .Select(r => r.Id)
+            .ToListAsync();
+
         return await _context.Metricas
-            .Where(m => m.VersionId == versionId)
+            .Where(m => resultadoIds.Contains(m.ResultadoId))
             .ToListAsync();
     }
 }

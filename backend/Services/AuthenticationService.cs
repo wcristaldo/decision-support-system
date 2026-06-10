@@ -33,21 +33,28 @@ public class AuthenticationService : IAuthenticationService
     public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto request)
     {
         var usuario = await GetUserByEmailAsync(request.Email);
-        if (usuario == null || !VerifyPassword(request.Password, usuario.ContrasenaHash))
+        if (usuario == null || usuario.Estado != "activo")
             return null;
 
-        var roles = await _context.UsuariosRoles
-            .Where(ur => ur.UsuarioId == usuario.Id)
+        if (!VerifyPassword(request.Password, usuario.PasswordHash))
+            return null;
+
+        // Actualizar fecha de último acceso
+        usuario.FechaUltimoAcceso = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        var roles = await _context.UsuarioRoles
+            .Where(ur => ur.IdUsuario == usuario.IdUsuario && ur.Estado == "activo")
             .Include(ur => ur.Rol)
-            .Select(ur => ur.Rol!.Nombre)
+            .Select(ur => ur.Rol!.NombreRol)
             .ToListAsync();
 
-        var permisos = await _context.UsuariosRoles
-            .Where(ur => ur.UsuarioId == usuario.Id)
-            .Include(ur => ur.Rol!.RolesPermisos)
-            .SelectMany(ur => ur.Rol!.RolesPermisos)
-            .Include(rp => rp.Permiso)
-            .Select(rp => rp.Permiso!.Nombre)
+        var permisos = await _context.UsuarioRoles
+            .Where(ur => ur.IdUsuario == usuario.IdUsuario && ur.Estado == "activo")
+            .Include(ur => ur.Rol!.RolPermisos)
+            .ThenInclude(rp => rp.Permiso)
+            .SelectMany(ur => ur.Rol!.RolPermisos)
+            .Select(rp => rp.Permiso!.NombrePermiso)
             .Distinct()
             .ToListAsync();
 
@@ -58,10 +65,10 @@ public class AuthenticationService : IAuthenticationService
             Token = token,
             Usuario = new UsuarioDto
             {
-                Id = usuario.Id,
+                Id = usuario.IdUsuario,
                 Nombre = usuario.Nombre,
                 Email = usuario.Email,
-                Activo = usuario.Activo,
+                Activo = usuario.Estado == "activo",
                 Roles = roles,
                 Permisos = permisos
             }
@@ -70,36 +77,35 @@ public class AuthenticationService : IAuthenticationService
 
     public async Task<Usuario?> GetUserByEmailAsync(string email)
     {
-        return await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
+        return await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Email == email);
     }
 
     public string GenerateJwtToken(Usuario usuario, List<string> roles, List<string> permisos)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "default-key"));
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "default-key-min-32-characters-here"));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<System.Security.Claims.Claim>
         {
-            new System.Security.Claims.Claim("sub", usuario.Id.ToString()),
-            new System.Security.Claims.Claim("email", usuario.Email),
-            new System.Security.Claims.Claim("name", usuario.Nombre)
+            new("sub",   usuario.IdUsuario.ToString()),
+            new("email", usuario.Email),
+            new("name",  usuario.Nombre)
         };
 
         foreach (var role in roles)
-        {
-            claims.Add(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role));
-        }
+            claims.Add(new(System.Security.Claims.ClaimTypes.Role, role));
 
         foreach (var permiso in permisos)
-        {
-            claims.Add(new System.Security.Claims.Claim("permission", permiso));
-        }
+            claims.Add(new("permission", permiso));
 
         var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(Convert.ToInt32(_configuration["Jwt:ExpirationMinutes"] ?? "60")),
+            issuer:             _configuration["Jwt:Issuer"],
+            audience:           _configuration["Jwt:Audience"],
+            claims:             claims,
+            expires:            DateTime.UtcNow.AddMinutes(
+                                    Convert.ToInt32(_configuration["Jwt:ExpirationMinutes"] ?? "60")),
             signingCredentials: credentials
         );
 
@@ -109,24 +115,20 @@ public class AuthenticationService : IAuthenticationService
     public string HashPassword(string password)
     {
         using var sha256 = SHA256.Create();
-        var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToHexString(hashedBytes).ToLower();
+        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+        return Convert.ToHexString(bytes).ToLower();
     }
 
     public bool VerifyPassword(string password, string hash)
-    {
-        var hashOfInput = HashPassword(password);
-        return hashOfInput == hash;
-    }
+        => HashPassword(password) == hash;
 
     public async Task<bool> ChangePasswordAsync(int usuarioId, string currentPassword, string newPassword)
     {
         var usuario = await _context.Usuarios.FindAsync(usuarioId);
-        if (usuario == null || !VerifyPassword(currentPassword, usuario.ContrasenaHash))
+        if (usuario == null || !VerifyPassword(currentPassword, usuario.PasswordHash))
             return false;
 
-        usuario.ContrasenaHash = HashPassword(newPassword);
-        usuario.FechaActualizacion = DateTime.UtcNow;
+        usuario.PasswordHash = HashPassword(newPassword);
         await _context.SaveChangesAsync();
         return true;
     }

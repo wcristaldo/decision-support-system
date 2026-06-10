@@ -29,9 +29,9 @@ public class ProyectosController : ControllerBase
             Id = p.Id,
             Nombre = p.Nombre,
             Descripcion = p.Descripcion,
+            TipoSolucion = p.TipoSolucion,
             Estado = p.Estado,
-            FechaCreacion = p.FechaCreacion,
-            FechaActualizacion = p.FechaActualizacion
+            FechaCreacion = p.FechaCreacion
         }).ToList());
     }
 
@@ -47,9 +47,9 @@ public class ProyectosController : ControllerBase
             Id = proyecto.Id,
             Nombre = proyecto.Nombre,
             Descripcion = proyecto.Descripcion,
+            TipoSolucion = proyecto.TipoSolucion,
             Estado = proyecto.Estado,
-            FechaCreacion = proyecto.FechaCreacion,
-            FechaActualizacion = proyecto.FechaActualizacion
+            FechaCreacion = proyecto.FechaCreacion
         });
     }
 
@@ -63,22 +63,23 @@ public class ProyectosController : ControllerBase
         {
             Nombre = request.Nombre,
             Descripcion = request.Descripcion,
+            TipoSolucion = request.TipoSolucion,
             Estado = "activo"
         };
 
         _context.Proyectos.Add(proyecto);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "Proyecto", "CREAR", null, $"ID: {proyecto.Id}, Nombre: {proyecto.Nombre}");
+        await _auditService.LogActionAsync(null, "Proyecto", "CREAR", $"ID: {proyecto.Id}, Nombre: {proyecto.Nombre}");
 
         return CreatedAtAction(nameof(GetById), new { id = proyecto.Id }, new ProyectoDto
         {
             Id = proyecto.Id,
             Nombre = proyecto.Nombre,
             Descripcion = proyecto.Descripcion,
+            TipoSolucion = proyecto.TipoSolucion,
             Estado = proyecto.Estado,
-            FechaCreacion = proyecto.FechaCreacion,
-            FechaActualizacion = proyecto.FechaActualizacion
+            FechaCreacion = proyecto.FechaCreacion
         });
     }
 
@@ -89,21 +90,18 @@ public class ProyectosController : ControllerBase
         if (proyecto == null)
             return NotFound();
 
-        var datosAnteriores = $"Nombre: {proyecto.Nombre}, Estado: {proyecto.Estado}";
+        var anterior = $"Nombre: {proyecto.Nombre}, Estado: {proyecto.Estado}";
 
-        if (!string.IsNullOrEmpty(request.Nombre))
-            proyecto.Nombre = request.Nombre;
-        if (!string.IsNullOrEmpty(request.Descripcion))
-            proyecto.Descripcion = request.Descripcion;
-        if (!string.IsNullOrEmpty(request.Estado))
-            proyecto.Estado = request.Estado;
-
-        proyecto.FechaActualizacion = DateTime.UtcNow;
+        if (!string.IsNullOrEmpty(request.Nombre))       proyecto.Nombre       = request.Nombre;
+        if (!string.IsNullOrEmpty(request.Descripcion))  proyecto.Descripcion  = request.Descripcion;
+        if (!string.IsNullOrEmpty(request.TipoSolucion)) proyecto.TipoSolucion = request.TipoSolucion;
+        if (!string.IsNullOrEmpty(request.Estado))       proyecto.Estado       = request.Estado;
 
         _context.Proyectos.Update(proyecto);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "Proyecto", "ACTUALIZAR", datosAnteriores, $"Nombre: {proyecto.Nombre}, Estado: {proyecto.Estado}");
+        await _auditService.LogActionAsync(null, "Proyecto", "ACTUALIZAR",
+            $"Antes: [{anterior}] → Después: Nombre: {proyecto.Nombre}, Estado: {proyecto.Estado}");
 
         return NoContent();
     }
@@ -118,7 +116,7 @@ public class ProyectosController : ControllerBase
         _context.Proyectos.Remove(proyecto);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "Proyecto", "ELIMINAR", $"ID: {proyecto.Id}, Nombre: {proyecto.Nombre}", null);
+        await _auditService.LogActionAsync(null, "Proyecto", "ELIMINAR", $"ID: {proyecto.Id}, Nombre: {proyecto.Nombre}");
 
         return NoContent();
     }

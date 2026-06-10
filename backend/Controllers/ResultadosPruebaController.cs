@@ -39,55 +39,14 @@ public class ResultadosPruebaController : ControllerBase
         {
             Id = r.Id,
             VersionId = r.VersionId,
-            NombrePrueba = r.NombrePrueba,
-            TipoPrueba = r.TipoPrueba,
-            Estado = r.Estado,
-            TiempoEjecucion = r.TiempoEjecucion,
-            Mensaje = r.Mensaje,
-            FechaEjecucion = r.FechaEjecucion
+            UsuarioCargaId = r.UsuarioCargaId,
+            NombreArchivo = r.NombreArchivo,
+            FormatoArchivo = r.FormatoArchivo,
+            RutaArchivo = r.RutaArchivo,
+            FechaCarga = r.FechaCarga,
+            EstadoValidacion = r.EstadoValidacion,
+            Observaciones = r.Observaciones
         }).ToList());
-    }
-
-    [HttpPost("upload")]
-    public async Task<IActionResult> UploadResults([FromBody] UploadResultadosPruebaDto request)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        var version = await _context.Versiones.FirstOrDefaultAsync(v => v.Id == request.VersionId);
-        if (version == null)
-            return NotFound("Versión no encontrada");
-
-        // Limpiar resultados anteriores
-        var resultadosAnteriores = await _context.ResultadosPrueba
-            .Where(r => r.VersionId == request.VersionId)
-            .ToListAsync();
-        _context.ResultadosPrueba.RemoveRange(resultadosAnteriores);
-
-        // Agregar nuevos resultados
-        var resultados = request.Resultados.Select(r => new ResultadoPrueba
-        {
-            VersionId = request.VersionId,
-            NombrePrueba = r.NombrePrueba,
-            TipoPrueba = r.TipoPrueba,
-            Estado = r.Estado,
-            TiempoEjecucion = r.TiempoEjecucion,
-            Mensaje = r.Mensaje
-        }).ToList();
-
-        _context.ResultadosPrueba.AddRange(resultados);
-        await _context.SaveChangesAsync();
-
-        // Calcular métricas
-        await _metricsService.CalculateMetricsAsync(request.VersionId);
-
-        // Generar recomendaciones
-        await _recommendationEngine.GenerateRecommendationsAsync(request.VersionId);
-
-        // Auditoría
-        await _auditService.LogActionAsync(null, "ResultadosPrueba", "CARGAR", null, $"VersionId: {request.VersionId}, Cantidad: {resultados.Count}");
-
-        return Ok(new { message = "Resultados cargados exitosamente", cantidad = resultados.Count });
     }
 
     [HttpPost]
@@ -96,33 +55,70 @@ public class ResultadosPruebaController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        var version = await _context.Versiones.FirstOrDefaultAsync(v => v.Id == request.VersionId);
+        if (version == null)
+            return NotFound("Versión no encontrada");
+
         var resultado = new ResultadoPrueba
         {
             VersionId = request.VersionId,
-            NombrePrueba = request.NombrePrueba,
-            TipoPrueba = request.TipoPrueba,
-            Estado = request.Estado,
-            TiempoEjecucion = request.TiempoEjecucion,
-            Mensaje = request.Mensaje
+            NombreArchivo = request.NombreArchivo,
+            FormatoArchivo = request.FormatoArchivo,
+            RutaArchivo = request.RutaArchivo,
+            Observaciones = request.Observaciones,
+            EstadoValidacion = "pendiente"
         };
 
         _context.ResultadosPrueba.Add(resultado);
         await _context.SaveChangesAsync();
 
-        // Recalcular métricas
+        // Calcular métricas y generar recomendaciones
         await _metricsService.CalculateMetricsAsync(request.VersionId);
         await _recommendationEngine.GenerateRecommendationsAsync(request.VersionId);
+
+        await _auditService.LogActionAsync(null, "ResultadoPrueba", "CARGAR",
+            $"VersionId: {request.VersionId}, Archivo: {request.NombreArchivo}");
 
         return CreatedAtAction(nameof(GetByVersion), new { versionId = request.VersionId }, new ResultadoPruebaDto
         {
             Id = resultado.Id,
             VersionId = resultado.VersionId,
-            NombrePrueba = resultado.NombrePrueba,
-            TipoPrueba = resultado.TipoPrueba,
-            Estado = resultado.Estado,
-            TiempoEjecucion = resultado.TiempoEjecucion,
-            Mensaje = resultado.Mensaje,
-            FechaEjecucion = resultado.FechaEjecucion
+            UsuarioCargaId = resultado.UsuarioCargaId,
+            NombreArchivo = resultado.NombreArchivo,
+            FormatoArchivo = resultado.FormatoArchivo,
+            RutaArchivo = resultado.RutaArchivo,
+            FechaCarga = resultado.FechaCarga,
+            EstadoValidacion = resultado.EstadoValidacion,
+            Observaciones = resultado.Observaciones
         });
     }
+
+    [HttpPut("{id}/validar")]
+    public async Task<IActionResult> Validar(int id, [FromBody] ValidarResultadoDto request)
+    {
+        var resultado = await _context.ResultadosPrueba.FirstOrDefaultAsync(r => r.Id == id);
+        if (resultado == null)
+            return NotFound();
+
+        resultado.EstadoValidacion = request.EstadoValidacion;
+        resultado.Observaciones = request.Observaciones ?? resultado.Observaciones;
+
+        _context.ResultadosPrueba.Update(resultado);
+        await _context.SaveChangesAsync();
+
+        // Recalcular métricas y recomendaciones
+        await _metricsService.CalculateMetricsAsync(resultado.VersionId);
+        await _recommendationEngine.GenerateRecommendationsAsync(resultado.VersionId);
+
+        await _auditService.LogActionAsync(null, "ResultadoPrueba", "VALIDAR",
+            $"ID: {id}, Estado: {request.EstadoValidacion}");
+
+        return NoContent();
+    }
+}
+
+public class ValidarResultadoDto
+{
+    public required string EstadoValidacion { get; set; }
+    public string? Observaciones { get; set; }
 }

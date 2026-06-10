@@ -4,26 +4,20 @@ public class ResultadoPruebaDto
 {
     public int Id { get; set; }
     public int VersionId { get; set; }
-    public string? NombrePrueba { get; set; }
-    public string? TipoPrueba { get; set; }
-    public string? Estado { get; set; }
-    public decimal? TiempoEjecucion { get; set; }
-    public string? Mensaje { get; set; }
-    public DateTime FechaEjecucion { get; set; }
+    public int? UsuarioCargaId { get; set; }
+    public string? NombreArchivo { get; set; }
+    public string? FormatoArchivo { get; set; }
+    public string? RutaArchivo { get; set; }
+    public DateTime FechaCarga { get; set; }
+    public string? EstadoValidacion { get; set; }
+    public string? Observaciones { get; set; }
 }
 
 public class CreateResultadoPruebaDto
 {
     public int VersionId { get; set; }
-    public required string NombrePrueba { get; set; }
-    public string? TipoPrueba { get; set; }
-    public string? Estado { get; set; }
-    public decimal? TiempoEjecucion { get; set; }
-    public string? Mensaje { get; set; }
-}
-
-public class UploadResultadosPruebaDto
-{
-    public int VersionId { get; set; }
-    public required List<CreateResultadoPruebaDto> Resultados { get; set; }
+    public required string NombreArchivo { get; set; }
+    public string? FormatoArchivo { get; set; }
+    public string? RutaArchivo { get; set; }
+    public string? Observaciones { get; set; }
 }
