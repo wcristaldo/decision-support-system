@@ -3,12 +3,12 @@ namespace DecisionSupportAPI.Models;
 public class DecisionDespliegue
 {
     public int Id { get; set; }
-    public int VersionId { get; set; }
-    public int UsuarioId { get; set; }
-    public string? Decision { get; set; }
-    public string? Justificacion { get; set; }
+    public int RecomendacionId { get; set; }
+    public int? UsuarioDecisorId { get; set; }
+    public string? DecisionFinal { get; set; }
+    public string? Comentario { get; set; }
     public DateTime FechaDecision { get; set; } = DateTime.UtcNow;
 
-    public Version? Version { get; set; }
-    public Usuario? Usuario { get; set; }
+    public Recomendacion? Recomendacion { get; set; }
+    public Usuario? UsuarioDecisor { get; set; }
 }

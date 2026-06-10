@@ -50,7 +50,8 @@ public class AuthController : ControllerBase
         if (request.NewPassword != request.ConfirmPassword)
             return BadRequest(new { message = "Las nuevas contraseñas no coinciden" });
 
-        var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)
+                          ?? User.FindFirst("sub");
         if (usuarioIdClaim == null || !int.TryParse(usuarioIdClaim.Value, out var usuarioId))
             return Unauthorized(new { message = "Usuario no identificado" });
 
@@ -77,22 +78,18 @@ public class AuthController : ControllerBase
             if (string.IsNullOrWhiteSpace(pwd))
                 return BadRequest(new { message = "Contraseña vacía" });
 
-            using (var dbContext = _context)
-            {
-                var user = dbContext.Usuarios.FirstOrDefault(u => u.Id == usuarioId);
-                if (user == null)
-                    return NotFound(new { message = "Usuario no encontrado" });
+            var user = _context.Usuarios.FirstOrDefault(u => u.IdUsuario == usuarioId);
+            if (user == null)
+                return NotFound(new { message = "Usuario no encontrado" });
 
-                user.ContrasenaHash = _authService.HashPassword(pwd);
-                user.FechaActualizacion = DateTime.UtcNow;
-                dbContext.SaveChanges();
-            }
+            user.PasswordHash = _authService.HashPassword(pwd);
+            _context.SaveChanges();
 
             return Ok(new { message = "Éxito" });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { error = ex.Message, stack = ex.StackTrace });
+            return StatusCode(500, new { error = ex.Message });
         }
     }
 }

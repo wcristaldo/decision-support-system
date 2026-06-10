@@ -33,7 +33,8 @@ public class VersionesController : ControllerBase
             ProyectoId = v.ProyectoId,
             NumeroVersion = v.NumeroVersion,
             Descripcion = v.Descripcion,
-            FechaCreacion = v.FechaCreacion
+            FechaVersion = v.FechaVersion,
+            Estado = v.Estado
         }).ToList());
     }
 
@@ -50,7 +51,8 @@ public class VersionesController : ControllerBase
             ProyectoId = version.ProyectoId,
             NumeroVersion = version.NumeroVersion,
             Descripcion = version.Descripcion,
-            FechaCreacion = version.FechaCreacion
+            FechaVersion = version.FechaVersion,
+            Estado = version.Estado
         });
     }
 
@@ -70,7 +72,7 @@ public class VersionesController : ControllerBase
         _context.Versiones.Add(version);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "Version", "CREAR", null, $"ID: {version.Id}, Numero: {version.NumeroVersion}");
+        await _auditService.LogActionAsync(null, "Version", "CREAR", $"ID: {version.Id}, Numero: {version.NumeroVersion}");
 
         return CreatedAtAction(nameof(GetById), new { id = version.Id }, new VersionDto
         {
@@ -78,7 +80,8 @@ public class VersionesController : ControllerBase
             ProyectoId = version.ProyectoId,
             NumeroVersion = version.NumeroVersion,
             Descripcion = version.Descripcion,
-            FechaCreacion = version.FechaCreacion
+            FechaVersion = version.FechaVersion,
+            Estado = version.Estado
         });
     }
 
@@ -89,17 +92,17 @@ public class VersionesController : ControllerBase
         if (version == null)
             return NotFound();
 
-        var datosAnteriores = $"Numero: {version.NumeroVersion}";
+        var anterior = $"Numero: {version.NumeroVersion}";
 
-        if (!string.IsNullOrEmpty(request.NumeroVersion))
-            version.NumeroVersion = request.NumeroVersion;
-        if (!string.IsNullOrEmpty(request.Descripcion))
-            version.Descripcion = request.Descripcion;
+        if (!string.IsNullOrEmpty(request.NumeroVersion)) version.NumeroVersion = request.NumeroVersion;
+        if (!string.IsNullOrEmpty(request.Descripcion))   version.Descripcion   = request.Descripcion;
+        if (!string.IsNullOrEmpty(request.Estado))        version.Estado        = request.Estado;
 
         _context.Versiones.Update(version);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "Version", "ACTUALIZAR", datosAnteriores, $"Numero: {version.NumeroVersion}");
+        await _auditService.LogActionAsync(null, "Version", "ACTUALIZAR",
+            $"Antes: [{anterior}] → Después: Numero: {version.NumeroVersion}");
 
         return NoContent();
     }
@@ -114,7 +117,7 @@ public class VersionesController : ControllerBase
         _context.Versiones.Remove(version);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "Version", "ELIMINAR", $"ID: {version.Id}, Numero: {version.NumeroVersion}", null);
+        await _auditService.LogActionAsync(null, "Version", "ELIMINAR", $"ID: {version.Id}, Numero: {version.NumeroVersion}");
 
         return NoContent();
     }

@@ -22,10 +22,9 @@ public class RecomendacionesController : ControllerBase
         return Ok(recomendaciones.Select(r => new RecomendacionDto
         {
             Id = r.Id,
-            VersionId = r.VersionId,
+            EvaluacionId = r.EvaluacionId,
             TipoRecomendacion = r.TipoRecomendacion,
-            Descripcion = r.Descripcion,
-            Confianza = r.Confianza,
+            Justificacion = r.Justificacion,
             FechaGeneracion = r.FechaGeneracion
         }).ToList());
     }

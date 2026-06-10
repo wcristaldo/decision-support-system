@@ -20,20 +20,20 @@ public class DecisionesDespliegueController : ControllerBase
         _auditService = auditService;
     }
 
-    [HttpGet("version/{versionId}")]
-    public async Task<ActionResult<List<DecisionDespliegueDto>>> GetByVersion(int versionId)
+    [HttpGet("recomendacion/{recomendacionId}")]
+    public async Task<ActionResult<List<DecisionDespliegueDto>>> GetByRecomendacion(int recomendacionId)
     {
         var decisiones = await _context.DecisionesDespliegue
-            .Where(d => d.VersionId == versionId)
+            .Where(d => d.RecomendacionId == recomendacionId)
             .ToListAsync();
 
         return Ok(decisiones.Select(d => new DecisionDespliegueDto
         {
             Id = d.Id,
-            VersionId = d.VersionId,
-            UsuarioId = d.UsuarioId,
-            Decision = d.Decision,
-            Justificacion = d.Justificacion,
+            RecomendacionId = d.RecomendacionId,
+            UsuarioDecisorId = d.UsuarioDecisorId,
+            DecisionFinal = d.DecisionFinal,
+            Comentario = d.Comentario,
             FechaDecision = d.FechaDecision
         }).ToList());
     }
@@ -44,29 +44,26 @@ public class DecisionesDespliegueController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        // Obtener ID del usuario del contexto (en implementación real, del JWT)
-        var usuarioId = 1; // Por ahora usar usuario por defecto
-
         var decision = new DecisionDespliegue
         {
-            VersionId = request.VersionId,
-            UsuarioId = usuarioId,
-            Decision = request.Decision,
-            Justificacion = request.Justificacion
+            RecomendacionId = request.RecomendacionId,
+            DecisionFinal = request.DecisionFinal,
+            Comentario = request.Comentario
         };
 
         _context.DecisionesDespliegue.Add(decision);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(usuarioId, "DecisionDespliegue", "TOMAR_DECISION", null, $"VersionId: {request.VersionId}, Decision: {request.Decision}");
+        await _auditService.LogActionAsync(null, "DecisionDespliegue", "TOMAR_DECISION",
+            $"RecomendacionId: {request.RecomendacionId}, Decision: {request.DecisionFinal}");
 
-        return CreatedAtAction(nameof(GetByVersion), new { versionId = request.VersionId }, new DecisionDespliegueDto
+        return CreatedAtAction(nameof(GetByRecomendacion), new { recomendacionId = request.RecomendacionId }, new DecisionDespliegueDto
         {
             Id = decision.Id,
-            VersionId = decision.VersionId,
-            UsuarioId = decision.UsuarioId,
-            Decision = decision.Decision,
-            Justificacion = decision.Justificacion,
+            RecomendacionId = decision.RecomendacionId,
+            UsuarioDecisorId = decision.UsuarioDecisorId,
+            DecisionFinal = decision.DecisionFinal,
+            Comentario = decision.Comentario,
             FechaDecision = decision.FechaDecision
         });
     }
