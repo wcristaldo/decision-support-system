@@ -22,9 +22,9 @@ public class MetricasController : ControllerBase
         return Ok(metricas.Select(m => new MetricaDto
         {
             Id = m.Id,
-            VersionId = m.VersionId,
+            ResultadoId = m.ResultadoId,
             NombreMetrica = m.NombreMetrica,
-            Valor = m.Valor,
+            ValorMetrica = m.ValorMetrica,
             Unidad = m.Unidad,
             FechaCalculo = m.FechaCalculo
         }).ToList());

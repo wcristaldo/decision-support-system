@@ -5,7 +5,7 @@ namespace DecisionSupportAPI.Services;
 
 public interface IAuditService
 {
-    Task LogActionAsync(int? usuarioId, string entidad, string accion, string? datosAnteriores = null, string? datosNuevos = null);
+    Task LogActionAsync(int? usuarioId, string entidad, string accion, string? detalle = null);
 }
 
 public class AuditService : IAuditService
@@ -17,15 +17,14 @@ public class AuditService : IAuditService
         _context = context;
     }
 
-    public async Task LogActionAsync(int? usuarioId, string entidad, string accion, string? datosAnteriores = null, string? datosNuevos = null)
+    public async Task LogActionAsync(int? usuarioId, string entidad, string accion, string? detalle = null)
     {
         var auditoria = new Auditoria
         {
             UsuarioId = usuarioId,
-            Entidad = entidad,
+            EntidadAfectada = entidad,
             Accion = accion,
-            DatosAnteriores = datosAnteriores,
-            DatosNuevos = datosNuevos,
+            Detalle = detalle,
             FechaEvento = DateTime.UtcNow
         };
 

@@ -20,13 +20,12 @@ function Login({ onLogin }) {
         email,
         password
       })
-
       localStorage.setItem('token', response.data.token)
       localStorage.setItem('userRoles', JSON.stringify(response.data.usuario.roles))
       onLogin()
       navigate('/')
     } catch (err) {
-      setError(err.response?.data?.message || 'Error al iniciar sesión. Credenciales inválidas.')
+      setError(err.response?.data?.message || 'Credenciales inválidas. Verificá tu correo y contraseña.')
     } finally {
       setLoading(false)
     }
@@ -34,78 +33,67 @@ function Login({ onLogin }) {
 
   return (
     <div className="login-page">
-      {/* Encabezado */}
-      <header className="login-header">
-        <div className="header-content">
-          <div className="logo-section">
-            <div className="logo">✨</div>
-            <div className="logo-text">
-              <h1>DSS</h1>
-              <p>Sistema de Apoyo a Decisiones</p>
+      {/* Burbujas decorativas */}
+      <div className="bubble bubble-1" />
+      <div className="bubble bubble-2" />
+      <div className="bubble bubble-3" />
+      <div className="bubble bubble-4" />
+
+      <div className="login-split">
+        {/* Panel izquierdo */}
+        <div className="login-panel-left">
+          <div className="brand">
+            <div className="brand-icon">DSS</div>
+            <h1>Decision Support System</h1>
+            <p>Sistema de apoyo a la toma de decisiones para el despliegue de software en Roshka S.A.</p>
+          </div>
+
+          <div className="features">
+            <div className="feature-item">
+              <div className="feature-dot" />
+              <span>Análisis de resultados de pruebas automatizadas</span>
+            </div>
+            <div className="feature-item">
+              <div className="feature-dot" />
+              <span>Métricas e indicadores de calidad por versión</span>
+            </div>
+            <div className="feature-item">
+              <div className="feature-dot" />
+              <span>Recomendaciones basadas en reglas configurables</span>
+            </div>
+            <div className="feature-item">
+              <div className="feature-dot" />
+              <span>Trazabilidad completa del proceso de decisión</span>
+            </div>
+            <div className="feature-item">
+              <div className="feature-dot" />
+              <span>Control de acceso por roles</span>
             </div>
           </div>
-          <nav className="header-nav">
-            <a href="#features">Características</a>
-            <a href="#docs">Documentación</a>
-            <a href="#contact">Soporte</a>
-          </nav>
+
+          <div className="panel-footer">
+            <span>© 2026 Roshka S.A. — Proyecto de Tesis UNIDA</span>
+          </div>
         </div>
-      </header>
 
-      {/* Contenido Principal */}
-      <div className="login-container">
-        <div className="login-wrapper">
-          {/* Lado Izquierdo - Información */}
-          <div className="login-info">
-            <h2>Decisiones de Despliegue Inteligentes</h2>
-            <p>Sistema impulsado por IA que analiza resultados de pruebas y guía tus decisiones de despliegue con confianza</p>
-
-            <ul className="features-list">
-              <li>
-                <span className="icon">⚡</span>
-                <span>Análisis en tiempo real de resultados de pruebas</span>
-              </li>
-              <li>
-                <span className="icon">🎯</span>
-                <span>Recomendaciones inteligentes de despliegue</span>
-              </li>
-              <li>
-                <span className="icon">🔍</span>
-                <span>Trazabilidad completa de decisiones</span>
-              </li>
-              <li>
-                <span className="icon">👥</span>
-                <span>Control de acceso basado en roles</span>
-              </li>
-              <li>
-                <span className="icon">📊</span>
-                <span>Análisis avanzado e información</span>
-              </li>
-            </ul>
-
-            <div className="info-box">
-              <strong>Acceso a Demostración Disponible</strong>
-              <p>Explora la plataforma completa con nuestra cuenta de demostración preconfigurada. Sin tarjeta de crédito requerida.</p>
+        {/* Panel derecho */}
+        <div className="login-panel-right">
+          <div className="login-card">
+            <div className="card-header">
+              <h2>Iniciar sesión</h2>
+              <p>Ingresá con tu cuenta institucional</p>
             </div>
-          </div>
 
-          {/* Lado Derecho - Formulario */}
-          <div className="login-form-container">
             <form onSubmit={handleSubmit} className="login-form">
-              <div className="form-header">
-                <h3>¡Bienvenido de Vuelta!</h3>
-                <p>Inicia sesión en tu cuenta para continuar</p>
-              </div>
-
               <div className="form-group">
-                <label htmlFor="email">Correo o Usuario</label>
+                <label htmlFor="email">Correo electrónico</label>
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="usuario@empresa.com"
+                  placeholder="usuario@roshka.com"
                   className="form-input"
                   autoComplete="email"
                 />
@@ -128,79 +116,29 @@ function Login({ onLogin }) {
               <div className="form-options">
                 <label className="remember-me">
                   <input type="checkbox" name="remember" />
-                  <span>Recuérdame</span>
+                  <span>Recordarme</span>
                 </label>
-                <a href="#forgot" className="forgot-link">¿Necesitas ayuda?</a>
+                <a href="#forgot" className="forgot-link">¿Olvidaste tu contraseña?</a>
               </div>
 
               {error && (
-                <div className="error-message" style={{
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  padding: '1rem',
-                  borderRadius: '8px',
-                  marginBottom: '1.5rem',
-                  color: '#fca5a5',
-                  fontSize: '0.95rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem'
-                }}>
-                  <span>⚠️</span>
+                <div className="error-box">
+                  <span className="error-icon">!</span>
                   <span>{error}</span>
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-login"
-              >
+              <button type="submit" disabled={loading} className="btn-login">
                 {loading ? (
-                  <>
-                    <span className="spinner"></span>
-                    Iniciando sesión...
-                  </>
+                  <><span className="spinner" /> Verificando...</>
                 ) : (
-                  'Iniciar Sesión'
+                  'Ingresar al sistema'
                 )}
               </button>
             </form>
-
-            {/* Tarjeta de Credenciales de Demostración */}
-            <div className="credentials-card">
-              <div className="credentials-header">
-                <span className="cred-icon">🚀</span>
-                <h4>Credenciales de Demostración</h4>
-              </div>
-              <div className="credentials-body">
-                <div className="credential-item">
-                  <span className="label">Correo</span>
-                  <code>admin@test.com</code>
-                </div>
-                <div className="credential-item">
-                  <span className="label">Contraseña</span>
-                  <code>admin123</code>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
-
-      {/* Pie de Página */}
-      <footer className="login-footer">
-        <div className="footer-content">
-          <p>&copy; 2026 DSS. Todos los derechos reservados.</p>
-          <div className="footer-links">
-            <a href="#privacy">Privacidad</a>
-            <span className="separator">•</span>
-            <a href="#terms">Términos</a>
-            <span className="separator">•</span>
-            <a href="#status">Estado</a>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using DecisionSupportAPI.Data;
-using System.Security.Claims;
 
 namespace DecisionSupportAPI.Controllers;
 
@@ -26,10 +25,12 @@ public class UsuariosController : ControllerBase
         var usuarios = _context.Usuarios
             .Select(u => new
             {
-                u.Id,
+                Id = u.IdUsuario,
                 u.Nombre,
+                u.Apellido,
                 u.Email,
-                u.Activo,
+                Activo = u.Estado == "activo",
+                u.Estado,
                 u.FechaCreacion
             })
             .ToList();

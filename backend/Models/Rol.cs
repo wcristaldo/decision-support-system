@@ -2,11 +2,11 @@ namespace DecisionSupportAPI.Models;
 
 public class Rol
 {
-    public int Id { get; set; }
-    public required string Nombre { get; set; }
+    public int IdRol { get; set; }
+    public required string NombreRol { get; set; }
     public string? Descripcion { get; set; }
-    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public string Estado { get; set; } = "activo";
 
-    public ICollection<UsuarioRol> UsuariosRoles { get; set; } = [];
-    public ICollection<RolPermiso> RolesPermisos { get; set; } = [];
+    public ICollection<UsuarioRol> UsuarioRoles { get; set; } = [];
+    public ICollection<RolPermiso> RolPermisos { get; set; } = [];
 }
