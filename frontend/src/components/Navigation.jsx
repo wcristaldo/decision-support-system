@@ -53,6 +53,11 @@ function Navigation({ onLogout }) {
               Cargar Resultados
             </Link>
           </li>
+          <li>
+            <Link to="/proyectos" className={`nav-link ${location.pathname.includes('/analisis') ? 'active' : ''}`}>
+              Análisis y Métricas
+            </Link>
+          </li>
           {isAdmin && (
             <li>
               <Link to="/usuarios" className={`nav-link ${isActive('/usuarios') ? 'active' : ''}`}>

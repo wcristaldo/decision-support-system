@@ -1,102 +1,91 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import api from '../services/api'
 import '../styles/CargarResultados.css'
 
+// El formato de resultados de prueba en el sistema es siempre JSON (según la tesis)
+const FORMATO_FIJO = 'JSON'
+
+function validate(fields) {
+  const errors = {}
+  if (!fields.versionId) {
+    errors.versionId = 'Seleccioná una versión.'
+  }
+  const nombre = fields.nombreArchivo.trim()
+  if (!nombre) {
+    errors.nombreArchivo = 'El nombre del archivo es obligatorio.'
+  } else if (nombre.length < 2) {
+    errors.nombreArchivo = 'Debe tener al menos 2 caracteres.'
+  } else if (nombre.length > 200) {
+    errors.nombreArchivo = 'No puede superar los 200 caracteres.'
+  }
+  if (fields.observaciones && fields.observaciones.length > 500) {
+    errors.observaciones = 'No puede superar los 500 caracteres.'
+  }
+  return errors
+}
+
 function CargarResultados() {
-  const [versionId, setVersionId] = useState('')
-  const [jsonContent, setJsonContent] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(null)
+  const [proyectos, setProyectos] = useState([])
+  const [versiones, setVersiones] = useState([])
+  const [loadingProyectos, setLoadingProyectos] = useState(true)
+  const [loadingVersiones, setLoadingVersiones] = useState(false)
+  const [proyectoId, setProyectoId] = useState('')
+  const [fields, setFields] = useState({
+    versionId:     '',
+    nombreArchivo: '',
+    rutaArchivo:   '',
+    observaciones: '',
+  })
+  const [errors, setErrors]   = useState({})
+  const [saving, setSaving]   = useState(false)
+  const [apiError, setApiError] = useState(null)
+  const [success, setSuccess] = useState(false)
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-    setSuccess(null)
+  useEffect(() => {
+    api.get('/proyectos')
+      .then(res => setProyectos(res.data))
+      .catch(() => {})
+      .finally(() => setLoadingProyectos(false))
+  }, [])
 
+  const handleProyectoChange = async (e) => {
+    const val = e.target.value
+    setProyectoId(val)
+    setFields(prev => ({ ...prev, versionId: '' }))
+    setVersiones([])
+    if (!val) return
+    setLoadingVersiones(true)
     try {
-      const resultados = JSON.parse(jsonContent)
-
-      if (!Array.isArray(resultados)) {
-        throw new Error('El JSON debe ser un array de resultados')
-      }
-
-      const payload = {
-        versionId: parseInt(versionId),
-        resultados: resultados.map(r => ({
-          nombrePrueba: r.nombrePrueba || r.name,
-          tipoPrueba: r.tipoPrueba || r.type || 'unit',
-          estado: r.estado || r.status || 'PASSED',
-          tiempoEjecucion: r.tiempoEjecucion || r.duration,
-          mensaje: r.mensaje || r.message
-        }))
-      }
-
-      const response = await api.post('/resultadosPrueba/upload', payload)
-      setSuccess(response.data.message)
-      setJsonContent('')
-      setVersionId('')
-    } catch (err) {
-      if (err instanceof SyntaxError) {
-        setError('JSON inválido')
-      } else {
-        setError(err.message || 'Error al cargar resultados')
-      }
+      const res = await api.get(`/versiones/proyecto/${val}`)
+      setVersiones(res.data)
+    } catch {
+      setVersiones([])
     } finally {
-      setLoading(false)
+      setLoadingVersiones(false)
     }
   }
 
-  return (
-    <div className="cargar-resultados-container">
-      <h1>Cargar Resultados de Pruebas</h1>
-
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
-
-      <form onSubmit={handleSubmit} className="form-cargar">
-        <div className="form-group">
-          <label>ID de Versión:</label>
-          <input
-            type="number"
-            value={versionId}
-            onChange={(e) => setVersionId(e.target.value)}
-            required
-            placeholder="Ej: 1"
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Resultados JSON:</label>
-          <textarea
-            value={jsonContent}
-            onChange={(e) => setJsonContent(e.target.value)}
-            placeholder={'[\n  {\n    "nombrePrueba": "test_login",\n    "estado": "PASSED",\n    "tiempoEjecucion": 0.5\n  }\n]'}
-            rows="10"
-            required
-          />
-        </div>
-
-        <button type="submit" disabled={loading} className="btn-primary">
-          {loading ? 'Cargando...' : 'Cargar Resultados'}
-        </button>
-      </form>
-
-      <div className="formato-ayuda">
-        <h3>Formato esperado:</h3>
-        <pre>{`[
-  {
-    "nombrePrueba": "test_name",
-    "tipoPrueba": "unit",
-    "estado": "PASSED",
-    "tiempoEjecucion": 0.5,
-    "mensaje": "optional message"
+  const set = (k) => (e) => {
+    setFields(prev => ({ ...prev, [k]: e.target.value }))
+    if (errors[k]) setErrors(prev => { const n = { ...prev }; delete n[k]; return n })
   }
-]`}</pre>
-      </div>
-    </div>
-  )
-}
 
-export default CargarResultados
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const errs = validate(fields)
+    if (Object.keys(errs).length) { setErrors(errs); return }
+    setSaving(true)
+    setApiError(null)
+    try {
+      await api.post('/resultadosPrueba', {
+        versionId:     parseInt(fields.versionId),
+        nombreArchivo: fields.nombreArchivo.trim(),
+        formatoArchivo: FORMATO_FIJO,
+        rutaArchivo:   fields.rutaArchivo.trim() || null,
+        observaciones: fields.observaciones.trim() || null,
+      })
+      setSuccess(true)
+    } catch (err) {
+      const msg = err.response?.data?.message
+        || err.response?.data?.title
+        || 'No 

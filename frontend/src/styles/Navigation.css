@@ -79,7 +79,7 @@ body {
 
 .nav-link {
   display: block;
-  color: var(--gray-400);
+  color: #c8d4dc;
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
@@ -90,14 +90,14 @@ body {
 }
 
 .nav-link:hover {
-  color: var(--white);
-  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .nav-link.active {
-  color: var(--white);
-  background: rgba(126, 154, 178, 0.25);
-  border-bottom: 2px solid var(--blue-400);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+  border-bottom: 2px solid #ffffff;
   border-radius: 8px 8px 0 0;
 }
 

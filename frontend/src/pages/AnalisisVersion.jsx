@@ -1,139 +1,131 @@
-import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import '../styles/AnalisisVersion.css'
 
-function AnalisisVersion() {
-  const { id } = useParams()
-  const [version, setVersion] = useState(null)
-  const [metricas, setMetricas] = useState([])
-  const [recomendaciones, setRecomendaciones] = useState([])
-  const [decisiones, setDecisiones] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+// ── Constantes ────────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    fetchData()
-  }, [id])
-
-  const fetchData = async () => {
-    try {
-      const [versionRes, metricasRes, recomendacionesRes, decisionesRes] = await Promise.all([
-        api.get(`/versiones/${id}`),
-        api.get(`/metricas/version/${id}`),
-        api.get(`/recomendaciones/version/${id}`),
-        api.get(`/decisionesDespliegue/version/${id}`)
-      ])
-
-      setVersion(versionRes.data)
-      setMetricas(metricasRes.data)
-      setRecomendaciones(recomendacionesRes.data)
-      setDecisiones(decisionesRes.data)
-      setError(null)
-    } catch (err) {
-      setError('Error al cargar datos')
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleTakeDecision = async (decision) => {
-    try {
-      await api.post('/decisionesDespliegue', {
-        versionId: parseInt(id),
-        decision,
-        justificacion: 'Decision taken from dashboard'
-      })
-      fetchData()
-    } catch (err) {
-      setError('Error al registrar decisión')
-    }
-  }
-
-  if (loading) return <div className="loading">Cargando análisis...</div>
-  if (!version) return <div className="error-message">Versión no encontrada</div>
-
-  const tasaExito = metricas.find(m => m.nombreMetrica === 'tasa_exito')
-  const tasaFallo = metricas.find(m => m.nombreMetrica === 'tasa_fallo')
-  const totalPruebas = metricas.find(m => m.nombreMetrica === 'total_pruebas')
-
-  return (
-    <div className="analisis-container">
-      <h1>Análisis - Versión {version.numeroVersion}</h1>
-
-      {error && <div className="error-message">{error}</div>}
-
-      <section className="metricas-section">
-        <h2>Métricas</h2>
-        <div className="metricas-grid">
-          {tasaExito && (
-            <div className={`metrica-card ${tasaExito.valor >= 95 ? 'success' : tasaExito.valor >= 80 ? 'warning' : 'danger'}`}>
-              <h4>Tasa de Éxito</h4>
-              <p className="valor">{tasaExito.valor.toFixed(2)}%</p>
-            </div>
-          )}
-          {totalPruebas && (
-            <div className="metrica-card">
-              <h4>Total de Pruebas</h4>
-              <p className="valor">{totalPruebas.valor}</p>
-            </div>
-          )}
-          {tasaFallo && (
-            <div className={`metrica-card ${tasaFallo.valor > 20 ? 'danger' : 'info'}`}>
-              <h4>Tasa de Fallo</h4>
-              <p className="valor">{tasaFallo.valor.toFixed(2)}%</p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="recomendaciones-section">
-        <h2>Recomendaciones</h2>
-        <div className="recomendaciones-list">
-          {recomendaciones.map((rec) => (
-            <div key={rec.id} className={`recomendacion-card ${rec.tipoRecomendacion.toLowerCase()}`}>
-              <div className="recom-header">
-                <h4>{rec.tipoRecomendacion}</h4>
-                <span className="confianza">Confianza: {rec.confianza}%</span>
-              </div>
-              <p>{rec.descripcion}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="decisiones-section">
-        <h2>Decisiones de Despliegue</h2>
-        <div className="decision-buttons">
-          <button className="btn-success" onClick={() => handleTakeDecision('DESPLEGAR')}>
-            Desplegar
-          </button>
-          <button className="btn-warning" onClick={() => handleTakeDecision('DESPLEGAR_CON_MONITOREO')}>
-            Desplegar con Monitoreo
-          </button>
-          <button className="btn-danger" onClick={() => handleTakeDecision('NO_DESPLEGAR')}>
-            No Desplegar
-          </button>
-        </div>
-
-        <div className="decisiones-historial">
-          {decisiones.length > 0 && (
-            <>
-              <h3>Historial de Decisiones</h3>
-              {decisiones.map((dec) => (
-                <div key={dec.id} className="decision-item">
-                  <span className={`decision-badge ${dec.decision.toLowerCase()}`}>{dec.decision}</span>
-                  <p>{dec.justificacion}</p>
-                  <small>{new Date(dec.fechaDecision).toLocaleString()}</small>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-      </section>
-    </div>
-  )
+const TIPO_RECOMENDACION = {
+  DESPLEGAR: {
+    label:    'Apto para despliegue',
+    sublabel: 'Las métricas cumplen los umbrales de calidad establecidos.',
+    cls:      'sem-desplegar',
+    iconCls:  'sem-icon-ok',
+    icon:     '✓',
+  },
+  REVISAR: {
+    label:    'Requiere revisión',
+    sublabel: 'Algunas métricas están por debajo de los umbrales esperados.',
+    cls:      'sem-revisar',
+    iconCls:  'sem-icon-warn',
+    icon:     '⚠',
+  },
+  NO_DESPLEGAR: {
+    label:    'No apto para despliegue',
+    sublabel: 'Las métricas no alcanzan los umbrales mínimos de calidad.',
+    cls:      'sem-no-desplegar',
+    iconCls:  'sem-icon-no',
+    icon:     '✕',
+  },
 }
 
-export default AnalisisVersion
+const DECISION_MAP = {
+  Aprobado:  { text: 'Aprobado',  cls: 'dec-aprobado' },
+  Rechazado: { text: 'Rechazado', cls: 'dec-rechazado' },
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function getRawValue(m) {
+  const v = m.valorMetrica ?? m.valor
+  return parseFloat(v)
+}
+
+function formatMetricValue(m) {
+  const v = getRawValue(m)
+  const unit = (m.unidad || '').toLowerCase()
+  if (isNaN(v)) return String(m.valorMetrica ?? m.valor ?? '—')
+  if (unit === '%' || unit === 'porcentaje' || unit === 'percent') {
+    return `${v.toFixed(2)}%`
+  }
+  if (Number.isInteger(v)) return m.unidad ? `${v} ${m.unidad}` : `${v}`
+  return m.unidad ? `${v.toFixed(3)} ${m.unidad}` : `${v.toFixed(3)}`
+}
+
+function metricColorClass(m) {
+  const nombre = (m.nombreMetrica || '').toLowerCase()
+  const v = getRawValue(m)
+  if (isNaN(v)) return 'mc-neutral'
+  if (nombre.includes('exito') || nombre.includes('éxito') || nombre.includes('cobertura')) {
+    if (v >= 95) return 'mc-ok'
+    if (v >= 80) return 'mc-warn'
+    return 'mc-danger'
+  }
+  if (nombre.includes('fallo') || nombre.includes('error') || nombre.includes('fail')) {
+    if (v <= 5)  return 'mc-ok'
+    if (v <= 20) return 'mc-warn'
+    return 'mc-danger'
+  }
+  return 'mc-neutral'
+}
+
+const METRIC_LABELS = {
+  tasa_exito:       'Tasa de éxito',
+  tasa_fallo:       'Tasa de fallo',
+  total_pruebas:    'Total de pruebas',
+  pruebas_exitosas: 'Pruebas exitosas',
+  pruebas_fallidas: 'Pruebas fallidas',
+  cobertura:        'Cobertura',
+  cobertura_codigo: 'Cobertura de código',
+  tiempo_promedio:  'Tiempo promedio',
+  duracion_total:   'Duración total',
+}
+
+function metricLabel(nombre) {
+  const k = (nombre || '').toLowerCase().replace(/ /g, '_')
+  return METRIC_LABELS[k] || nombre
+}
+
+// ── Validación decisión ───────────────────────────────────────────────────────
+
+function validateDecision(fields) {
+  const errors = {}
+  if (!fields.decision) {
+    errors.decision = 'Seleccioná una decisión.'
+  }
+  const comentario = fields.comentario.trim()
+  if (!comentario) {
+    errors.comentario = 'La justificación es obligatoria.'
+  } else if (comentario.length < 10) {
+    errors.comentario = 'Debe tener al menos 10 caracteres.'
+  } else if (comentario.length > 1000) {
+    errors.comentario = 'No puede superar los 1000 caracteres.'
+  }
+  return errors
+}
+
+// ── DecisionModal ─────────────────────────────────────────────────────────────
+
+function DecisionModal({ recomendaciones, onClose, onSaved }) {
+  const [fields, setFields] = useState({ decision: '', comentario: '' })
+  const [errors, setErrors] = useState({})
+  const [saving, setSaving]   = useState(false)
+  const [apiError, setApiError] = useState(null)
+  const textRef = useRef(null)
+
+  // Usamos el ID de la primera recomendación disponible
+  const recomendacionId = recomendaciones?.[0]?.id ?? null
+
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [onClose])
+
+  const set = (k) => (e) => {
+    setFields(prev => ({ ...prev, [k]: e.target.value }))
+    if (errors[k]) setErrors(prev => { const n = { ...prev }; delete n[k]; return n })
+  }
+
+  const handleSubmit = async (e) => {
+    e.p
