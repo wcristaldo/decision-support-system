@@ -11,30 +11,6 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Railway: PORT dinámico ────────────────────────────────────────────────────
-// Railway inyecta $PORT en cada deploy. Si no está definido, usamos 5000 (local).
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
-
-// ── Railway: DATABASE_URL (formato postgres://user:pass@host:port/db) ─────────
-// Railway provee esta variable automáticamente al agregar un servicio PostgreSQL.
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-if (!string.IsNullOrEmpty(databaseUrl))
-{
-    try
-    {
-        var uri    = new Uri(databaseUrl);
-        var user   = uri.UserInfo.Split(':')[0];
-        var pass   = uri.UserInfo.Split(':')[1];
-        var host   = uri.Host;
-        var dbPort = uri.Port;
-        var dbName = uri.AbsolutePath.TrimStart('/');
-        var connStr = $"Host={host};Port={dbPort};Database={dbName};Username={user};Password={pass};SSL Mode=Require;Trust Server Certificate=true";
-        builder.Configuration["ConnectionStrings:DefaultConnection"] = connStr;
-    }
-    catch { /* Usar la cadena de appsettings si el parsing falla */ }
-}
-
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -99,10 +75,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-// ── Health check para Railway ─────────────────────────────────────────────────
-app.MapGet("/health", () => Results.Ok(new { status = "ok", timestamp = DateTime.UtcNow }))
-   .AllowAnonymous();
 
 app.UseHttpsRedirection();
 app.UseCors("AllowReactApp");
