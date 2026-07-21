@@ -16,23 +16,50 @@ var builder = WebApplication.CreateBuilder(args);
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-// ── Railway: DATABASE_URL (formato postgres://user:pass@host:port/db) ─────────
-// Railway provee esta variable automáticamente al agregar un servicio PostgreSQL.
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-if (!string.IsNullOrEmpty(databaseUrl))
+// ── Railway: conexión PostgreSQL ──────────────────────────────────────────────
+// Railway inyecta PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD automáticamente
+// cuando el servicio tiene referencia al addon de Postgres.
+// Usamos esas variables individuales en vez de parsear DATABASE_URL (más seguro
+// con passwords que contienen caracteres especiales).
+var pgHost = Environment.GetEnvironmentVariable("PGHOST");
+if (!string.IsNullOrEmpty(pgHost))
 {
-    try
+    var connBuilder = new Npgsql.NpgsqlConnectionStringBuilder
     {
-        var uri    = new Uri(databaseUrl);
-        var user   = uri.UserInfo.Split(':')[0];
-        var pass   = uri.UserInfo.Split(':')[1];
-        var host   = uri.Host;
-        var dbPort = uri.Port;
-        var dbName = uri.AbsolutePath.TrimStart('/');
-        var connStr = $"Host={host};Port={dbPort};Database={dbName};Username={user};Password={pass};SSL Mode=Require;Trust Server Certificate=true";
-        builder.Configuration["ConnectionStrings:DefaultConnection"] = connStr;
+        Host               = pgHost,
+        Port               = int.Parse(Environment.GetEnvironmentVariable("PGPORT") ?? "5432"),
+        Database           = Environment.GetEnvironmentVariable("PGDATABASE") ?? "railway",
+        Username           = Environment.GetEnvironmentVariable("PGUSER")     ?? "postgres",
+        Password           = Environment.GetEnvironmentVariable("PGPASSWORD") ?? "",
+        SslMode            = Npgsql.SslMode.Require,
+        TrustServerCertificate = true
+    };
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = connBuilder.ConnectionString;
+}
+else
+{
+    // Fallback: parsear DATABASE_URL si las variables PG* no están disponibles
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (!string.IsNullOrEmpty(databaseUrl))
+    {
+        try
+        {
+            var uri      = new Uri(databaseUrl);
+            var userParts = uri.UserInfo.Split(':', 2);
+            var connBuilder = new Npgsql.NpgsqlConnectionStringBuilder
+            {
+                Host               = uri.Host,
+                Port               = uri.Port > 0 ? uri.Port : 5432,
+                Database           = uri.AbsolutePath.TrimStart('/'),
+                Username           = Uri.UnescapeDataString(userParts[0]),
+                Password           = userParts.Length > 1 ? Uri.UnescapeDataString(userParts[1]) : "",
+                SslMode            = Npgsql.SslMode.Require,
+                TrustServerCertificate = true
+            };
+            builder.Configuration["ConnectionStrings:DefaultConnection"] = connBuilder.ConnectionString;
+        }
+        catch { /* Usar la cadena de appsettings si el parsing falla */ }
     }
-    catch { /* Usar la cadena de appsettings si el parsing falla */ }
 }
 
 // Add services to the container
