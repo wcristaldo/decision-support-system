@@ -32,3 +32,6 @@ desktop.ini
 # Temp
 *.tar.gz
 *.ps1
+*.tmp
+corrupto.json
+results-*.json

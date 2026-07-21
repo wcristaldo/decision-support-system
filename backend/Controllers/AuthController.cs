@@ -13,11 +13,13 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthenticationService _authService;
     private readonly ApplicationDbContext _context;
+    private readonly IAuditoriaService _auditoriaService;
 
-    public AuthController(IAuthenticationService authService, ApplicationDbContext context)
+    public AuthController(IAuthenticationService authService, ApplicationDbContext context, IAuditoriaService auditoriaService)
     {
         _authService = authService;
         _context = context;
+        _auditoriaService = auditoriaService;
     }
 
     [HttpPost("login")]
@@ -29,6 +31,12 @@ public class AuthController : ControllerBase
         var result = await _authService.LoginAsync(request);
         if (result == null)
             return Unauthorized(new { message = "Credenciales inválidas" });
+
+        var usuario = _context.Usuarios.FirstOrDefault(u => u.Email == request.Email);
+        if (usuario != null)
+        {
+            _ = _auditoriaService.RegistrarAsync("Login", "Usuario", usuario.IdUsuario, $"Login exitoso: {request.Email}");
+        }
 
         return Ok(result);
     }
@@ -59,12 +67,14 @@ public class AuthController : ControllerBase
         if (!result)
             return BadRequest(new { message = "Contraseña actual incorrecta" });
 
+        await _auditoriaService.RegistrarAsync("Password Change", "Usuario", usuarioId, $"Cambio de contraseña");
+
         return Ok(new { message = "Contraseña actualizada correctamente" });
     }
 
     [Authorize]
     [HttpPost("reset-password/{usuarioId}")]
-    public IActionResult ResetPassword(int usuarioId, [FromBody] Dictionary<string, string> request)
+    public async Task<IActionResult> ResetPassword(int usuarioId, [FromBody] Dictionary<string, string> request)
     {
         try
         {
@@ -84,6 +94,8 @@ public class AuthController : ControllerBase
 
             user.PasswordHash = _authService.HashPassword(pwd);
             _context.SaveChanges();
+
+            await _auditoriaService.RegistrarAsync("Password Change", "Usuario", usuarioId, $"Reset de contraseña por administrador");
 
             return Ok(new { message = "Éxito" });
         }

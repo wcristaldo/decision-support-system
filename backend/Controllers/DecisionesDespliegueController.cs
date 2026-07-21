@@ -29,12 +29,53 @@ public class DecisionesDespliegueController : ControllerBase
 
         return Ok(decisiones.Select(d => new DecisionDespliegueDto
         {
-            Id = d.Id,
-            RecomendacionId = d.RecomendacionId,
+            Id               = d.Id,
+            RecomendacionId  = d.RecomendacionId,
             UsuarioDecisorId = d.UsuarioDecisorId,
-            DecisionFinal = d.DecisionFinal,
-            Comentario = d.Comentario,
-            FechaDecision = d.FechaDecision
+            DecisionFinal    = d.DecisionFinal,
+            Comentario       = d.Comentario,
+            FechaDecision    = d.FechaDecision
+        }).ToList());
+    }
+
+    /// <summary>
+    /// GET /api/decisionesDespliegue/version/{versionId}
+    /// Devuelve todas las decisiones de despliegue registradas para una versión,
+    /// recorriendo la cadena: version → resultados_prueba → evaluaciones
+    /// → recomendaciones → decisiones_despliegue.
+    /// Usado por la página AnalisisVersion.jsx.
+    /// </summary>
+    [HttpGet("version/{versionId}")]
+    public async Task<ActionResult<List<DecisionDespliegueDto>>> GetByVersion(int versionId)
+    {
+        var resultadoIds = await _context.ResultadosPrueba
+            .Where(r => r.VersionId == versionId)
+            .Select(r => r.Id)
+            .ToListAsync();
+
+        var evaluacionIds = await _context.Evaluaciones
+            .Where(e => resultadoIds.Contains(e.ResultadoId))
+            .Select(e => e.Id)
+            .ToListAsync();
+
+        var recomendacionIds = await _context.Recomendaciones
+            .Where(r => evaluacionIds.Contains(r.EvaluacionId))
+            .Select(r => r.Id)
+            .ToListAsync();
+
+        var decisiones = await _context.DecisionesDespliegue
+            .Where(d => recomendacionIds.Contains(d.RecomendacionId))
+            .OrderByDescending(d => d.FechaDecision)
+            .ToListAsync();
+
+        return Ok(decisiones.Select(d => new DecisionDespliegueDto
+        {
+            Id               = d.Id,
+            RecomendacionId  = d.RecomendacionId,
+            UsuarioDecisorId = d.UsuarioDecisorId,
+            DecisionFinal    = d.DecisionFinal,
+            Comentario       = d.Comentario,
+            FechaDecision    = d.FechaDecision
         }).ToList());
     }
 

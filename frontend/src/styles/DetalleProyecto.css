@@ -1,4 +1,4 @@
-/* ── DetalleProyecto.css ────────────────────────────────────────────────────── */
+﻿/* ── DetalleProyecto.css ────────────────────────────────────────────────────── */
 
 /* ── Loading / Error states ── */
 .dp-loading {
@@ -8,7 +8,7 @@
   color: var(--text-mid);
   font-size: 0.95rem;
   padding: 4rem 2rem;
-  max-width: 1280px;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -50,7 +50,7 @@
 }
 
 .dp-header-inner {
-  max-width: 1280px;
+  width: 100%;
   margin: 0 auto;
   padding: 1.5rem 2rem 2.5rem;
   display: flex;
@@ -154,7 +154,7 @@
 
 /* ── Body ── */
 .dp-body {
-  max-width: 1280px;
+  width: 100%;
   margin: 2rem auto;
   padding: 0 2rem;
 }

@@ -5,7 +5,7 @@ function Navigation({ onLogout }) {
   const navigate  = useNavigate()
   const location  = useLocation()
   const roles     = JSON.parse(localStorage.getItem('userRoles') || '[]')
-  const isAdmin   = roles.includes('ADMIN') || roles.includes('Administrador')
+  const isAdmin   = roles.includes('Administrador')
 
   // nombre del usuario desde JWT
   let nombreUsuario = 'Usuario'
@@ -54,25 +54,36 @@ function Navigation({ onLogout }) {
             </Link>
           </li>
           <li>
-            <Link to="/proyectos" className={`nav-link ${location.pathname.includes('/analisis') ? 'active' : ''}`}>
+            <Link to="/analisis" className={`nav-link ${(location.pathname === '/analisis' || location.pathname.includes('/analisis')) ? 'active' : ''}`}>
               Análisis y Métricas
             </Link>
           </li>
           {isAdmin && (
-            <li>
-              <Link to="/usuarios" className={`nav-link ${isActive('/usuarios') ? 'active' : ''}`}>
-                Gestión de Usuarios
-              </Link>
-            </li>
+            <>
+              <li>
+                <Link to="/usuarios" className={`nav-link ${isActive('/usuarios') ? 'active' : ''}`}>
+                  Gestión de Usuarios
+                </Link>
+              </li>
+              <li>
+                <Link to="/auditoria" className={`nav-link ${isActive('/auditoria') ? 'active' : ''}`}>
+                  Auditoría
+                </Link>
+              </li>
+              <li>
+                <Link to="/suscripcion" className={`nav-link ${isActive('/suscripcion') ? 'active' : ''}`}>
+                  Suscripción
+                </Link>
+              </li>
+            </>
           )}
         </ul>
 
         {/* Usuario */}
         <div className="nav-user">
           <div className="user-avatar">{nombreUsuario.charAt(0).toUpperCase()}</div>
-          <span className="user-name">{nombreUsuario}</span>
           <button onClick={handleLogout} className="btn-nav-logout">
-            Cerrar sesión
+            Salir
           </button>
         </div>
       </div>

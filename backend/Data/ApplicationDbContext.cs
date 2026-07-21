@@ -23,6 +23,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<DecisionDespliegue> DecisionesDespliegue { get; set; }
     public DbSet<Auditoria>        Auditoria          { get; set; }
 
+    // ── Módulo de suscripciones ──────────────────────────────────────────
+    public DbSet<PlanSuscripcion>  PlanesSuscripcion  { get; set; }
+    public DbSet<Suscripcion>      Suscripciones      { get; set; }
+    public DbSet<PagoSuscripcion>  PagosSuscripcion   { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -225,6 +230,70 @@ public class ApplicationDbContext : DbContext
             e.Property(a => a.Detalle).HasColumnName("detalle");
             e.Property(a => a.FechaEvento).HasColumnName("fecha_evento");
             e.Property(a => a.IpOrigen).HasColumnName("ip_origen");
+        });
+
+        // ── PLANES_SUSCRIPCION ────────────────────────────────────
+        modelBuilder.Entity<PlanSuscripcion>(e =>
+        {
+            e.ToTable("planes_suscripcion");
+            e.HasKey(p => p.Id);
+            e.Property(p => p.Id).HasColumnName("id");
+            e.Property(p => p.Nombre).HasColumnName("nombre");
+            e.Property(p => p.PrecioMensual).HasColumnName("precio_mensual");
+            e.Property(p => p.MaxProyectos).HasColumnName("max_proyectos");
+            e.Property(p => p.MaxUsuarios).HasColumnName("max_usuarios");
+            e.Property(p => p.MaxEvaluacionesMes).HasColumnName("max_evaluaciones_mes");
+            e.Property(p => p.MaxTamanoArchivoMb).HasColumnName("max_tamano_archivo_mb");
+            e.Property(p => p.HistorialDias).HasColumnName("historial_dias");
+            e.Property(p => p.ExportarPdf).HasColumnName("exportar_pdf");
+            e.Property(p => p.ExportarExcel).HasColumnName("exportar_excel");
+            e.Property(p => p.DashboardAvanzado).HasColumnName("dashboard_avanzado");
+            e.Property(p => p.AuditoriaDetallada).HasColumnName("auditoria_detallada");
+            e.Property(p => p.NotificacionesEmail).HasColumnName("notificaciones_email");
+            e.Property(p => p.NotificacionesSlack).HasColumnName("notificaciones_slack");
+            e.Property(p => p.ApiPublica).HasColumnName("api_publica");
+            e.Property(p => p.IntegracionCicd).HasColumnName("integracion_cicd");
+            e.Property(p => p.Webhooks).HasColumnName("webhooks");
+            e.Property(p => p.SoportePrioritario).HasColumnName("soporte_prioritario");
+            e.Property(p => p.Estado).HasColumnName("estado");
+            e.Property(p => p.FechaCreacion).HasColumnName("fecha_creacion");
+            e.HasIndex(p => p.Nombre).IsUnique();
+        });
+
+        // ── SUSCRIPCIONES ─────────────────────────────────────────
+        modelBuilder.Entity<Suscripcion>(e =>
+        {
+            e.ToTable("suscripciones");
+            e.HasKey(s => s.Id);
+            e.Property(s => s.Id).HasColumnName("id");
+            e.Property(s => s.IdPlan).HasColumnName("id_plan");
+            e.Property(s => s.Estado).HasColumnName("estado");
+            e.Property(s => s.FechaInicio).HasColumnName("fecha_inicio");
+            e.Property(s => s.FechaVencimiento).HasColumnName("fecha_vencimiento");
+            e.Property(s => s.FechaCreacion).HasColumnName("fecha_creacion");
+            e.Property(s => s.PagoparIdCliente).HasColumnName("pagopar_id_cliente");
+            e.Property(s => s.PagoparIdTarjeta).HasColumnName("pagopar_id_tarjeta");
+            e.HasOne(s => s.Plan).WithMany(p => p.Suscripciones).HasForeignKey(s => s.IdPlan);
+        });
+
+        // ── PAGOS_SUSCRIPCION ─────────────────────────────────────
+        modelBuilder.Entity<PagoSuscripcion>(e =>
+        {
+            e.ToTable("pagos_suscripcion");
+            e.HasKey(p => p.Id);
+            e.Property(p => p.Id).HasColumnName("id");
+            e.Property(p => p.IdSuscripcion).HasColumnName("id_suscripcion");
+            e.Property(p => p.IdPlan).HasColumnName("id_plan");
+            e.Property(p => p.Monto).HasColumnName("monto");
+            e.Property(p => p.Estado).HasColumnName("estado");
+            e.Property(p => p.PagoparIdPedidoComercio).HasColumnName("pagopar_id_pedido_comercio");
+            e.Property(p => p.PagoparHashPedido).HasColumnName("pagopar_hash_pedido");
+            e.Property(p => p.PagoparNumeroPedido).HasColumnName("pagopar_numero_pedido");
+            e.Property(p => p.PagoparRespuesta).HasColumnName("pagopar_respuesta");
+            e.Property(p => p.FechaPago).HasColumnName("fecha_pago");
+            e.Property(p => p.FechaCreacion).HasColumnName("fecha_creacion");
+            e.HasOne(p => p.Suscripcion).WithMany(s => s.Pagos).HasForeignKey(p => p.IdSuscripcion);
+            e.HasOne(p => p.Plan).WithMany().HasForeignKey(p => p.IdPlan);
         });
     }
 }

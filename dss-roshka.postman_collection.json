@@ -1,0 +1,1250 @@
+{
+  "info": {
+    "name": "SAD-Roshka - Sistema de Apoyo a Decisiones",
+    "description": "Colección completa de endpoints de la API REST del SAD-Roshka (tesis UNIDA). Base URL: http://localhost:5000/api\n\n**Setup rápido:**\n1. Ejecutar 'POST Login' → el token se guarda automáticamente en la variable `{{token}}`.\n2. Todos los endpoints protegidos ya usan `Bearer {{token}}`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token guardado:', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@roshka.com\",\n  \"password\": \"Admin2026!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Líder Técnico",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"lider@roshka.com\",\n  \"password\": \"Lider2026!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Analista QA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"analista@roshka.com\",\n  \"password\": \"Analista2026!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Gerente QA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"gerente@roshka.com\",\n  \"password\": \"Gerente2026!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar contraseña (usuario autenticado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Admin2026!\",\n  \"newPassword\": \"Admin2027!\",\n  \"confirmPassword\": \"Admin2027!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "change-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset contraseña de usuario (solo Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newPassword\": \"NuevaClave2026!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password/2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password",
+                "2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "[DEBUG] Obtener hash de contraseña",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cualquiera@test.com\",\n  \"password\": \"MiClave123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/debug/hash",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "debug",
+                "hash"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auditoría (solo Admin)",
+      "item": [
+        {
+          "name": "Listar registros de auditoría con filtros",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auditoria?usuario=admin&accion=&entidad=Proyecto&fechaDesde=2026-07-01T00:00:00&fechaHasta=2026-07-31T23:59:59&pagina=1&limite=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auditoria"
+              ],
+              "query": [
+                {
+                  "key": "usuario",
+                  "value": "admin",
+                  "disabled": true
+                },
+                {
+                  "key": "accion",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "entidad",
+                  "value": "Proyecto",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaDesde",
+                  "value": "2026-07-01T00:00:00",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaHasta",
+                  "value": "2026-07-31T23:59:59",
+                  "disabled": true
+                },
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener registro de auditoría por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auditoria/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auditoria",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener estadísticas de auditoría",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auditoria/estadisticas?desde=2026-07-01T00:00:00&hasta=2026-07-31T23:59:59",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auditoria",
+                "estadisticas"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-07-01T00:00:00",
+                  "disabled": true
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-07-31T23:59:59",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Proyectos",
+      "item": [
+        {
+          "name": "Listar todos los proyectos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener proyecto por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener versiones de un proyecto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/1/versiones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "1",
+                "versiones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear proyecto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Portal de Clientes\",\n  \"descripcion\": \"Módulo de acceso y gestión de clientes\",\n  \"tipoSolucion\": \"web\",\n  \"versionInicial\": \"1.0.0\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar proyecto",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Portal de Clientes v2\",\n  \"descripcion\": \"Versión rediseñada\",\n  \"tipoSolucion\": \"web\",\n  \"estado\": \"activo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Inactivar proyecto",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Portal de Clientes\",\n  \"tipoSolucion\": \"web\",\n  \"estado\": \"inactivo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar proyecto",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Versiones",
+      "item": [
+        {
+          "name": "Listar versiones de un proyecto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/versiones/proyecto/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "versiones",
+                "proyecto",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener versión por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/versiones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "versiones",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear versión",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"proyectoId\": 1,\n  \"numeroVersion\": \"1.1.0\",\n  \"descripcion\": \"Sprint 2 - módulo de reportes\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/versiones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "versiones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar versión",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numeroVersion\": \"1.1.1\",\n  \"descripcion\": \"Corrección de bugs Sprint 2\",\n  \"estado\": \"pendiente\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/versiones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "versiones",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar versión",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/versiones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "versiones",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Resultados de Prueba",
+      "item": [
+        {
+          "name": "Listar resultados por versión",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resultadosPrueba/version/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resultadosPrueba",
+                "version",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cargar resultado (con métricas RF → genera recomendación automática)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"versionId\": 1,\n  \"nombreArchivo\": \"output.json\",\n  \"formatoArchivo\": \"JSON\",\n  \"rutaArchivo\": null,\n  \"observaciones\": \"Suite: 01-Login | Estado: PASS | Herramienta: Robot 7.4\",\n  \"totalPruebas\": 3,\n  \"pruebasExitosas\": 3,\n  \"pruebasFallidas\": 0,\n  \"cobertura\": 100.00,\n  \"tiempoEjecucion\": 12.44\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/resultadosPrueba",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resultadosPrueba"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Validar / cambiar estado de resultado",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estadoValidacion\": \"valido\",\n  \"observaciones\": \"Revisión manual OK\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/resultadosPrueba/1/validar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resultadosPrueba",
+                "1",
+                "validar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Métricas",
+      "item": [
+        {
+          "name": "Obtener métricas por versión",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/metricas/version/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metricas",
+                "version",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Recomendaciones",
+      "item": [
+        {
+          "name": "Obtener recomendaciones por versión",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recomendaciones/version/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recomendaciones",
+                "version",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generar recomendación manualmente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recomendaciones/generar/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recomendaciones",
+                "generar",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Decisiones de Despliegue",
+      "item": [
+        {
+          "name": "Obtener decisiones por versión",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/decisionesDespliegue/version/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "decisionesDespliegue",
+                "version",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener decisiones por recomendación",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/decisionesDespliegue/recomendacion/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "decisionesDespliegue",
+                "recomendacion",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar decisión de despliegue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recomendacionId\": 1,\n  \"decisionFinal\": \"DESPLEGAR\",\n  \"comentario\": \"Todas las pruebas pasaron. Se aprueba el despliegue a producción.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/decisionesDespliegue",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "decisionesDespliegue"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Análisis y Métricas",
+      "item": [
+        {
+          "name": "Historial de análisis (todas las versiones evaluadas)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/analisis/historial",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analisis",
+                "historial"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reglas de Evaluación",
+      "item": [
+        {
+          "name": "Listar todas las reglas activas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reglaEvaluacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reglaEvaluacion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener regla por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reglaEvaluacion/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reglaEvaluacion",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar umbral de regla (solo Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"umbral\": 90.00,\n  \"descripcion\": \"Tasa de éxito mínima requerida para aprobar despliegue\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reglaEvaluacion/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reglaEvaluacion",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Usuarios (solo Admin)",
+      "item": [
+        {
+          "name": "Listar todos los usuarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"María\",\n  \"email\": \"maria@roshka.com\",\n  \"password\": \"Maria2026!\",\n  \"rol\": \"Desarrollador\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"María López\",\n  \"email\": \"maria.lopez@roshka.com\",\n  \"rol\": \"Líder Técnico\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "4"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Activar usuario",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/4/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "4",
+                "estado"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Inactivar usuario",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/4/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "4",
+                "estado"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "Listar roles activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

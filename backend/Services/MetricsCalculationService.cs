@@ -6,7 +6,18 @@ namespace DecisionSupportAPI.Services;
 
 public interface IMetricsCalculationService
 {
-    Task CalculateMetricsAsync(int versionId);
+    /// <summary>
+    /// Calcula y persiste las métricas reales de un resultado de prueba.
+    /// Los valores provienen directamente del reporte cargado por el usuario.
+    /// </summary>
+    Task CalculateMetricsAsync(
+        int resultadoId,
+        int totalPruebas,
+        int pruebasExitosas,
+        int pruebasFallidas,
+        decimal cobertura,
+        decimal tiempoEjecucion);
+
     Task<List<Metrica>> GetMetricsByVersionAsync(int versionId);
 }
 
@@ -19,52 +30,43 @@ public class MetricsCalculationService : IMetricsCalculationService
         _context = context;
     }
 
-    public async Task CalculateMetricsAsync(int versionId)
+    /// <inheritdoc/>
+    public async Task CalculateMetricsAsync(
+        int resultadoId,
+        int totalPruebas,
+        int pruebasExitosas,
+        int pruebasFallidas,
+        decimal cobertura,
+        decimal tiempoEjecucion)
     {
-        var resultados = await _context.ResultadosPrueba
-            .Where(r => r.VersionId == versionId)
+        // Eliminar métricas anteriores de este resultado (en caso de recálculo)
+        var anteriores = await _context.Metricas
+            .Where(m => m.ResultadoId == resultadoId)
             .ToListAsync();
+        _context.Metricas.RemoveRange(anteriores);
 
-        if (!resultados.Any())
-            return;
+        // Calcular tasas derivadas
+        decimal tasaExito = totalPruebas > 0
+            ? Math.Round((decimal)pruebasExitosas / totalPruebas * 100, 2)
+            : 0;
 
-        foreach (var resultado in resultados)
+        decimal tasaFallo = totalPruebas > 0
+            ? Math.Round((decimal)pruebasFallidas / totalPruebas * 100, 2)
+            : 0;
+
+        // Persistir las 7 métricas definidas en la tesis (Tablas 24 y 20)
+        var metricas = new List<Metrica>
         {
-            // Eliminar métricas anteriores de este resultado
-            var metricasAnteriores = await _context.Metricas
-                .Where(m => m.ResultadoId == resultado.Id)
-                .ToListAsync();
-            _context.Metricas.RemoveRange(metricasAnteriores);
+            new() { ResultadoId = resultadoId, NombreMetrica = "total_pruebas",    ValorMetrica = totalPruebas,    Unidad = "casos",    FechaCalculo = DateTime.UtcNow },
+            new() { ResultadoId = resultadoId, NombreMetrica = "pruebas_exitosas", ValorMetrica = pruebasExitosas, Unidad = "casos",    FechaCalculo = DateTime.UtcNow },
+            new() { ResultadoId = resultadoId, NombreMetrica = "pruebas_fallidas", ValorMetrica = pruebasFallidas, Unidad = "casos",    FechaCalculo = DateTime.UtcNow },
+            new() { ResultadoId = resultadoId, NombreMetrica = "tasa_exito",       ValorMetrica = tasaExito,       Unidad = "%",        FechaCalculo = DateTime.UtcNow },
+            new() { ResultadoId = resultadoId, NombreMetrica = "tasa_fallo",       ValorMetrica = tasaFallo,       Unidad = "%",        FechaCalculo = DateTime.UtcNow },
+            new() { ResultadoId = resultadoId, NombreMetrica = "cobertura",        ValorMetrica = cobertura,       Unidad = "%",        FechaCalculo = DateTime.UtcNow },
+            new() { ResultadoId = resultadoId, NombreMetrica = "tiempo_ejecucion", ValorMetrica = tiempoEjecucion, Unidad = "segundos", FechaCalculo = DateTime.UtcNow },
+        };
 
-            // Generar métricas basadas en estado de validación
-            var metricas = new List<Metrica>
-            {
-                new Metrica
-                {
-                    ResultadoId = resultado.Id,
-                    NombreMetrica = "archivo_validado",
-                    ValorMetrica = resultado.EstadoValidacion == "validado" ? 1 : 0,
-                    Unidad = "boolean",
-                    FechaCalculo = DateTime.UtcNow
-                },
-                new Metrica
-                {
-                    ResultadoId = resultado.Id,
-                    NombreMetrica = "estado_validacion",
-                    ValorMetrica = resultado.EstadoValidacion switch
-                    {
-                        "validado"  => 2,
-                        "pendiente" => 1,
-                        _           => 0  // rechazado
-                    },
-                    Unidad = "nivel",
-                    FechaCalculo = DateTime.UtcNow
-                }
-            };
-
-            _context.Metricas.AddRange(metricas);
-        }
-
+        _context.Metricas.AddRange(metricas);
         await _context.SaveChangesAsync();
     }
 
@@ -77,6 +79,7 @@ public class MetricsCalculationService : IMetricsCalculationService
 
         return await _context.Metricas
             .Where(m => resultadoIds.Contains(m.ResultadoId))
+            .OrderBy(m => m.NombreMetrica)
             .ToListAsync();
     }
 }

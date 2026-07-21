@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../services/api'
 import '../styles/Dashboard.css'
@@ -74,8 +74,10 @@ function Dashboard({ onLogout }) {
   const navigate = useNavigate()
   const [usuario, setUsuario]         = useState(null)
   const [totalProyectos, setTotal]    = useState(null)
+  const [suscripcion, setSuscripcion] = useState(null)
   const roles = JSON.parse(localStorage.getItem('userRoles') || '[]')
-  const isAdmin = roles.includes('ADMIN') || roles.includes('Administrador')
+  // Según RF10: solo el Administrador accede al módulo de gestión de usuarios
+  const isAdmin = roles.includes('Administrador')
 
   // Decode JWT
   useEffect(() => {
@@ -105,6 +107,14 @@ function Dashboard({ onLogout }) {
       .catch(() => setTotal(0))
   }, [])
 
+  // Fetch suscripción (solo admin)
+  useEffect(() => {
+    if (!isAdmin) return
+    api.get('/suscripcion/actual')
+      .then(res => setSuscripcion(res.data))
+      .catch(() => setSuscripcion(null))
+  }, [isAdmin])
+
   if (!usuario) return (
     <div className="dash-loading">
       <span className="dash-spinner" /> Cargando...
@@ -125,7 +135,7 @@ function Dashboard({ onLogout }) {
           <div>
             <h1 className="dash-name">¡Bienvenido, {primerNombre}!</h1>
             <p className="dash-subtitle">
-              Sistema de Apoyo a la Toma de Decisiones — Roshka S.A.
+              Sistema de Apoyo a la Toma de Decisiones - Roshka S.A.
             </p>
           </div>
           <div className="dash-hero-chips">
@@ -184,8 +194,39 @@ function Dashboard({ onLogout }) {
         </div>
       </div>
 
+      {/* ── Card suscripción (admin) ── */}
+      {isAdmin && suscripcion !== null && (
+        <div className="dash-body" style={{ paddingTop: 0 }}>
+          <div className="dash-section-head">
+            <h2 className="dash-section-title">Estado de suscripción</h2>
+          </div>
+          <Link to="/suscripcion" className="dash-sus-card">
+            <div className="dash-sus-left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="28" height="28">
+                <path d="M2 18h20L19 8l-5 5-2-6-2 6-5-5z" />
+              </svg>
+              <div>
+                <p className="dash-sus-plan">
+                  {suscripcion.activa ? suscripcion.plan?.nombre : 'Sin plan activo'}
+                </p>
+                <p className="dash-sus-detalle">
+                  {suscripcion.activa
+                    ? `Vence: ${suscripcion.fechaVencimiento
+                        ? new Date(suscripcion.fechaVencimiento).toLocaleDateString('es-PY')
+                        : '—'} · ${suscripcion.usoActual?.proyectos ?? 0}/${suscripcion.plan?.maxProyectos ?? '∞'} proyectos`
+                    : 'Contratá un plan para desbloquear todas las funciones'}
+                </p>
+              </div>
+            </div>
+            <span className={`dash-sus-badge ${suscripcion.activa ? 'activa' : 'inactiva'}`}>
+              {suscripcion.activa ? suscripcion.estado : 'Sin suscripción'}
+            </span>
+          </Link>
+        </div>
+      )}
+
       <footer className="dash-footer">
-        © 2026 Roshka S.A. — Proyecto de Tesis UNIDA
+        © 2026 Roshka S.A. - Proyecto de Tesis UNIDA
       </footer>
     </div>
   )

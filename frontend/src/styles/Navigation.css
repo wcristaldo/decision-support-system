@@ -4,6 +4,7 @@
   --white:      #ffffff;
   --gray-50:    #f4f5f9;
   --gray-100:   #e9ecf1;
+  --gray-150:   #dfe8ef;
   --gray-200:   #d7e0e7;
   --gray-300:   #cbd5df;
   --gray-400:   #b6c6d5;
@@ -17,10 +18,11 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-body {
+html, body {
   font-family: 'Inter', sans-serif;
   background: var(--gray-50);
   color: var(--text-dark);
+  overflow-x: hidden;   /* evita scroll horizontal y barras negras laterales */
 }
 
 /* ── Navbar ── */
@@ -33,13 +35,12 @@ body {
 }
 
 .navbar-container {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 2rem;
+  width: 100%;
+  padding: 0 1.5rem;
   height: 64px;
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 /* ── Brand ── */
@@ -79,25 +80,33 @@ body {
 
 .nav-link {
   display: block;
-  color: #c8d4dc;
+  color: #ffffff !important;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 500;
-  padding: 0.45rem 0.9rem;
+  padding: 0.4rem 0.65rem;
   border-radius: 8px;
-  transition: all 0.2s;
+  transition: color 0.2s, background 0.2s;
   white-space: nowrap;
 }
 
+.nav-link:visited {
+  color: #ffffff !important;
+}
+
 .nav-link:hover {
-  color: #ffffff;
+  color: #ffffff !important;
   background: rgba(255, 255, 255, 0.1);
 }
 
+.nav-link:active {
+  color: #ffffff !important;
+}
+
 .nav-link.active {
-  color: #ffffff;
+  color: #ffffff !important;
   background: rgba(255, 255, 255, 0.12);
-  border-bottom: 2px solid #ffffff;
+  border-bottom: 2px solid var(--white);
   border-radius: 8px 8px 0 0;
 }
 
@@ -124,23 +133,16 @@ body {
   flex-shrink: 0;
 }
 
-.user-name {
-  color: var(--gray-300);
-  font-size: 0.875rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
 .btn-nav-logout {
   background: transparent;
-  color: var(--gray-400);
-  border: 1px solid rgba(182, 198, 213, 0.35);
-  padding: 0.4rem 1rem;
+  color: var(--gray-200);
+  border: 1px solid rgba(215, 224, 231, 0.35);
+  padding: 0.35rem 0.85rem;
   border-radius: 50px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
   white-space: nowrap;
 }
 
@@ -151,7 +153,6 @@ body {
 }
 
 @media (max-width: 900px) {
-  .brand-name  { display: none; }
-  .user-name   { display: none; }
-  .navbar-container { gap: 1rem; }
+  .brand-name { display: none; }
+  .navbar-container { gap: 0.75rem; }
 }

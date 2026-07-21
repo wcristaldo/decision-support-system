@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import '../styles/Login.css'
@@ -70,7 +70,7 @@ function Login({ onLogin }) {
           </div>
 
           <div className="panel-footer">
-            <span>© 2026 Roshka S.A. — Proyecto de Tesis UNIDA</span>
+            <span>© 2026 Roshka S.A. - Proyecto de Tesis UNIDA</span>
           </div>
         </div>
 

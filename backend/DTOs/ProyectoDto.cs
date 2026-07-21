@@ -15,6 +15,7 @@ public class CreateProyectoDto
     public required string Nombre { get; set; }
     public string? Descripcion { get; set; }
     public string? TipoSolucion { get; set; }
+    public string? VersionInicial { get; set; }
 }
 
 public class UpdateProyectoDto

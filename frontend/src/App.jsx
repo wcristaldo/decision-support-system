@@ -6,8 +6,11 @@ import Login from './pages/Login'
 import Proyectos from './pages/Proyectos'
 import DetalleProyecto from './pages/DetalleProyecto'
 import CargarResultados from './pages/CargarResultados'
+import AnalisisMetricas from './pages/AnalisisMetricas'
 import AnalisisVersion from './pages/AnalisisVersion'
 import UserManagement from './pages/UserManagement'
+import Auditoria from './pages/Auditoria'
+import Suscripcion from './pages/Suscripcion'
 import Navigation from './components/Navigation'
 
 function App() {
@@ -44,8 +47,11 @@ function App() {
         <Route path="/proyectos" element={<ProtectedRoute><Proyectos /></ProtectedRoute>} />
         <Route path="/proyectos/:id" element={<ProtectedRoute><DetalleProyecto /></ProtectedRoute>} />
         <Route path="/cargar-resultados" element={<ProtectedRoute><CargarResultados /></ProtectedRoute>} />
+        <Route path="/analisis" element={<ProtectedRoute><AnalisisMetricas /></ProtectedRoute>} />
         <Route path="/versiones/:id/analisis" element={<ProtectedRoute><AnalisisVersion /></ProtectedRoute>} />
         <Route path="/usuarios" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+        <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
+        <Route path="/suscripcion" element={<ProtectedRoute><Suscripcion /></ProtectedRoute>} />
       </Routes>
     </Router>
   )

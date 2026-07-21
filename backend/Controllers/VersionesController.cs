@@ -94,9 +94,9 @@ public class VersionesController : ControllerBase
 
         var anterior = $"Numero: {version.NumeroVersion}";
 
-        if (!string.IsNullOrEmpty(request.NumeroVersion)) version.NumeroVersion = request.NumeroVersion;
-        if (!string.IsNullOrEmpty(request.Descripcion))   version.Descripcion   = request.Descripcion;
-        if (!string.IsNullOrEmpty(request.Estado))        version.Estado        = request.Estado;
+        if (request.NumeroVersion != null) version.NumeroVersion = request.NumeroVersion;
+        if (request.Descripcion != null)   version.Descripcion   = request.Descripcion;
+        if (request.Estado != null)        version.Estado        = request.Estado;
 
         _context.Versiones.Update(version);
         await _context.SaveChangesAsync();
