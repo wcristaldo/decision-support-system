@@ -231,7 +231,7 @@ public class SuscripcionController : ControllerBase
             if (pago == null)
             {
                 _logger.LogWarning("Webhook: no se encontró pago con hash {Hash}", hashPedido);
-                return Ok(items.GetRawText()); // Pagopar requiere 200
+                return Content(items.GetRawText(), "application/json"); // Pagopar requiere 200 con el mismo JSON
             }
 
             pago.PagoparRespuesta = body;
@@ -263,8 +263,8 @@ public class SuscripcionController : ControllerBase
 
             await _db.SaveChangesAsync();
 
-            // Pagopar requiere que el comercio retorne el mismo JSON de resultado
-            return Ok(items.GetRawText());
+            // Pagopar requiere que el comercio retorne el mismo JSON de resultado (raw, no re-serializado)
+            return Content(items.GetRawText(), "application/json");
         }
         catch (Exception ex)
         {
@@ -272,6 +272,8 @@ public class SuscripcionController : ControllerBase
             return StatusCode(500);
         }
     }
+
+
 
     // ── POST /api/suscripcion/recurrente/registrar-cliente ───────────────
     /// <summary>Registra al usuario administrador como cliente en Pagopar para pagos recurrentes.</summary>

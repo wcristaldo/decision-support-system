@@ -1,21 +1,12 @@
 {
   "info": {
+    "_postman_id": "9bbdc857-f397-4395-bb05-24ed979a7894",
     "name": "SAD-Roshka - Sistema de Apoyo a Decisiones",
-    "description": "Colección completa de endpoints de la API REST del SAD-Roshka (tesis UNIDA). Base URL: http://localhost:5000/api\n\n**Setup rápido:**\n1. Ejecutar 'POST Login' → el token se guarda automáticamente en la variable `{{token}}`.\n2. Todos los endpoints protegidos ya usan `Bearer {{token}}`.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "description": "Colección completa de endpoints de la API REST del SAD-Roshka (tesis UNIDA). Base URL: http://localhost:5000/api\n\n**Setup rápido:**\n1. Ejecutar 'POST Login' → el token se guarda automáticamente en la variable `{{token}}`.\n2. Todos los endpoints protegidos ya usan `Bearer {{token}}`.\n\n**Flujo Pagopar (staging):**\n1. Login → 2. GET Planes → 3. POST Iniciar Pago → 4. POST Simular Webhook Pago → 5. GET Suscripción Actual",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "48542171",
+    "_collection_link": "https://go.postman.co/collection/48542171-9bbdc857-f397-4395-bb05-24ed979a7894?source=collection_link"
   },
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:5000/api",
-      "type": "string"
-    },
-    {
-      "key": "token",
-      "value": "",
-      "type": "string"
-    }
-  ],
   "item": [
     {
       "name": "Auth",
@@ -51,13 +42,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
             }
           },
           "response": []
@@ -66,26 +52,12 @@
           "name": "Login - Líder Técnico",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{"key": "Content-Type","value": "application/json"}],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"lider@roshka.com\",\n  \"password\": \"Lider2026!\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/auth/login","host": ["{{baseUrl}}"],"path": ["auth","login"]}
           },
           "response": []
         },
@@ -93,26 +65,12 @@
           "name": "Login - Analista QA",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{"key": "Content-Type","value": "application/json"}],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"analista@roshka.com\",\n  \"password\": \"Analista2026!\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/auth/login","host": ["{{baseUrl}}"],"path": ["auth","login"]}
           },
           "response": []
         },
@@ -120,26 +78,12 @@
           "name": "Login - Gerente QA",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{"key": "Content-Type","value": "application/json"}],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"gerente@roshka.com\",\n  \"password\": \"Gerente2026!\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/auth/login","host": ["{{baseUrl}}"],"path": ["auth","login"]}
           },
           "response": []
         },
@@ -148,29 +92,14 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"currentPassword\": \"Admin2026!\",\n  \"newPassword\": \"Admin2027!\",\n  \"confirmPassword\": \"Admin2027!\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/change-password",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "change-password"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/auth/change-password","host": ["{{baseUrl}}"],"path": ["auth","change-password"]}
           },
           "response": []
         },
@@ -179,30 +108,14 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"newPassword\": \"NuevaClave2026!\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/reset-password/2",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "reset-password",
-                "2"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/auth/reset-password/2","host": ["{{baseUrl}}"],"path": ["auth","reset-password","2"]}
           },
           "response": []
         },
@@ -210,26 +123,303 @@
           "name": "[DEBUG] Obtener hash de contraseña",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{"key": "Content-Type","value": "application/json"}],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"cualquiera@test.com\",\n  \"password\": \"MiClave123!\"\n}"
             },
+            "url": {"raw": "{{baseUrl}}/auth/debug/hash","host": ["{{baseUrl}}"],"path": ["auth","debug","hash"]}
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔔 Suscripción / Pagopar (staging)",
+      "description": "Flujo completo de pago con Pagopar en entorno staging.\n\n**Orden de ejecución:**\n1. Login (guarda {{token}})\n2. GET Planes disponibles\n3. POST Iniciar Pago → guarda {{hashPedido}} automáticamente\n4. POST Simular Webhook Pago → calcula token SHA1 automáticamente y activa la suscripción\n5. GET Suscripción actual → verificar que está activa\n6. GET Historial de pagos\n\n**Claves staging:** PUBLIC=7fde2c9a716450803053bb4a1c0d4971 | PRIVATE=9321226ee984b4a5dda826d4c8ed555f",
+      "item": [
+        {
+          "name": "1 · GET Planes disponibles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization","value": "Bearer {{token}}"}
+            ],
             "url": {
-              "raw": "{{baseUrl}}/auth/debug/hash",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "debug",
-                "hash"
-              ]
+              "raw": "{{baseUrl}}/suscripcion/planes",
+              "host": ["{{baseUrl}}"],
+              "path": ["suscripcion","planes"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2 · GET Suscripción actual",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization","value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/actual",
+              "host": ["{{baseUrl}}"],
+              "path": ["suscripcion","actual"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3 · POST Iniciar Pago (crea pedido en Pagopar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('hashPedido', json.hashPedido);",
+                  "    pm.collectionVariables.set('numeroPedido', json.numeroPedido);",
+                  "    console.log('✅ Hash pedido guardado:', json.hashPedido);",
+                  "    console.log('📋 Número pedido:', json.numeroPedido);",
+                  "    console.log('🔗 URL checkout Pagopar:', json.checkoutUrl);",
+                  "    pm.test('Pedido creado correctamente en Pagopar', () => {",
+                  "        pm.expect(json.hashPedido).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "} else {",
+                  "    console.error('❌ Error al iniciar pago:', pm.response.text());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlan\": 2,\n  \"nombreComprador\": \"Willian Cristaldo\",\n  \"emailComprador\": \"scristaldopy@gmail.com\",\n  \"documentoComprador\": \"5812345\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/iniciar-pago",
+              "host": ["{{baseUrl}}"],
+              "path": ["suscripcion","iniciar-pago"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4 · POST Simular Webhook — Pago APROBADO ✅",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Calcula el token SHA1 que Pagopar enviaría: sha1(privateKey + hashPedido)",
+                  "const privateKey = pm.collectionVariables.get('pagoparPrivateKey');",
+                  "const hashPedido = pm.collectionVariables.get('hashPedido');",
+                  "",
+                  "if (!hashPedido) {",
+                  "    console.error('❌ hashPedido vacío. Ejecutá primero el request 3 · Iniciar Pago.');",
+                  "    return;",
+                  "}",
+                  "",
+                  "const token = CryptoJS.SHA1(privateKey + hashPedido).toString();",
+                  "pm.collectionVariables.set('webhookToken', token);",
+                  "console.log('🔑 hashPedido:', hashPedido);",
+                  "console.log('🔐 token webhook calculado:', token);",
+                  "",
+                  "// Armar el body dinámicamente con los valores calculados",
+                  "const body = {",
+                  "    resultado: [{",
+                  "        pagado: true,",
+                  "        cancelado: false,",
+                  "        hash_pedido: hashPedido,",
+                  "        token: token,",
+                  "        numero_pedido: pm.collectionVariables.get('numeroPedido') || '9999',",
+                  "        numero_comprobante_interno: '8888888',",
+                  "        ultimo_mensaje_error: null,",
+                  "        forma_pago: 'Tarjetas de crédito/débito',",
+                  "        forma_pago_identificador: '9',",
+                  "        fecha_pago: new Date().toISOString().replace('T', ' ').substring(0, 19),",
+                  "        monto: '150000.00',",
+                  "        fecha_maxima_pago: new Date(Date.now() + 86400000).toISOString().replace('T', ' ').substring(0, 19)",
+                  "    }],",
+                  "    respuesta: true",
+                  "};",
+                  "pm.collectionVariables.set('webhookBody', JSON.stringify(body));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Webhook procesado con HTTP 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "console.log('✅ Respuesta webhook:', pm.response.text());"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type","value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{webhookBody}}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/webhook",
+              "host": ["{{baseUrl}}"],
+              "path": ["suscripcion","webhook"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4b · POST Simular Webhook — Pago REVERTIDO ❌",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const privateKey = pm.collectionVariables.get('pagoparPrivateKey');",
+                  "const hashPedido = pm.collectionVariables.get('hashPedido');",
+                  "",
+                  "if (!hashPedido) {",
+                  "    console.error('❌ hashPedido vacío. Ejecutá primero el request 3 · Iniciar Pago.');",
+                  "    return;",
+                  "}",
+                  "",
+                  "const token = CryptoJS.SHA1(privateKey + hashPedido).toString();",
+                  "pm.collectionVariables.set('webhookToken', token);",
+                  "",
+                  "const body = {",
+                  "    resultado: [{",
+                  "        pagado: false,",
+                  "        cancelado: false,",
+                  "        hash_pedido: hashPedido,",
+                  "        token: token,",
+                  "        numero_pedido: pm.collectionVariables.get('numeroPedido') || '9999',",
+                  "        numero_comprobante_interno: '8888888',",
+                  "        ultimo_mensaje_error: 'Pago revertido por el comercio',",
+                  "        forma_pago: 'Tarjetas de crédito/débito',",
+                  "        forma_pago_identificador: '9',",
+                  "        fecha_pago: null,",
+                  "        monto: '150000.00',",
+                  "        fecha_maxima_pago: new Date(Date.now() + 86400000).toISOString().replace('T', ' ').substring(0, 19)",
+                  "    }],",
+                  "    respuesta: true",
+                  "};",
+                  "pm.collectionVariables.set('webhookBody', JSON.stringify(body));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Webhook reversión procesada con HTTP 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "console.log('↩️ Reversión procesada:', pm.response.text());"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type","value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{webhookBody}}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/webhook",
+              "host": ["{{baseUrl}}"],
+              "path": ["suscripcion","webhook"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5 · GET Suscripción actual (verificar activación)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.activa) {",
+                  "        console.log('✅ Suscripción ACTIVA — Plan:', json.plan?.nombre);",
+                  "        console.log('📅 Vence:', json.fechaVencimiento);",
+                  "    } else {",
+                  "        console.log('⚠️ Sin suscripción activa:', json.mensaje);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization","value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/actual",
+              "host": ["{{baseUrl}}"],
+              "path": ["suscripcion","actual"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6 · GET Historial de pagos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization","value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/pagos",
+              "host": ["{{baseUrl}}"],
+              "path": ["suscripcion","pagos"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST Cambiar plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlan\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/cambiar-plan",
+              "host": ["{{baseUrl}}"],
+              "path": ["suscripcion","cambiar-plan"]
             }
           },
           "response": []
@@ -243,54 +433,19 @@
           "name": "Listar registros de auditoría con filtros",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
             "url": {
-              "raw": "{{baseUrl}}/auditoria?usuario=admin&accion=&entidad=Proyecto&fechaDesde=2026-07-01T00:00:00&fechaHasta=2026-07-31T23:59:59&pagina=1&limite=50",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auditoria"
-              ],
+              "raw": "{{baseUrl}}/auditoria?pagina=1&limite=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["auditoria"],
               "query": [
-                {
-                  "key": "usuario",
-                  "value": "admin",
-                  "disabled": true
-                },
-                {
-                  "key": "accion",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "entidad",
-                  "value": "Proyecto",
-                  "disabled": true
-                },
-                {
-                  "key": "fechaDesde",
-                  "value": "2026-07-01T00:00:00",
-                  "disabled": true
-                },
-                {
-                  "key": "fechaHasta",
-                  "value": "2026-07-31T23:59:59",
-                  "disabled": true
-                },
-                {
-                  "key": "pagina",
-                  "value": "1"
-                },
-                {
-                  "key": "limite",
-                  "value": "50"
-                }
+                {"key": "usuario","value": "admin","disabled": true},
+                {"key": "accion","value": "","disabled": true},
+                {"key": "entidad","value": "Proyecto","disabled": true},
+                {"key": "fechaDesde","value": "2026-07-01T00:00:00","disabled": true},
+                {"key": "fechaHasta","value": "2026-07-31T23:59:59","disabled": true},
+                {"key": "pagina","value": "1"},
+                {"key": "limite","value": "50"}
               ]
             }
           },
@@ -300,22 +455,8 @@
           "name": "Obtener registro de auditoría por ID",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/auditoria/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auditoria",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/auditoria/1","host": ["{{baseUrl}}"],"path": ["auditoria","1"]}
           },
           "response": []
         },
@@ -323,32 +464,14 @@
           "name": "Obtener estadísticas de auditoría",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
             "url": {
-              "raw": "{{baseUrl}}/auditoria/estadisticas?desde=2026-07-01T00:00:00&hasta=2026-07-31T23:59:59",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auditoria",
-                "estadisticas"
-              ],
+              "raw": "{{baseUrl}}/auditoria/estadisticas",
+              "host": ["{{baseUrl}}"],
+              "path": ["auditoria","estadisticas"],
               "query": [
-                {
-                  "key": "desde",
-                  "value": "2026-07-01T00:00:00",
-                  "disabled": true
-                },
-                {
-                  "key": "hasta",
-                  "value": "2026-07-31T23:59:59",
-                  "disabled": true
-                }
+                {"key": "desde","value": "2026-07-01T00:00:00","disabled": true},
+                {"key": "hasta","value": "2026-07-31T23:59:59","disabled": true}
               ]
             }
           },
@@ -363,15 +486,8 @@
           "name": "Health Check",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/health",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "health"
-              ]
-            }
+            "header": [],
+            "url": {"raw": "{{baseUrl}}/health","host": ["{{baseUrl}}"],"path": ["health"]}
           },
           "response": []
         }
@@ -384,21 +500,8 @@
           "name": "Listar todos los proyectos",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/proyectos",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "proyectos"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/proyectos","host": ["{{baseUrl}}"],"path": ["proyectos"]}
           },
           "response": []
         },
@@ -406,22 +509,8 @@
           "name": "Obtener proyecto por ID",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/proyectos/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "proyectos",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/proyectos/1","host": ["{{baseUrl}}"],"path": ["proyectos","1"]}
           },
           "response": []
         },
@@ -429,23 +518,8 @@
           "name": "Obtener versiones de un proyecto",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/proyectos/1/versiones",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "proyectos",
-                "1",
-                "versiones"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/proyectos/1/versiones","host": ["{{baseUrl}}"],"path": ["proyectos","1","versiones"]}
           },
           "response": []
         },
@@ -454,28 +528,14 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"Portal de Clientes\",\n  \"descripcion\": \"Módulo de acceso y gestión de clientes\",\n  \"tipoSolucion\": \"web\",\n  \"versionInicial\": \"1.0.0\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/proyectos",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "proyectos"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/proyectos","host": ["{{baseUrl}}"],"path": ["proyectos"]}
           },
           "response": []
         },
@@ -484,29 +544,14 @@
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"Portal de Clientes v2\",\n  \"descripcion\": \"Versión rediseñada\",\n  \"tipoSolucion\": \"web\",\n  \"estado\": \"activo\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/proyectos/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "proyectos",
-                "1"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/proyectos/1","host": ["{{baseUrl}}"],"path": ["proyectos","1"]}
           },
           "response": []
         },
@@ -515,29 +560,14 @@
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"Portal de Clientes\",\n  \"tipoSolucion\": \"web\",\n  \"estado\": \"inactivo\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/proyectos/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "proyectos",
-                "1"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/proyectos/1","host": ["{{baseUrl}}"],"path": ["proyectos","1"]}
           },
           "response": []
         },
@@ -545,22 +575,8 @@
           "name": "Eliminar proyecto",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/proyectos/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "proyectos",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/proyectos/1","host": ["{{baseUrl}}"],"path": ["proyectos","1"]}
           },
           "response": []
         }
@@ -573,23 +589,8 @@
           "name": "Listar versiones de un proyecto",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/versiones/proyecto/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "versiones",
-                "proyecto",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/versiones/proyecto/1","host": ["{{baseUrl}}"],"path": ["versiones","proyecto","1"]}
           },
           "response": []
         },
@@ -597,22 +598,8 @@
           "name": "Obtener versión por ID",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/versiones/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "versiones",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/versiones/1","host": ["{{baseUrl}}"],"path": ["versiones","1"]}
           },
           "response": []
         },
@@ -621,28 +608,14 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"proyectoId\": 1,\n  \"numeroVersion\": \"1.1.0\",\n  \"descripcion\": \"Sprint 2 - módulo de reportes\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/versiones",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "versiones"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/versiones","host": ["{{baseUrl}}"],"path": ["versiones"]}
           },
           "response": []
         },
@@ -651,29 +624,14 @@
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"numeroVersion\": \"1.1.1\",\n  \"descripcion\": \"Corrección de bugs Sprint 2\",\n  \"estado\": \"pendiente\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/versiones/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "versiones",
-                "1"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/versiones/1","host": ["{{baseUrl}}"],"path": ["versiones","1"]}
           },
           "response": []
         },
@@ -681,22 +639,8 @@
           "name": "Eliminar versión",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/versiones/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "versiones",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/versiones/1","host": ["{{baseUrl}}"],"path": ["versiones","1"]}
           },
           "response": []
         }
@@ -709,23 +653,8 @@
           "name": "Listar resultados por versión",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/resultadosPrueba/version/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "resultadosPrueba",
-                "version",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/resultadosPrueba/version/1","host": ["{{baseUrl}}"],"path": ["resultadosPrueba","version","1"]}
           },
           "response": []
         },
@@ -734,28 +663,14 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"versionId\": 1,\n  \"nombreArchivo\": \"output.json\",\n  \"formatoArchivo\": \"JSON\",\n  \"rutaArchivo\": null,\n  \"observaciones\": \"Suite: 01-Login | Estado: PASS | Herramienta: Robot 7.4\",\n  \"totalPruebas\": 3,\n  \"pruebasExitosas\": 3,\n  \"pruebasFallidas\": 0,\n  \"cobertura\": 100.00,\n  \"tiempoEjecucion\": 12.44\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/resultadosPrueba",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "resultadosPrueba"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/resultadosPrueba","host": ["{{baseUrl}}"],"path": ["resultadosPrueba"]}
           },
           "response": []
         },
@@ -764,30 +679,14 @@
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"estadoValidacion\": \"valido\",\n  \"observaciones\": \"Revisión manual OK\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/resultadosPrueba/1/validar",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "resultadosPrueba",
-                "1",
-                "validar"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/resultadosPrueba/1/validar","host": ["{{baseUrl}}"],"path": ["resultadosPrueba","1","validar"]}
           },
           "response": []
         }
@@ -800,23 +699,8 @@
           "name": "Obtener métricas por versión",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/metricas/version/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "metricas",
-                "version",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/metricas/version/1","host": ["{{baseUrl}}"],"path": ["metricas","version","1"]}
           },
           "response": []
         }
@@ -829,23 +713,8 @@
           "name": "Obtener recomendaciones por versión",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/recomendaciones/version/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "recomendaciones",
-                "version",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/recomendaciones/version/1","host": ["{{baseUrl}}"],"path": ["recomendaciones","version","1"]}
           },
           "response": []
         },
@@ -853,23 +722,8 @@
           "name": "Generar recomendación manualmente",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/recomendaciones/generar/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "recomendaciones",
-                "generar",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/recomendaciones/generar/1","host": ["{{baseUrl}}"],"path": ["recomendaciones","generar","1"]}
           },
           "response": []
         }
@@ -882,23 +736,8 @@
           "name": "Obtener decisiones por versión",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/decisionesDespliegue/version/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "decisionesDespliegue",
-                "version",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/decisionesDespliegue/version/1","host": ["{{baseUrl}}"],"path": ["decisionesDespliegue","version","1"]}
           },
           "response": []
         },
@@ -906,23 +745,8 @@
           "name": "Obtener decisiones por recomendación",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/decisionesDespliegue/recomendacion/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "decisionesDespliegue",
-                "recomendacion",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/decisionesDespliegue/recomendacion/1","host": ["{{baseUrl}}"],"path": ["decisionesDespliegue","recomendacion","1"]}
           },
           "response": []
         },
@@ -931,28 +755,14 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"recomendacionId\": 1,\n  \"decisionFinal\": \"DESPLEGAR\",\n  \"comentario\": \"Todas las pruebas pasaron. Se aprueba el despliegue a producción.\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/decisionesDespliegue",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "decisionesDespliegue"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/decisionesDespliegue","host": ["{{baseUrl}}"],"path": ["decisionesDespliegue"]}
           },
           "response": []
         }
@@ -965,22 +775,8 @@
           "name": "Historial de análisis (todas las versiones evaluadas)",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/analisis/historial",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "analisis",
-                "historial"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/analisis/historial","host": ["{{baseUrl}}"],"path": ["analisis","historial"]}
           },
           "response": []
         }
@@ -993,21 +789,8 @@
           "name": "Listar todas las reglas activas",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/reglaEvaluacion",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reglaEvaluacion"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/reglaEvaluacion","host": ["{{baseUrl}}"],"path": ["reglaEvaluacion"]}
           },
           "response": []
         },
@@ -1015,22 +798,8 @@
           "name": "Obtener regla por ID",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/reglaEvaluacion/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reglaEvaluacion",
-                "1"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/reglaEvaluacion/1","host": ["{{baseUrl}}"],"path": ["reglaEvaluacion","1"]}
           },
           "response": []
         },
@@ -1039,29 +808,14 @@
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"umbral\": 90.00,\n  \"descripcion\": \"Tasa de éxito mínima requerida para aprobar despliegue\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/reglaEvaluacion/1",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reglaEvaluacion",
-                "1"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/reglaEvaluacion/1","host": ["{{baseUrl}}"],"path": ["reglaEvaluacion","1"]}
           },
           "response": []
         }
@@ -1074,21 +828,8 @@
           "name": "Listar todos los usuarios",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/usuarios",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "usuarios"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/usuarios","host": ["{{baseUrl}}"],"path": ["usuarios"]}
           },
           "response": []
         },
@@ -1097,28 +838,14 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"María\",\n  \"email\": \"maria@roshka.com\",\n  \"password\": \"Maria2026!\",\n  \"rol\": \"Desarrollador\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/usuarios",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "usuarios"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/usuarios","host": ["{{baseUrl}}"],"path": ["usuarios"]}
           },
           "response": []
         },
@@ -1127,29 +854,14 @@
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"María López\",\n  \"email\": \"maria.lopez@roshka.com\",\n  \"rol\": \"Líder Técnico\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/usuarios/4",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "usuarios",
-                "4"
-              ]
-            }
+            "url": {"raw": "{{baseUrl}}/usuarios/4","host": ["{{baseUrl}}"],"path": ["usuarios","4"]}
           },
           "response": []
         },
@@ -1158,30 +870,11 @@
           "request": {
             "method": "PATCH",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"activo\": true\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/usuarios/4/estado",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "usuarios",
-                "4",
-                "estado"
-              ]
-            }
+            "body": {"mode": "raw","raw": "{\n  \"activo\": true\n}"},
+            "url": {"raw": "{{baseUrl}}/usuarios/4/estado","host": ["{{baseUrl}}"],"path": ["usuarios","4","estado"]}
           },
           "response": []
         },
@@ -1190,30 +883,11 @@
           "request": {
             "method": "PATCH",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
+              {"key": "Content-Type","value": "application/json"},
+              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"activo\": false\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/usuarios/4/estado",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "usuarios",
-                "4",
-                "estado"
-              ]
-            }
+            "body": {"mode": "raw","raw": "{\n  \"activo\": false\n}"},
+            "url": {"raw": "{{baseUrl}}/usuarios/4/estado","host": ["{{baseUrl}}"],"path": ["usuarios","4","estado"]}
           },
           "response": []
         }
@@ -1226,25 +900,42 @@
           "name": "Listar roles activos",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/roles",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "roles"
-              ]
-            }
+            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/roles","host": ["{{baseUrl}}"],"path": ["roles"]}
           },
           "response": []
         }
       ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "pagoparPrivateKey",
+      "value": "9321226ee984b4a5dda826d4c8ed555f"
+    },
+    {
+      "key": "hashPedido",
+      "value": ""
+    },
+    {
+      "key": "numeroPedido",
+      "value": ""
+    },
+    {
+      "key": "webhookToken",
+      "value": ""
+    },
+    {
+      "key": "webhookBody",
+      "value": ""
     }
   ]
 }
