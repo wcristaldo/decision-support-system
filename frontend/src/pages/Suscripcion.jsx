@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
+import NotificationModal from '../components/NotificationModal'
 import '../styles/Suscripcion.css'
 
 // ── Íconos SVG inline ───────────────────────────────────────────────────────
@@ -56,11 +57,7 @@ export default function Suscripcion() {
   const [tab, setTab]             = useState('estado') // 'estado' | 'planes' | 'pagos' | 'tarjeta'
   const [procesando, setProcesando] = useState(false)
   const [msg, setMsg]             = useState(null)     // { tipo: 'ok'|'err', texto }
-
-  // Form para iniciar pago manual (checkout Pagopar)
-  const [formPago, setFormPago] = useState({
-    idPlan: '', nombre: '', email: '', documento: ''
-  })
+  const [modal, setModal]         = useState(null)     // { type, title, message }
 
   // Form para pago recurrente
   const [formRec, setFormRec] = useState({
@@ -131,26 +128,8 @@ export default function Suscripcion() {
     setTimeout(() => setMsg(null), 6000)
   }
 
-  const iniciarPago = async () => {
-    if (!formPago.idPlan || !formPago.nombre || !formPago.email || !formPago.documento) {
-      mostrarMsg('err', 'Completá todos los campos antes de continuar.')
-      return
-    }
-    setProcesando(true)
-    try {
-      const { data } = await api.post('/suscripcion/iniciar-pago', {
-        idPlan:            parseInt(formPago.idPlan),
-        nombreComprador:   formPago.nombre,
-        emailComprador:    formPago.email,
-        documentoComprador: formPago.documento,
-      })
-      // Redirigir al checkout de Pagopar
-      window.location.href = data.checkoutUrl
-    } catch (e) {
-      mostrarMsg('err', e.response?.data?.message ?? 'Error al iniciar el pago.')
-    } finally {
-      setProcesando(false)
-    }
+  const mostrarModal = (type, title, message) => {
+    setModal({ type, title, message })
   }
 
   const registrarClienteYAbrirIframe = async () => {
@@ -175,7 +154,8 @@ export default function Suscripcion() {
       setIframeUrl(data.iframeUrl)
       setTab('tarjeta')
     } catch (e) {
-      mostrarMsg('err', e.response?.data?.message ?? 'Error al registrar cliente.')
+      const msg = e.response?.data?.message ?? 'Error al registrar cliente en Pagopar.'
+      mostrarModal('error', 'Error al agregar tarjeta', msg)
     } finally {
       setProcesando(false)
     }
@@ -190,7 +170,7 @@ export default function Suscripcion() {
       setIframeUrl(null)
       cargar()
     } catch (e) {
-      mostrarMsg('err', 'Error al confirmar tarjeta.')
+      mostrarModal('error', 'Error al confirmar tarjeta', e.response?.data?.message ?? 'No se pudo confirmar la tarjeta.')
     }
   }
 
@@ -209,7 +189,7 @@ export default function Suscripcion() {
       mostrarMsg('ok', data.message)
       cargar()
     } catch (e) {
-      mostrarMsg('err', e.response?.data?.message ?? 'El cobro fue rechazado.')
+      mostrarModal('error', 'Cobro rechazado', e.response?.data?.message ?? 'El cobro fue rechazado por Pagopar.')
     } finally {
       setProcesando(false)
     }
@@ -236,13 +216,22 @@ export default function Suscripcion() {
         </div>
       </div>
 
-      {/* ── Banner de notificación ── */}
+      {/* ── Banner de notificación inline (ok) ── */}
       {msg && (
         <div className={`sus-banner sus-banner--${msg.tipo}`}>
           {msg.tipo === 'ok' ? <IcCheck /> : <IcAlert />}
           {msg.texto}
         </div>
       )}
+
+      {/* ── Modal de error ── */}
+      <NotificationModal
+        isOpen={!!modal}
+        type={modal?.type}
+        title={modal?.title}
+        message={modal?.message}
+        onClose={() => setModal(null)}
+      />
 
       {/* ── Tabs ── */}
       <div className="sus-tabs">
@@ -306,6 +295,10 @@ export default function Suscripcion() {
               {/* ── Cobro recurrente ── */}
               <div className="sus-recurrente">
                 <h3 className="sus-section-title"><IcCard /> Pago recurrente con tarjeta</h3>
+                <div className="sus-recurrente-aviso">
+                  <IcAlert />
+                  <span>Esta función requiere activación del módulo de catastro de tarjetas en el panel de Pagopar. Para la demo, usá la pestaña <strong>Planes</strong> → <strong>Contratar</strong>.</span>
+                </div>
 
                 {actual.tieneTarjeta ? (
                   <div className="sus-con-tarjeta">
@@ -442,37 +435,8 @@ export default function Suscripcion() {
 
                   {!esCurrent && (
                     <div className="sus-contratar">
-                      <h4 className="sus-contratar-title">Contratar vía Pagopar</h4>
-                      <div className="sus-form-col">
-                        <input
-                          placeholder="Nombre y apellido"
-                          value={formPago.nombre}
-                          onChange={e => setFormPago(f => ({ ...f, nombre: e.target.value }))}
-                        />
-                        <input
-                          placeholder="Email"
-                          type="email"
-                          value={formPago.email}
-                          onChange={e => setFormPago(f => ({ ...f, email: e.target.value }))}
-                        />
-                        <input
-                          placeholder="Nro. cédula"
-                          value={formPago.documento}
-                          onChange={e => setFormPago(f => ({ ...f, documento: e.target.value }))}
-                        />
-                        <button
-                          className="sus-btn sus-btn--primary"
-                          disabled={procesando}
-                          onClick={() => {
-                            setFormPago(f => ({ ...f, idPlan: p.id }))
-                            setTimeout(iniciarPago, 50)
-                          }}
-                        >
-                          {procesando ? 'Redirigiendo…' : `Contratar — ${formatGs(p.precioMensual)}/mes`}
-                        </button>
-                      </div>
                       <p className="sus-nota-staging">
-                        🧪 Staging disponible: tarjeta de crédito, QR ueno, Pix.
+                        Para contratar este plan contactá al administrador del sistema.
                       </p>
                     </div>
                   )}

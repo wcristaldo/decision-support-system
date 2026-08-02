@@ -40,19 +40,21 @@
 
 /* ── Page ── */
 .dp-page {
-  min-height: calc(100vh - 64px);
+  min-height: 100vh;
   background: var(--gray-50);
 }
 
 /* ── Header ── */
 .dp-header {
-  background: linear-gradient(135deg, var(--text-dark) 0%, #2a3f54 100%);
+  background: var(--white);
+  border-bottom: 2px solid var(--gray-100);
+  box-shadow: 0 2px 10px rgba(28,43,58,0.06);
 }
 
 .dp-header-inner {
   width: 100%;
   margin: 0 auto;
-  padding: 1.5rem 2rem 2.5rem;
+  padding: 1.25rem 2rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -81,9 +83,9 @@
 
 .dp-tipo-chip {
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.65);
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--text-dark);
+  background: rgba(255,255,255,0.35);
+  border: 1px solid rgba(255,255,255,0.5);
   border-radius: 50px;
   padding: 0.2rem 0.65rem;
 }
@@ -92,13 +94,13 @@
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 2rem;
   font-weight: 800;
-  color: var(--white);
+  color: var(--text-dark);
   margin: 0;
   line-height: 1.2;
 }
 
 .dp-desc {
-  color: rgba(255,255,255,0.6);
+  color: var(--text-mid);
   font-size: 0.95rem;
   line-height: 1.5;
   max-width: 600px;
@@ -106,14 +108,14 @@
 
 .dp-meta {
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.4);
+  color: var(--text-mid);
 }
 
 /* ── Back button ── */
 .btn-back-link {
   background: none;
   border: none;
-  color: rgba(255,255,255,0.55);
+  color: var(--text-mid);
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -125,7 +127,7 @@
   font-family: 'Inter', sans-serif;
 }
 
-.btn-back-link:hover { color: var(--white); }
+.btn-back-link:hover { color: var(--text-dark); }
 
 /* ── Nueva versión button (shared pill style) ── */
 .btn-nuevo {
