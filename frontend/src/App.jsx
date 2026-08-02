@@ -11,7 +11,7 @@ import AnalisisVersion from './pages/AnalisisVersion'
 import UserManagement from './pages/UserManagement'
 import Auditoria from './pages/Auditoria'
 import Suscripcion from './pages/Suscripcion'
-import Navigation from './components/Navigation'
+import Sidebar from './components/Sidebar'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -40,19 +40,23 @@ function App() {
 
   return (
     <Router>
-      {isAuthenticated && <Navigation onLogout={handleLogout} />}
-      <Routes>
-        <Route path="/login" element={<Login onLogin={handleLogin} />} />
-        <Route path="/" element={<ProtectedRoute><Dashboard onLogout={handleLogout} /></ProtectedRoute>} />
-        <Route path="/proyectos" element={<ProtectedRoute><Proyectos /></ProtectedRoute>} />
-        <Route path="/proyectos/:id" element={<ProtectedRoute><DetalleProyecto /></ProtectedRoute>} />
-        <Route path="/cargar-resultados" element={<ProtectedRoute><CargarResultados /></ProtectedRoute>} />
-        <Route path="/analisis" element={<ProtectedRoute><AnalisisMetricas /></ProtectedRoute>} />
-        <Route path="/versiones/:id/analisis" element={<ProtectedRoute><AnalisisVersion /></ProtectedRoute>} />
-        <Route path="/usuarios" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
-        <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
-        <Route path="/suscripcion" element={<ProtectedRoute><Suscripcion /></ProtectedRoute>} />
-      </Routes>
+      <div className="app-layout">
+        {isAuthenticated && <Sidebar onLogout={handleLogout} />}
+        <main className="app-main">
+          <Routes>
+            <Route path="/login" element={<Login onLogin={handleLogin} />} />
+            <Route path="/" element={<ProtectedRoute><Dashboard onLogout={handleLogout} /></ProtectedRoute>} />
+            <Route path="/proyectos" element={<ProtectedRoute><Proyectos /></ProtectedRoute>} />
+            <Route path="/proyectos/:id" element={<ProtectedRoute><DetalleProyecto /></ProtectedRoute>} />
+            <Route path="/cargar-resultados" element={<ProtectedRoute><CargarResultados /></ProtectedRoute>} />
+            <Route path="/analisis" element={<ProtectedRoute><AnalisisMetricas /></ProtectedRoute>} />
+            <Route path="/versiones/:id/analisis" element={<ProtectedRoute><AnalisisVersion /></ProtectedRoute>} />
+            <Route path="/usuarios" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+            <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
+            <Route path="/suscripcion" element={<ProtectedRoute><Suscripcion /></ProtectedRoute>} />
+          </Routes>
+        </main>
+      </div>
     </Router>
   )
 }

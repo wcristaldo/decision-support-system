@@ -1,45 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
 :root {
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --white:      #ffffff;
+  --gray-50:    #f4f5f9;
+  --gray-100:   #e9ecf1;
+  --gray-150:   #dfe8ef;
+  --gray-200:   #d7e0e7;
+  --gray-300:   #cbd5df;
+  --gray-400:   #b6c6d5;
+  --blue-300:   #9aafc2;
+  --blue-400:   #8ea7bb;
+  --blue-500:   #7e9ab2;
+  --text-dark:  #1c2b3a;
+  --text-mid:   #4a647a;
+  --text-light: #7e9ab2;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  font-family: 'Inter', sans-serif;
+  background: var(--gray-50);
+  color: var(--text-dark);
+  overflow-x: hidden;
 }
 
 a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
+  text-decoration: none;
+  color: inherit;
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-
-button:hover {
-  border-color: #646cff;
 }
 
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  a:visited {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+  outline: 2px solid var(--blue-400);
+  outline-offset: 2px;
 }
