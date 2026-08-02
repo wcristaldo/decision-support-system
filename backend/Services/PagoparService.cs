@@ -103,7 +103,8 @@ public class PagoparService : IPagoparService
 
     public string GenerarTokenTransaccion(string idPedido, decimal monto)
         // sha1(private_key + idPedido + strval(floatval(monto)))
-        => Sha1Hex(_privateKey + idPedido + ((double)monto).ToString("G"));
+        // InvariantCulture para que el separador decimal sea siempre "." igual que PHP
+        => Sha1Hex(_privateKey + idPedido + ((double)monto).ToString("G", System.Globalization.CultureInfo.InvariantCulture));
 
     public string GenerarTokenRecurrente()
         => Sha1Hex(_privateKey + "PAGO-RECURRENTE");
