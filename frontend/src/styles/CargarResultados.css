@@ -1,31 +1,33 @@
 /* ── CargarResultados.css ───────────────────────────────────────────────────── */
 
 .cr-page {
-  min-height: calc(100vh - 64px);
+  min-height: 100vh;
   background: var(--gray-50);
 }
 
 /* ── Header ── */
 .cr-header {
-  background: linear-gradient(135deg, var(--text-dark) 0%, #2a3f54 100%);
+  background: var(--white);
+  border-bottom: 2px solid var(--gray-100);
+  box-shadow: 0 2px 10px rgba(28,43,58,0.06);
 }
 
 .cr-header-inner {
   width: 100%;
   margin: 0 auto;
-  padding: 2rem 2rem;
+  padding: 1.25rem 2rem;
 }
 
 .cr-title {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 2rem;
   font-weight: 800;
-  color: var(--white);
+  color: var(--text-dark);
   margin: 0 0 0.25rem;
 }
 
 .cr-subtitle {
-  color: rgba(255,255,255,0.5);
+  color: var(--text-mid);
   font-size: 0.875rem;
 }
 
@@ -136,7 +138,7 @@
 
 .cr-upload-zone--ok {
   border-style: solid;
-  border-color: #27ae60;
+  border-color: var(--blue-400);
   background: #f0fdf4;
   flex-direction: row;
   justify-content: flex-start;
@@ -175,7 +177,7 @@
 .cr-upload-icon-ok {
   width: 36px; height: 36px;
   border-radius: 50%;
-  background: #27ae60;
+  background: var(--blue-400);
   color: var(--white);
   font-size: 1.1rem;
   font-weight: 700;
@@ -283,7 +285,7 @@
 
 /* ── Preview de métricas extraídas ── */
 .cr-metrics-preview {
-  background: linear-gradient(135deg, #f0f7ff 0%, #e8f0f7 100%);
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
   border: 1.5px solid var(--gray-200);
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
@@ -373,7 +375,7 @@
 .cr-success-icon {
   width: 72px; height: 72px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #27ae60, #1a7a4e);
+  background: linear-gradient(135deg, var(--blue-400), var(--blue-500));
   color: var(--white);
   font-size: 2rem;
   display: flex;

@@ -35,19 +35,21 @@
 
 /* ── Page ── */
 .av-page {
-  min-height: calc(100vh - 64px);
+  min-height: 100vh;
   background: var(--gray-50);
 }
 
 /* ── Header ── */
 .av-header {
-  background: linear-gradient(135deg, var(--text-dark) 0%, #2a3f54 100%);
+  background: var(--white);
+  border-bottom: 2px solid var(--gray-100);
+  box-shadow: 0 2px 10px rgba(28,43,58,0.06);
 }
 
 .av-header-inner {
   width: 100%;
   margin: 0 auto;
-  padding: 1.5rem 2rem 2.5rem;
+  padding: 1.25rem 2rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -66,7 +68,7 @@
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.45);
+  color: var(--text-mid);
   margin: 0 0 0.35rem;
 }
 
@@ -74,13 +76,13 @@
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 2.25rem;
   font-weight: 800;
-  color: var(--white);
+  color: var(--text-dark);
   margin: 0;
   letter-spacing: -0.02em;
 }
 
 .av-version-desc {
-  color: rgba(255,255,255,0.55);
+  color: var(--text-mid);
   font-size: 0.9rem;
   margin: 0.35rem 0 0;
   line-height: 1.5;
@@ -99,7 +101,7 @@
 .av-btn-back {
   background: none;
   border: none;
-  color: rgba(255,255,255,0.55);
+  color: var(--text-mid);
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -111,7 +113,7 @@
   font-family: 'Inter', sans-serif;
 }
 
-.av-btn-back:hover { color: var(--white); }
+.av-btn-back:hover { color: var(--text-dark); }
 
 /* ── Body ── */
 .av-body {
