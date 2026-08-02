@@ -1,7 +1,7 @@
 /* -- Auditoria.css -- */
 
 .audit-page {
-  min-height: calc(100vh - 64px);
+  min-height: 100vh;
   background: var(--gray-50);
   display: flex;
   flex-direction: column;
@@ -9,25 +9,27 @@
 
 /* -- Header -- */
 .audit-header {
-  background: linear-gradient(135deg, var(--text-dark) 0%, #2a3f54 100%);
+  background: var(--white);
+  border-bottom: 2px solid var(--gray-100);
+  box-shadow: 0 2px 10px rgba(28,43,58,0.06);
 }
 
 .audit-header-inner {
   width: 100%;
-  padding: 2rem 2rem;
+  padding: 1.25rem 2rem;
 }
 
 .audit-title {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 1.75rem;
   font-weight: 800;
-  color: var(--white);
+  color: var(--text-dark);
   margin: 0 0 0.25rem;
 }
 
 .audit-subtitle {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-mid);
   margin: 0;
 }
 
