@@ -1,4 +1,4 @@
-# DSS — Decision Support System
+# DSS - Decision Support System
 
 Sistema de apoyo a la toma de decisiones para el despliegue de software.  
 Analiza resultados de pruebas automatizadas y genera recomendaciones sobre si un release está listo para producción.
