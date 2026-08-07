@@ -69,6 +69,7 @@ public class AnalisisController : ControllerBase
                     ProyectoTipo     = proyecto?.TipoSolucion ?? "",
                     VersionId        = version.Id,
                     VersionNumero    = version.NumeroVersion,
+                    ResultadoId      = rp.Id,
                     RecomendacionId  = r.Id,
                     Recomendacion    = r.TipoRecomendacion ?? "",
                     Justificacion    = r.Justificacion,

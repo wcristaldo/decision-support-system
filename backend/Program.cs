@@ -47,14 +47,20 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
 builder.Services.AddHttpContextAccessor();
 
-// Módulo de suscripciones + Pagopar
+// Módulo de suscripciones
 builder.Services.AddScoped<ISuscripcionService, SuscripcionService>();
-builder.Services.AddScoped<IPagoparService, PagoparService>();
-builder.Services.AddHttpClient("Pagopar", client =>
+
+// AdamsPay
+builder.Services.AddScoped<IAdamsPayService, AdamsPayService>();
+builder.Services.AddHttpClient("AdamsPay", client =>
 {
     client.Timeout = TimeSpan.FromSeconds(30);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
+
+// Email + PDF receipt
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddSingleton<IReceiptService, ReceiptService>();
 
 // CORS configuration
 builder.Services.AddCors(options =>
