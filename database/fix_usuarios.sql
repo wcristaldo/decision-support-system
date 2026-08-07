@@ -12,11 +12,11 @@
 DELETE FROM usuario_rol
 WHERE id_usuario IN (
     SELECT id_usuario FROM usuarios
-    WHERE email <> 'admin@roshka.com'
+    WHERE email <> 'wcristaldo@roshka.com'
 );
 
 DELETE FROM usuarios
-WHERE email <> 'admin@roshka.com';
+WHERE email <> 'wcristaldo@roshka.com';
 
 -- ── 2. Eliminar rol incorrecto "Desarrollador" ────────────────────────────
 DELETE FROM rol_permiso
