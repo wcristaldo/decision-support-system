@@ -174,22 +174,23 @@ public class EmailService : IEmailService
         var fecha = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
         var anio  = DateTime.Now.Year;
 
-        var html = $"""
+        // ── Body HTML ($$""" = doble $: CSS usa { } literal, interpolaciones usan {{expr}}) ──
+        var html = $$"""
             <!DOCTYPE html><html><head><meta charset="utf-8">
             <style>
-              body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #f5f7fa; }}
-              .wrap {{ max-width: 560px; margin: 32px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.08); }}
-              .header {{ background: #c0392b; color: #fff; padding: 28px 32px; }}
-              .header h1 {{ margin: 0 0 4px; font-size: 1.1rem; font-weight: 600; }}
-              .header p {{ margin: 0; font-size: 0.85rem; opacity: .85; }}
-              .badge {{ display: inline-block; background: #fff; color: #c0392b; font-weight: 700; font-size: 0.78rem; padding: 4px 12px; border-radius: 20px; margin-top: 12px; letter-spacing: .5px; }}
-              .body {{ padding: 28px 32px; }}
-              .intro {{ color: #4a647a; font-size: 0.92rem; margin-bottom: 24px; }}
-              table {{ width: 100%; border-collapse: collapse; margin-bottom: 24px; }}
-              td {{ padding: 10px 0; border-bottom: 1px solid #f0f4f8; font-size: 0.91rem; color: #1c2b3a; }}
-              td:first-child {{ color: #7e9ab2; width: 45%; }}
-              .alerta {{ background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; color: #7f1d1d; font-size: 0.9rem; }}
-              .footer {{ background: #f5f7fa; padding: 20px 32px; text-align: center; font-size: 0.8rem; color: #7e9ab2; }}
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #f5f7fa; }
+              .wrap { max-width: 560px; margin: 32px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+              .header { background: #c0392b; color: #fff; padding: 28px 32px; }
+              .header h1 { margin: 0 0 4px; font-size: 1.1rem; font-weight: 600; }
+              .header p { margin: 0; font-size: 0.85rem; opacity: .85; }
+              .badge { display: inline-block; background: #fff; color: #c0392b; font-weight: 700; font-size: 0.78rem; padding: 4px 12px; border-radius: 20px; margin-top: 12px; letter-spacing: .5px; }
+              .body { padding: 28px 32px; }
+              .intro { color: #4a647a; font-size: 0.92rem; margin-bottom: 24px; }
+              table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+              td { padding: 10px 0; border-bottom: 1px solid #f0f4f8; font-size: 0.91rem; color: #1c2b3a; }
+              td:first-child { color: #7e9ab2; width: 45%; }
+              .alerta { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; color: #7f1d1d; font-size: 0.9rem; }
+              .footer { background: #f5f7fa; padding: 20px 32px; text-align: center; font-size: 0.8rem; color: #7e9ab2; }
             </style></head>
             <body>
             <div class="wrap">
@@ -203,10 +204,10 @@ public class EmailService : IEmailService
                   El motor de recomendación ha detectado que los resultados de prueba no cumplen los umbrales mínimos de calidad configurados para este proyecto.
                 </div>
                 <table>
-                  <tr><td>Proyecto</td><td><strong>{proyectoNombre}</strong></td></tr>
-                  <tr><td>Versión</td><td>{versionNumero}</td></tr>
-                  <tr><td>Archivo evaluado</td><td>{archivoNombre}</td></tr>
-                  <tr><td>Fecha de evaluación</td><td>{fecha}</td></tr>
+                  <tr><td>Proyecto</td><td><strong>{{proyectoNombre}}</strong></td></tr>
+                  <tr><td>Versión</td><td>{{versionNumero}}</td></tr>
+                  <tr><td>Archivo evaluado</td><td>{{archivoNombre}}</td></tr>
+                  <tr><td>Fecha de evaluación</td><td>{{fecha}}</td></tr>
                   <tr><td>Recomendación</td><td><strong style="color:#c0392b">No Apto para Despliegue</strong></td></tr>
                 </table>
                 <p style="color:#7e9ab2;font-size:0.82rem;">
@@ -214,7 +215,7 @@ public class EmailService : IEmailService
                 </p>
               </div>
               <div class="footer">
-                SAD-Roshka &copy; {anio} &nbsp;|&nbsp; Notificación automática — no responder a este correo.
+                SAD-Roshka &copy; {{anio}} &nbsp;|&nbsp; Notificación automática — no responder a este correo.
               </div>
             </div>
             </body></html>
