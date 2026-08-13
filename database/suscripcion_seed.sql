@@ -1,8 +1,8 @@
 -- =============================================================
 -- suscripcion_seed.sql
--- Datos iniciales: 3 planes comerciales del sistema SAD-Roshka.
+-- Datos iniciales: 3 planes comerciales del sistema Roshka DSS.
 -- Ejecutar DESPUES de suscripcion_schema.sql
--- Fuente: Tabla 14 de la tesis (Planes comerciales SAD-Roshka)
+-- Fuente: Tabla 14 de la tesis (Planes comerciales Roshka DSS)
 -- =============================================================
 
 INSERT INTO planes_suscripcion (

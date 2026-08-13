@@ -1,7 +1,7 @@
 -- =============================================================
 -- migration_precios_planes.sql
 -- Actualización de planes según Tabla 14 de la tesis y
--- Presupuesto_SAD_Roshka_2026.xlsx (Hoja "Precios")
+-- Presupuesto_RoshkaDSS_2026.xlsx (Hoja "Precios")
 --
 -- PRECIOS:
 --   Básico:       400.000 → 250.000 Gs./mes

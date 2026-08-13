@@ -12,7 +12,7 @@ public interface IReceiptService
 public class ReceiptService : IReceiptService
 {
     // ── Datos del emisor ──────────────────────────────────────────────────────
-    private const string EmisorNombre  = "SAD-Roshka";
+    private const string EmisorNombre  = "Roshka DSS";
     private const string EmisorEmpresa = "Roshka S.A.";
     private const string EmisorDir1   = "Aviadores del Chaco 1669";
     private const string EmisorDir2   = "Asunción, Paraguay";
@@ -40,7 +40,7 @@ public class ReceiptService : IReceiptService
             : $"{fechaInicioStr} – {fechaVencStr}";
 
         // N° factura: versión más corta del docId
-        var nroFactura = recibo.DocId.Replace("SAD-", "RKA-").Replace("-202", "-");
+        var nroFactura = recibo.DocId.Replace("DSS-", "RKA-").Replace("-202", "-");
 
         var doc = Document.Create(container =>
         {
@@ -61,9 +61,9 @@ public class ReceiptService : IReceiptService
 
                         row.AutoItem().AlignRight().AlignBottom().Column(c =>
                         {
-                            c.Item().Text("SAD")
-                             .FontSize(20).Bold().FontColor("#1c2b3a").AlignRight();
-                            c.Item().Text("Sistema de Apoyo a la Decisión")
+                            c.Item().Text("Roshka DSS")
+                             .FontSize(18).Bold().FontColor("#1c2b3a").AlignRight();
+                            c.Item().Text("Decision Support System")
                              .FontSize(7f).FontColor("#7e9ab2").AlignRight();
                         });
                     });

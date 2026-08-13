@@ -164,7 +164,7 @@ export default function Suscripcion() {
         <div className="sus-header-icon"><IcCrown /></div>
         <div>
           <h1 className="sus-title">Suscripción</h1>
-          <p className="sus-subtitle">Gestioná tu plan SAD-Roshka y los métodos de pago.</p>
+          <p className="sus-subtitle">Gestioná tu plan Roshka DSS y los métodos de pago.</p>
         </div>
       </div>
 

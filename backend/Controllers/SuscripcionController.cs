@@ -127,8 +127,8 @@ public class SuscripcionController : ControllerBase
         if (plan == null)
             return NotFound(new { message = "Plan no encontrado." });
 
-        var docId = $"SAD-{plan.Id}-{DateTime.UtcNow:yyyyMMddHHmmss}";
-        var label = $"SAD-Roshka — Plan {plan.Nombre} ({DateTime.UtcNow:MM/yyyy})";
+        var docId = $"DSS-{plan.Id}-{DateTime.UtcNow:yyyyMMddHHmmss}";
+        var label = $"Roshka DSS — Plan {plan.Nombre} ({DateTime.UtcNow:MM/yyyy})";
 
         var (success, payUrl, error) = await _adams.CreateDebtAsync(docId, label, plan.PrecioMensual, validHours: 24);
 

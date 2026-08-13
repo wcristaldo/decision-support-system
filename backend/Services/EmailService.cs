@@ -52,7 +52,7 @@ public class EmailService : IEmailService
         var user     = _config["Email:Username"]     ?? "";
         var password = _config["Email:Password"]     ?? "";
         var from     = _config["Email:FromAddress"]  ?? user;
-        var fromName = _config["Email:FromName"]     ?? "SAD-Roshka";
+        var fromName = _config["Email:FromName"]     ?? "Roshka DSS";
 
         if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(password))
         {
@@ -78,7 +78,7 @@ public class EmailService : IEmailService
         foreach (var dest in destinatarios)
             message.To.Add(MailboxAddress.Parse(dest));
 
-        message.Subject = $"Recibo de pago — Plan {recibo.PlanNombre} — SAD-Roshka";
+        message.Subject = $"Recibo de pago — Plan {recibo.PlanNombre} — Roshka DSS";
 
         // ── Body HTML ($$""" = doble $: CSS usa { } literal, interpolaciones usan {{expr}}) ──
         var html = $$"""
@@ -111,7 +111,7 @@ public class EmailService : IEmailService
             <body>
             <div class="wrap">
               <div class="header">
-                <h1>SAD-Roshka · Sistema de Apoyo a la Decisión</h1>
+                <h1>Roshka DSS · Decision Support System</h1>
                 <p>Comprobante de pago de suscripción</p>
                 <span class="badge-aprobado">&#10003; Pago aprobado</span>
               </div>
@@ -132,7 +132,7 @@ public class EmailService : IEmailService
                 </p>
               </div>
               <div class="footer">
-                SAD-Roshka &copy; {{anio}} &nbsp;|&nbsp; Powered by <a href="https://adamspay.com">AdamsPay</a>
+                Roshka DSS &copy; {{anio}} &nbsp;|&nbsp; Powered by <a href="https://adamspay.com">AdamsPay</a>
               </div>
             </div>
             </body></html>
@@ -169,7 +169,7 @@ public class EmailService : IEmailService
         var user     = _config["Email:Username"]    ?? "";
         var password = _config["Email:Password"]    ?? "";
         var from     = _config["Email:FromAddress"] ?? user;
-        var fromName = _config["Email:FromName"]    ?? "SAD-Roshka";
+        var fromName = _config["Email:FromName"]    ?? "Roshka DSS";
 
         var fecha = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
         var anio  = DateTime.Now.Year;
@@ -195,7 +195,7 @@ public class EmailService : IEmailService
             <body>
             <div class="wrap">
               <div class="header">
-                <h1>SAD-Roshka · Alerta de Calidad</h1>
+                <h1>Roshka DSS · Alerta de Calidad</h1>
                 <p>Notificación automática del sistema</p>
                 <span class="badge">&#9888; No Apto para Despliegue</span>
               </div>
@@ -215,7 +215,7 @@ public class EmailService : IEmailService
                 </p>
               </div>
               <div class="footer">
-                SAD-Roshka &copy; {{anio}} &nbsp;|&nbsp; Notificación automática — no responder a este correo.
+                Roshka DSS &copy; {{anio}} &nbsp;|&nbsp; Notificación automática — no responder a este correo.
               </div>
             </div>
             </body></html>
@@ -225,7 +225,7 @@ public class EmailService : IEmailService
         message.From.Add(new MailboxAddress(fromName, from));
         foreach (var dest in destinatarios)
             message.To.Add(MailboxAddress.Parse(dest));
-        message.Subject = $"[SAD-Roshka] ⚠ No Apto para Despliegue — {proyectoNombre} v{versionNumero}";
+        message.Subject = $"[Roshka DSS] ⚠ No Apto para Despliegue — {proyectoNombre} v{versionNumero}";
         message.Body = new BodyBuilder { HtmlBody = html }.ToMessageBody();
 
         using var client = new SmtpClient();
