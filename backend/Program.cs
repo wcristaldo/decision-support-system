@@ -58,6 +58,14 @@ builder.Services.AddHttpClient("AdamsPay", client =>
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
+// PayPal
+builder.Services.AddScoped<IPayPalService, PayPalService>();
+builder.Services.AddHttpClient("PayPal", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
 // Email + PDF receipt
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSingleton<IReceiptService, ReceiptService>();

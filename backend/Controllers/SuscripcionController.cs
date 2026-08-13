@@ -15,6 +15,7 @@ public class SuscripcionController : ControllerBase
     private readonly ApplicationDbContext           _db;
     private readonly ISuscripcionService            _suscripcionService;
     private readonly IAdamsPayService               _adams;
+    private readonly IPayPalService                 _paypal;
     private readonly IEmailService                  _email;
     private readonly IReceiptService                _receipt;
     private readonly ILogger<SuscripcionController> _logger;
@@ -23,6 +24,7 @@ public class SuscripcionController : ControllerBase
         ApplicationDbContext            db,
         ISuscripcionService             suscripcionService,
         IAdamsPayService                adams,
+        IPayPalService                  paypal,
         IEmailService                   email,
         IReceiptService                 receipt,
         ILogger<SuscripcionController>  logger)
@@ -30,6 +32,7 @@ public class SuscripcionController : ControllerBase
         _db                 = db;
         _suscripcionService = suscripcionService;
         _adams              = adams;
+        _paypal             = paypal;
         _email              = email;
         _receipt            = receipt;
         _logger             = logger;
@@ -391,6 +394,149 @@ public class SuscripcionController : ControllerBase
     }
 }
 
+    // ── POST /api/suscripcion/iniciar-pago-paypal ────────────────────────────
+    /// <summary>
+    /// Crea una orden en PayPal y devuelve la URL de aprobación para redirigir al usuario.
+    /// FrontendUrl: origen del frontend (ej. http://localhost:5173) para construir returnUrl.
+    /// </summary>
+    [HttpPost("iniciar-pago-paypal")]
+    [Authorize]
+    public async Task<IActionResult> IniciarPagoPayPal([FromBody] IniciarPagoPayPalRequest req)
+    {
+        if (!User.IsInRole("Administrador")) return Forbid();
+
+        var plan = await _db.PlanesSuscripcion.FindAsync(req.IdPlan);
+        if (plan == null)
+            return NotFound(new { message = "Plan no encontrado." });
+
+        var returnUrl = $"{req.FrontendUrl}/suscripcion?pp_status=success&pp_planId={req.IdPlan}";
+        var cancelUrl = $"{req.FrontendUrl}/suscripcion?pp_status=cancel";
+
+        var (success, approvalUrl, orderId, error) = await _paypal.CreateOrderAsync(
+            req.IdPlan, plan.Nombre, plan.PrecioMensual, returnUrl, cancelUrl);
+
+        if (!success || approvalUrl == null)
+            return BadRequest(new { message = $"Error al crear orden en PayPal: {error}" });
+
+        // Obtener o crear suscripción pendiente
+        var sub = await _db.Suscripciones
+            .Where(s => s.Estado == "pendiente" || s.Estado == "activa")
+            .OrderByDescending(s => s.FechaCreacion)
+            .FirstOrDefaultAsync();
+
+        if (sub == null)
+        {
+            sub = new Suscripcion { IdPlan = plan.Id, Estado = "pendiente", FechaCreacion = DateTime.UtcNow };
+            _db.Suscripciones.Add(sub);
+        }
+        else
+        {
+            sub.IdPlan = plan.Id;
+            sub.Estado = "pendiente";
+        }
+
+        await _db.SaveChangesAsync();
+
+        // Registrar intento de pago — docId con prefijo PP-
+        _db.PagosSuscripcion.Add(new PagoSuscripcion
+        {
+            IdSuscripcion           = sub.Id,
+            IdPlan                  = plan.Id,
+            Monto                   = plan.PrecioMensual,
+            Estado                  = "pendiente",
+            PagoparIdPedidoComercio = $"PP-{orderId}",
+            PagoparHashPedido       = approvalUrl,
+            FechaCreacion           = DateTime.UtcNow
+        });
+
+        await _db.SaveChangesAsync();
+
+        _logger.LogInformation("Pago PayPal iniciado: orderId={OrderId} plan={Plan}", orderId, plan.Nombre);
+        return Ok(new { approvalUrl });
+    }
+
+    // ── POST /api/suscripcion/paypal-capture ─────────────────────────────────
+    /// <summary>
+    /// Captura la orden aprobada y activa la suscripción.
+    /// Llamado por el frontend tras el retorno de PayPal (?token=ORDER_ID).
+    /// </summary>
+    [HttpPost("paypal-capture")]
+    [Authorize]
+    public async Task<IActionResult> CapturePayPal([FromBody] PayPalCaptureRequest req)
+    {
+        if (!User.IsInRole("Administrador")) return Forbid();
+
+        var (success, transactionId, error) = await _paypal.CaptureOrderAsync(req.OrderId);
+        if (!success)
+            return BadRequest(new { message = error ?? "Error al capturar el pago con PayPal." });
+
+        var docIdPayPal = $"PP-{req.OrderId}";
+        var pago = await _db.PagosSuscripcion
+            .Include(p => p.Suscripcion)
+            .Include(p => p.Plan)
+            .FirstOrDefaultAsync(p => p.PagoparIdPedidoComercio == docIdPayPal);
+
+        if (pago == null)
+        {
+            _logger.LogWarning("paypal-capture: pago no encontrado para orderId={OrderId}", req.OrderId);
+            return NotFound(new { message = "Pago no encontrado. Contactá al administrador." });
+        }
+
+        pago.Estado            = "aprobado";
+        pago.FechaPago         = DateTime.UtcNow;
+        pago.PagoparRespuesta  = $"paypal_capture:{transactionId}";
+
+        if (pago.Suscripcion != null)
+        {
+            pago.Suscripcion.IdPlan           = pago.IdPlan;
+            pago.Suscripcion.Estado           = "activa";
+            pago.Suscripcion.FechaInicio      = DateTime.UtcNow;
+            pago.Suscripcion.FechaVencimiento = DateTime.UtcNow.AddDays(30);
+        }
+
+        await _db.SaveChangesAsync();
+
+        // Enviar recibo por email (no interrumpe el flujo si falla)
+        try
+        {
+            var admins = await _db.Usuarios
+                .Where(u => u.Estado == "activo"
+                         && u.UsuarioRoles.Any(ur => ur.Estado == "activo"
+                                                  && ur.Rol!.NombreRol == "Administrador"))
+                .Select(u => new { u.Nombre, u.Apellido, u.Email })
+                .ToListAsync();
+
+            if (admins.Count > 0)
+            {
+                var adminEmails = admins.Select(a => a.Email).ToList();
+                var primer      = admins.First();
+                var recibo = new ReciboData(
+                    DocId:            docIdPayPal,
+                    PlanNombre:       pago.Plan?.Nombre ?? "—",
+                    Monto:            pago.Monto,
+                    FechaPago:        pago.FechaPago!.Value,
+                    FechaInicio:      pago.Suscripcion?.FechaInicio,
+                    FechaVencimiento: pago.Suscripcion?.FechaVencimiento,
+                    NombreCliente:    $"{primer.Nombre} {primer.Apellido}".Trim(),
+                    EmailCliente:     primer.Email
+                );
+                var pdfBytes = _receipt.GenerarReciboPdf(recibo);
+                await _email.EnviarReciboAsync(recibo, adminEmails, pdfBytes);
+                _logger.LogInformation("Recibo PayPal enviado a {Count} admin(s)", admins.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error enviando recibo PayPal orderId={OrderId}", req.OrderId);
+        }
+
+        _logger.LogInformation("Suscripción activada via PayPal, orderId={OrderId}", req.OrderId);
+        return Ok(new { message = "¡Pago confirmado! Tu suscripción está activa." });
+    }
+}
+
 // ── Request DTOs ──────────────────────────────────────────────────────────────
 public record IniciarPagoRequest(int IdPlan);
+public record IniciarPagoPayPalRequest(int IdPlan, string FrontendUrl);
+public record PayPalCaptureRequest(string OrderId, int PlanId);
 public record CambiarPlanRequest(int IdPlan);

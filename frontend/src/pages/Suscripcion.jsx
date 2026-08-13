@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
+import PaymentModal from '../components/PaymentModal'
 import '../styles/Suscripcion.css'
 
 // ── Íconos SVG inline ────────────────────────────────────────────────────────
@@ -63,15 +64,17 @@ const pct = (v, max) => (max == null ? 0 : Math.min(100, (v / max) * 100))
 // ── Componente principal ─────────────────────────────────────────────────────
 
 export default function Suscripcion() {
-  const [planes, setPlanes]         = useState([])
-  const [actual, setActual]         = useState(null)
-  const [pagos, setPagos]           = useState([])
-  const [loading, setLoading]       = useState(true)
-  const [error, setError]           = useState(null)
-  const [tab, setTab]               = useState('estado')
-  const [procesando, setProcesando] = useState(false)
-  const [msg, setMsg]               = useState(null)
-  const [modal, setModal]           = useState(null)
+  const [planes, setPlanes]           = useState([])
+  const [actual, setActual]           = useState(null)
+  const [pagos, setPagos]             = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState(null)
+  const [tab, setTab]                 = useState('estado')
+  const [procesando, setProcesando]   = useState(false)
+  const [msg, setMsg]                 = useState(null)
+  const [modal, setModal]             = useState(null)
+  // Modal de selección de pasarela
+  const [payModal, setPayModal]       = useState(null)   // { id, nombre, precioMensual }
 
   const roles   = JSON.parse(localStorage.getItem('userRoles') || '[]')
   const esAdmin = roles.includes('Administrador')
@@ -115,13 +118,41 @@ export default function Suscripcion() {
     const params = new URLSearchParams(window.location.search)
     if (params.get('intent') === 'pay-debt') {
       window.history.replaceState({}, '', '/suscripcion')
-      setMsg({
-        tipo: 'ok',
-        texto: 'Pago recibido por AdamsPay. Verificando estado de tu suscripción…'
-      })
+      setMsg({ tipo: 'ok', texto: 'Pago recibido por AdamsPay. Verificando estado de tu suscripción…' })
       setTab('pagos')
-      // Recargar 2 s después para darle tiempo al webhook
       setTimeout(() => cargar(), 2500)
+    }
+  }, [cargar])
+
+  // ── Detectar retorno desde PayPal ─────────────────────────────────────────
+  useEffect(() => {
+    const params  = new URLSearchParams(window.location.search)
+    const ppStatus = params.get('pp_status')
+    const ppToken  = params.get('token')      // PayPal agrega ?token=ORDER_ID al retornar
+    const ppPlanId = params.get('pp_planId')
+
+    if (ppStatus === 'success' && ppToken) {
+      window.history.replaceState({}, '', '/suscripcion')
+      setTab('pagos')
+      setMsg({ tipo: 'ok', texto: 'Confirmando pago con PayPal…' })
+
+      api.post('/suscripcion/paypal-capture', { orderId: ppToken, planId: Number(ppPlanId) })
+        .then(() => {
+          setMsg({ tipo: 'ok', texto: '¡Pago PayPal confirmado! Tu suscripción está activa.' })
+          cargar()
+        })
+        .catch((e) => {
+          setModal({
+            type: 'error',
+            title: 'Error al confirmar el pago PayPal',
+            message: e.response?.data?.message ?? 'No se pudo confirmar el pago. Contactá al soporte.'
+          })
+        })
+    }
+
+    if (ppStatus === 'cancel') {
+      window.history.replaceState({}, '', '/suscripcion')
+      setMsg({ tipo: 'error', texto: 'Pago con PayPal cancelado. Podés intentarlo de nuevo.' })
     }
   }, [cargar])
 
@@ -132,7 +163,14 @@ export default function Suscripcion() {
     setTimeout(() => setMsg(null), 7000)
   }
 
-  const contratarPlan = async (idPlan) => {
+  // Abre el modal selector de pasarela
+  const contratarPlan = (plan) => {
+    setPayModal(plan)
+  }
+
+  // Pago con AdamsPay (flujo original)
+  const pagarConAdamsPay = async (idPlan) => {
+    setPayModal(null)
     setProcesando(true)
     try {
       const { data } = await api.post('/suscripcion/iniciar-pago', { idPlan })
@@ -140,8 +178,27 @@ export default function Suscripcion() {
     } catch (e) {
       setModal({
         type: 'error',
-        title: 'Error al iniciar el pago',
+        title: 'Error al iniciar el pago con AdamsPay',
         message: e.response?.data?.message ?? 'No se pudo conectar con AdamsPay. Intentá nuevamente.'
+      })
+    } finally {
+      setProcesando(false)
+    }
+  }
+
+  // Pago con PayPal — redirige al checkout de PayPal sandbox
+  const pagarConPayPal = async (idPlan) => {
+    setPayModal(null)
+    setProcesando(true)
+    try {
+      const frontendUrl = window.location.origin
+      const { data } = await api.post('/suscripcion/iniciar-pago-paypal', { idPlan, frontendUrl })
+      window.location.href = data.approvalUrl
+    } catch (e) {
+      setModal({
+        type: 'error',
+        title: 'Error al iniciar el pago con PayPal',
+        message: e.response?.data?.message ?? 'No se pudo conectar con PayPal. Intentá nuevamente.'
       })
     } finally {
       setProcesando(false)
@@ -183,6 +240,16 @@ export default function Suscripcion() {
         title={modal?.title}
         message={modal?.message}
         onClose={() => setModal(null)}
+      />
+
+      {/* ── Modal selector de pasarela de pago ── */}
+      <PaymentModal
+        isOpen={!!payModal}
+        plan={payModal}
+        cargando={procesando}
+        onClose={() => setPayModal(null)}
+        onAdamsPay={pagarConAdamsPay}
+        onPayPal={pagarConPayPal}
       />
 
       {/* ── Tabs ── */}
@@ -315,7 +382,7 @@ export default function Suscripcion() {
                       {esAdmin ? (
                         <button
                           className="sus-btn sus-btn--primary sus-btn--full"
-                          onClick={() => contratarPlan(p.id)}
+                          onClick={() => contratarPlan(p)}
                           disabled={procesando}
                         >
                           {procesando ? 'Procesando…' : `Contratar — ${formatGs(p.precioMensual)}/mes`}
