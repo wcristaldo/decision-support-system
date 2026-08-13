@@ -104,7 +104,7 @@ function AboutContent() {
 const PLANS = [
   {
     nombre: 'Básico',
-    precio: 'Gs. 400.000',
+    precio: 'Gs. 250.000',
     color: 'basic',
     features: [
       { label: '1 proyecto',              ok: true  },
@@ -121,7 +121,7 @@ const PLANS = [
   },
   {
     nombre: 'Profesional',
-    precio: 'Gs. 1.000.000',
+    precio: 'Gs. 500.000',
     color: 'pro',
     badge: 'Recomendado',
     features: [
@@ -139,7 +139,7 @@ const PLANS = [
   },
   {
     nombre: 'Empresarial',
-    precio: 'Gs. 2.500.000',
+    precio: 'Gs. 900.000',
     color: 'enterprise',
     features: [
       { label: 'Proyectos ilimitados',       ok: true },
