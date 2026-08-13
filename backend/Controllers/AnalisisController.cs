@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DecisionSupportAPI.Data;
 using DecisionSupportAPI.DTOs;
+using DecisionSupportAPI.Services;
 
 namespace DecisionSupportAPI.Controllers;
 
@@ -10,10 +11,12 @@ namespace DecisionSupportAPI.Controllers;
 public class AnalisisController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly ISuscripcionService _suscripcionService;
 
-    public AnalisisController(ApplicationDbContext context)
+    public AnalisisController(ApplicationDbContext context, ISuscripcionService suscripcionService)
     {
         _context = context;
+        _suscripcionService = suscripcionService;
     }
 
     /// <summary>
@@ -25,14 +28,26 @@ public class AnalisisController : ControllerBase
     [HttpGet("historial")]
     public async Task<ActionResult<List<AnalisisHistorialDto>>> GetHistorial()
     {
+        // Aplicar límite de historial según plan activo
+        var plan = await _suscripcionService.GetPlanActivoAsync();
+        DateTime? fechaMinima = plan?.HistorialDias.HasValue == true
+            ? DateTime.UtcNow.AddDays(-plan.HistorialDias!.Value)
+            : null;
+
         // Carga recomendaciones con la cadena completa: evaluacion → resultado → version + metricas
-        var recomendaciones = await _context.Recomendaciones
+        var query = _context.Recomendaciones
             .Include(r => r.Evaluacion)
                 .ThenInclude(e => e!.Resultado)
                     .ThenInclude(rp => rp!.Version)
             .Include(r => r.Evaluacion)
                 .ThenInclude(e => e!.Resultado)
                     .ThenInclude(rp => rp!.Metricas)
+            .AsQueryable();
+
+        if (fechaMinima.HasValue)
+            query = query.Where(r => r.FechaGeneracion >= fechaMinima.Value);
+
+        var recomendaciones = await query
             .OrderByDescending(r => r.FechaGeneracion)
             .ToListAsync();
 

@@ -20,6 +20,17 @@ public record ReciboData(
 public interface IEmailService
 {
     Task EnviarReciboAsync(ReciboData recibo, List<string> destinatarios, byte[] pdfBytes);
+
+    /// <summary>
+    /// Envía una alerta automática a los administradores cuando un resultado
+    /// genera recomendación "No Apto para despliegue".
+    /// Requiere que el plan activo tenga NotificacionesEmail = true.
+    /// </summary>
+    Task EnviarAlertaNoAptoAsync(
+        string proyectoNombre,
+        string versionNumero,
+        string archivoNombre,
+        List<string> destinatarios);
 }
 
 // ── Implementación ────────────────────────────────────────────────────────────
@@ -138,6 +149,84 @@ public class EmailService : IEmailService
         message.Body = bodyBuilder.ToMessageBody();
 
         // ── Envío via SMTP ───────────────────────────────────────────────────
+        using var client = new SmtpClient();
+        await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+        await client.AuthenticateAsync(user, password);
+        await client.SendAsync(message);
+        await client.DisconnectAsync(true);
+    }
+
+    public async Task EnviarAlertaNoAptoAsync(
+        string proyectoNombre,
+        string versionNumero,
+        string archivoNombre,
+        List<string> destinatarios)
+    {
+        if (destinatarios.Count == 0) return;
+
+        var host     = _config["Email:SmtpHost"]    ?? "";
+        var port     = int.Parse(_config["Email:SmtpPort"] ?? "587");
+        var user     = _config["Email:Username"]    ?? "";
+        var password = _config["Email:Password"]    ?? "";
+        var from     = _config["Email:FromAddress"] ?? user;
+        var fromName = _config["Email:FromName"]    ?? "SAD-Roshka";
+
+        var fecha = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+        var anio  = DateTime.Now.Year;
+
+        var html = $"""
+            <!DOCTYPE html><html><head><meta charset="utf-8">
+            <style>
+              body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #f5f7fa; }}
+              .wrap {{ max-width: 560px; margin: 32px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.08); }}
+              .header {{ background: #c0392b; color: #fff; padding: 28px 32px; }}
+              .header h1 {{ margin: 0 0 4px; font-size: 1.1rem; font-weight: 600; }}
+              .header p {{ margin: 0; font-size: 0.85rem; opacity: .85; }}
+              .badge {{ display: inline-block; background: #fff; color: #c0392b; font-weight: 700; font-size: 0.78rem; padding: 4px 12px; border-radius: 20px; margin-top: 12px; letter-spacing: .5px; }}
+              .body {{ padding: 28px 32px; }}
+              .intro {{ color: #4a647a; font-size: 0.92rem; margin-bottom: 24px; }}
+              table {{ width: 100%; border-collapse: collapse; margin-bottom: 24px; }}
+              td {{ padding: 10px 0; border-bottom: 1px solid #f0f4f8; font-size: 0.91rem; color: #1c2b3a; }}
+              td:first-child {{ color: #7e9ab2; width: 45%; }}
+              .alerta {{ background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; color: #7f1d1d; font-size: 0.9rem; }}
+              .footer {{ background: #f5f7fa; padding: 20px 32px; text-align: center; font-size: 0.8rem; color: #7e9ab2; }}
+            </style></head>
+            <body>
+            <div class="wrap">
+              <div class="header">
+                <h1>SAD-Roshka · Alerta de Calidad</h1>
+                <p>Notificación automática del sistema</p>
+                <span class="badge">&#9888; No Apto para Despliegue</span>
+              </div>
+              <div class="body">
+                <div class="alerta">
+                  El motor de recomendación ha detectado que los resultados de prueba no cumplen los umbrales mínimos de calidad configurados para este proyecto.
+                </div>
+                <table>
+                  <tr><td>Proyecto</td><td><strong>{proyectoNombre}</strong></td></tr>
+                  <tr><td>Versión</td><td>{versionNumero}</td></tr>
+                  <tr><td>Archivo evaluado</td><td>{archivoNombre}</td></tr>
+                  <tr><td>Fecha de evaluación</td><td>{fecha}</td></tr>
+                  <tr><td>Recomendación</td><td><strong style="color:#c0392b">No Apto para Despliegue</strong></td></tr>
+                </table>
+                <p style="color:#7e9ab2;font-size:0.82rem;">
+                  Ingresá al sistema para revisar las métricas en detalle y registrar la decisión de despliegue correspondiente.
+                </p>
+              </div>
+              <div class="footer">
+                SAD-Roshka &copy; {anio} &nbsp;|&nbsp; Notificación automática — no responder a este correo.
+              </div>
+            </div>
+            </body></html>
+            """;
+
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress(fromName, from));
+        foreach (var dest in destinatarios)
+            message.To.Add(MailboxAddress.Parse(dest));
+        message.Subject = $"[SAD-Roshka] ⚠ No Apto para Despliegue — {proyectoNombre} v{versionNumero}";
+        message.Body = new BodyBuilder { HtmlBody = html }.ToMessageBody();
+
         using var client = new SmtpClient();
         await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
         await client.AuthenticateAsync(user, password);
