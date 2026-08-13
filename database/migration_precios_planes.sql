@@ -21,9 +21,13 @@ UPDATE planes_suscripcion SET precio_mensual = 250000.00  WHERE nombre = 'Básic
 UPDATE planes_suscripcion SET precio_mensual = 500000.00  WHERE nombre = 'Profesional';
 UPDATE planes_suscripcion SET precio_mensual = 900000.00  WHERE nombre = 'Empresarial';
 
--- Límites de usuarios (Tabla 14 tesis)
-UPDATE planes_suscripcion SET max_usuarios = 10  WHERE nombre = 'Básico';
-UPDATE planes_suscripcion SET max_usuarios = 25  WHERE nombre = 'Profesional';
+-- Límites de usuarios
+UPDATE planes_suscripcion SET max_usuarios   = 10  WHERE nombre = 'Básico';
+UPDATE planes_suscripcion SET max_usuarios   = 25  WHERE nombre = 'Profesional';
+
+-- Límites de proyectos
+UPDATE planes_suscripcion SET max_proyectos  =  3  WHERE nombre = 'Básico';
+UPDATE planes_suscripcion SET max_proyectos  = 10  WHERE nombre = 'Profesional';
 
 -- Verificación
 SELECT nombre, precio_mensual, max_proyectos, max_usuarios, max_evaluaciones_mes

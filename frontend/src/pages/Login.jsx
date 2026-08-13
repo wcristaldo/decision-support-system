@@ -107,7 +107,7 @@ const PLANS = [
     precio: 'Gs. 250.000',
     color: 'basic',
     features: [
-      { label: '1 proyecto',              ok: true  },
+      { label: '3 proyectos',             ok: true  },
       { label: '10 usuarios',             ok: true  },
       { label: '100 evaluaciones/mes',    ok: true  },
       { label: 'Archivos hasta 5 MB',     ok: true  },
@@ -125,7 +125,7 @@ const PLANS = [
     color: 'pro',
     badge: 'Recomendado',
     features: [
-      { label: '5 proyectos',             ok: true  },
+      { label: '10 proyectos',            ok: true  },
       { label: '25 usuarios',             ok: true  },
       { label: '500 evaluaciones/mes',    ok: true  },
       { label: 'Archivos hasta 20 MB',    ok: true  },
