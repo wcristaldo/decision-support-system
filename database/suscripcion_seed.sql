@@ -17,7 +17,7 @@ INSERT INTO planes_suscripcion (
 -- ── Plan Básico ──────────────────────────────────────────────────────────
 (
     'Básico', 250000.00,
-    1, 3, 100, 5,
+    1, 10, 100, 5,
     30,
     FALSE, FALSE, FALSE, FALSE,
     FALSE, FALSE,
@@ -27,7 +27,7 @@ INSERT INTO planes_suscripcion (
 -- ── Plan Profesional ─────────────────────────────────────────────────────
 (
     'Profesional', 500000.00,
-    5, 10, 500, 20,
+    5, 25, 500, 20,
     NULL,           -- historial completo
     TRUE, FALSE, TRUE, FALSE,
     TRUE, FALSE,
