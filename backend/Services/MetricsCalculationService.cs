@@ -19,6 +19,7 @@ public interface IMetricsCalculationService
         decimal tiempoEjecucion);
 
     Task<List<Metrica>> GetMetricsByVersionAsync(int versionId);
+    Task<List<Metrica>> GetMetricsByResultadoAsync(int resultadoId);
 }
 
 public class MetricsCalculationService : IMetricsCalculationService
@@ -70,15 +71,28 @@ public class MetricsCalculationService : IMetricsCalculationService
         await _context.SaveChangesAsync();
     }
 
+    public async Task<List<Metrica>> GetMetricsByResultadoAsync(int resultadoId)
+    {
+        return await _context.Metricas
+            .Where(m => m.ResultadoId == resultadoId)
+            .OrderBy(m => m.NombreMetrica)
+            .ToListAsync();
+    }
+
     public async Task<List<Metrica>> GetMetricsByVersionAsync(int versionId)
     {
-        var resultadoIds = await _context.ResultadosPrueba
+        // Solo retornar métricas del resultado más reciente de la versión
+        var ultimoResultadoId = await _context.ResultadosPrueba
             .Where(r => r.VersionId == versionId)
+            .OrderByDescending(r => r.FechaCarga)
             .Select(r => r.Id)
-            .ToListAsync();
+            .FirstOrDefaultAsync();
+
+        if (ultimoResultadoId == 0)
+            return new List<Metrica>();
 
         return await _context.Metricas
-            .Where(m => resultadoIds.Contains(m.ResultadoId))
+            .Where(m => m.ResultadoId == ultimoResultadoId)
             .OrderBy(m => m.NombreMetrica)
             .ToListAsync();
     }

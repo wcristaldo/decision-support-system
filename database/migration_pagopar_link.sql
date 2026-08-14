@@ -1,0 +1,2 @@
+-- CANCELADO — no ejecutar.
+-- Este script fue revertido. No contiene cambios activos.

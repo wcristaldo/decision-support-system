@@ -29,4 +29,19 @@ public class MetricasController : ControllerBase
             FechaCalculo = m.FechaCalculo
         }).ToList());
     }
+
+    [HttpGet("resultado/{resultadoId}")]
+    public async Task<ActionResult<List<MetricaDto>>> GetByResultado(int resultadoId)
+    {
+        var metricas = await _metricsService.GetMetricsByResultadoAsync(resultadoId);
+        return Ok(metricas.Select(m => new MetricaDto
+        {
+            Id = m.Id,
+            ResultadoId = m.ResultadoId,
+            NombreMetrica = m.NombreMetrica,
+            ValorMetrica = m.ValorMetrica,
+            Unidad = m.Unidad,
+            FechaCalculo = m.FechaCalculo
+        }).ToList());
+    }
 }

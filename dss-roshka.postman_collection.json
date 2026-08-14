@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "9bbdc857-f397-4395-bb05-24ed979a7894",
-    "name": "SAD-Roshka - Sistema de Apoyo a Decisiones",
-    "description": "Colección completa de endpoints de la API REST del SAD-Roshka (tesis UNIDA). Base URL: http://localhost:5000/api\n\n**Setup rápido:**\n1. Ejecutar 'POST Login' → el token se guarda automáticamente en la variable `{{token}}`.\n2. Todos los endpoints protegidos ya usan `Bearer {{token}}`.\n\n**Flujo Pagopar (staging):**\n1. Login → 2. GET Planes → 3. POST Iniciar Pago → 4. POST Simular Webhook Pago → 5. GET Suscripción Actual",
+    "name": "Roshka DSS - Decision Support System",
+    "description": "Colección completa de endpoints de la API REST del Roshka DSS (tesis UNIDA). Base URL: http://localhost:5000/api\n\n**Setup rápido:**\n1. Ejecutar 'POST Login' → el token se guarda automáticamente en la variable `{{token}}`.\n2. Todos los endpoints protegidos ya usan `Bearer {{token}}`.\n\n**Flujo AdamsPay (staging):**\n1. Login → 2. GET Planes → 3. POST Iniciar Pago → 4. POST Simular Webhook Pago → 5. GET Suscripción Actual",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "48542171",
     "_collection_link": "https://go.postman.co/collection/48542171-9bbdc857-f397-4395-bb05-24ed979a7894?source=collection_link"

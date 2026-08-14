@@ -7,6 +7,7 @@ public class AnalisisHistorialDto
     public string ProyectoTipo     { get; set; } = "";
     public int    VersionId        { get; set; }
     public string VersionNumero    { get; set; } = "";
+    public int    ResultadoId       { get; set; }
     public int    RecomendacionId  { get; set; }
     public string Recomendacion    { get; set; } = "";
     public string? Justificacion   { get; set; }
