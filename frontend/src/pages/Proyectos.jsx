@@ -408,6 +408,7 @@ function Proyectos() {
                   <th>Tipo</th>
                   <th>Versión</th>
                   <th>Estado</th>
+                  <th>Creado el</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -431,6 +432,9 @@ function Proyectos() {
                       <td className="proy-td-version">{p.versionInicial || '1.0.0'}</td>
                       <td>
                         <span className={`proy-badge ${est.cls}`}>{est.text}</span>
+                      </td>
+                      <td style={{fontSize:'0.78rem',color:'#5d6d7e',fontFamily:'monospace',whiteSpace:'nowrap'}}>
+                        {p.fechaCreacion ? new Date(p.fechaCreacion).toLocaleString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'}
                       </td>
                       <td>
                         <div className="proy-actions">

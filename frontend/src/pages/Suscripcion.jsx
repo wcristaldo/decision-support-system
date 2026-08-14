@@ -81,6 +81,8 @@ export default function Suscripcion() {
   const [porPagina, setPorPagina]       = useState(10)
   const [filtroEstado, setFiltroEstado] = useState('')
   const [filtroPlan, setFiltroPlan]     = useState('')
+  const [filtroDesde, setFiltroDesde]   = useState('')
+  const [filtroHasta, setFiltroHasta]   = useState('')
 
   const roles   = JSON.parse(localStorage.getItem('userRoles') || '[]')
   const esAdmin = roles.includes('Administrador')
@@ -226,7 +228,10 @@ export default function Suscripcion() {
   const pagosFiltrados = pagos.filter(p => {
     const okEstado = !filtroEstado || p.estado === filtroEstado
     const okPlan   = !filtroPlan   || p.plan   === filtroPlan
-    return okEstado && okPlan
+    const fecha    = p.fechaPago ? new Date(p.fechaPago) : null
+    const okDesde  = !filtroDesde || (fecha && fecha >= new Date(filtroDesde))
+    const okHasta  = !filtroHasta || (fecha && fecha <= new Date(filtroHasta + 'T23:59:59'))
+    return okEstado && okPlan && okDesde && okHasta
   })
 
   const totalPaginas = Math.max(1, Math.ceil(pagosFiltrados.length / porPagina))
@@ -474,10 +479,16 @@ export default function Suscripcion() {
                     ))}
                   </select>
 
-                  {(filtroEstado || filtroPlan) && (
+                  <label style={{fontSize:'0.8rem',color:'#5d6d7e',display:'flex',alignItems:'center',gap:'0.3rem'}}>
+                    Desde <input type="date" value={filtroDesde} onChange={e=>{setFiltroDesde(e.target.value);setPaginaActual(1)}} className="sus-hist-select" style={{paddingLeft:'0.5rem'}} />
+                  </label>
+                  <label style={{fontSize:'0.8rem',color:'#5d6d7e',display:'flex',alignItems:'center',gap:'0.3rem'}}>
+                    Hasta <input type="date" value={filtroHasta} onChange={e=>{setFiltroHasta(e.target.value);setPaginaActual(1)}} className="sus-hist-select" style={{paddingLeft:'0.5rem'}} />
+                  </label>
+                  {(filtroEstado || filtroPlan || filtroDesde || filtroHasta) && (
                     <button
                       className="sus-hist-clear"
-                      onClick={() => { setFiltroEstado(''); setFiltroPlan(''); setPaginaActual(1) }}
+                      onClick={() => { setFiltroEstado(''); setFiltroPlan(''); setFiltroDesde(''); setFiltroHasta(''); setPaginaActual(1) }}
                     >
                       ✕ Limpiar filtros
                     </button>
