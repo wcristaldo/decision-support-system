@@ -480,6 +480,7 @@ export default function UserManagement() {
                   <th>Correo</th>
                   <th>Rol</th>
                   <th>Estado</th>
+                  <th>Creado el</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -499,9 +500,10 @@ export default function UserManagement() {
                       <td className="um-td-email">{u.email}</td>
                       <td className="um-td-rol">{rolLabel}</td>
                       <td>
-                        <span className={`um-badge ${esActivo ? 'um-badge-ok' : 'um-badge-off'}`}>
-                          {esActivo ? 'Activo' : 'Inactivo'}
-                        </span>
+                        <span className={`um-estado-badge um-estado-badge--${u.estado}`}>{u.estado}</span>
+                      </td>
+                      <td style={{fontSize:'0.78rem',color:'#5d6d7e',fontFamily:'monospace',whiteSpace:'nowrap'}}>
+                        {u.fechaCreacion ? new Date(u.fechaCreacion).toLocaleString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'}
                       </td>
                       <td>
                         <div className="um-actions">

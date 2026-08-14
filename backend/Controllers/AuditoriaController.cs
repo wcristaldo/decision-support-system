@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using DecisionSupportAPI.Data;
 using DecisionSupportAPI.DTOs;
+using DecisionSupportAPI.Services;
 using System.Security.Claims;
 
 namespace DecisionSupportAPI.Controllers;
@@ -13,10 +14,12 @@ namespace DecisionSupportAPI.Controllers;
 public class AuditoriaController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly ISuscripcionService _suscripcionService;
 
-    public AuditoriaController(ApplicationDbContext context)
+    public AuditoriaController(ApplicationDbContext context, ISuscripcionService suscripcionService)
     {
         _context = context;
+        _suscripcionService = suscripcionService;
     }
 
     [HttpGet]
@@ -33,6 +36,13 @@ public class AuditoriaController : ControllerBase
 
         if (!isAdmin)
             return Forbid("Solo administradores pueden acceder a la auditoría");
+
+        // ── Verificar feature auditoria_detallada ────────────────────────────
+        var limiteAuditoria = await _suscripcionService.VerificarFeatureAsync(
+            p => p.AuditoriaDetallada,
+            "Auditoría detallada");
+        if (!limiteAuditoria.Permitido)
+            return StatusCode(402, new { message = limiteAuditoria.Mensaje, codigo = "FEATURE_AUDITORIA_DETALLADA" });
 
         var query = _context.Auditoria.AsQueryable();
 

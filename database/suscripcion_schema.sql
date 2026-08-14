@@ -1,6 +1,6 @@
 -- =============================================================
 -- suscripcion_schema.sql
--- Módulo de suscripciones SaaS del sistema SAD-Roshka.
+-- Módulo de suscripciones SaaS del sistema Roshka DSS.
 -- Ejecutar DESPUES de schema.sql
 -- Modelo de negocio: Tabla 13 y 14 de la tesis (Lean Canvas)
 -- =============================================================
