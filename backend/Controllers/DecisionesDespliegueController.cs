@@ -79,6 +79,39 @@ public class DecisionesDespliegueController : ControllerBase
         }).ToList());
     }
 
+    /// <summary>
+    /// GET /api/decisionesDespliegue/resultado/{resultadoId}
+    /// Devuelve las decisiones de despliegue asociadas a un resultado específico.
+    /// </summary>
+    [HttpGet("resultado/{resultadoId}")]
+    public async Task<ActionResult<List<DecisionDespliegueDto>>> GetByResultado(int resultadoId)
+    {
+        var evaluacionIds = await _context.Evaluaciones
+            .Where(e => e.ResultadoId == resultadoId)
+            .Select(e => e.Id)
+            .ToListAsync();
+
+        var recomendacionIds = await _context.Recomendaciones
+            .Where(r => evaluacionIds.Contains(r.EvaluacionId))
+            .Select(r => r.Id)
+            .ToListAsync();
+
+        var decisiones = await _context.DecisionesDespliegue
+            .Where(d => recomendacionIds.Contains(d.RecomendacionId))
+            .OrderByDescending(d => d.FechaDecision)
+            .ToListAsync();
+
+        return Ok(decisiones.Select(d => new DecisionDespliegueDto
+        {
+            Id               = d.Id,
+            RecomendacionId  = d.RecomendacionId,
+            UsuarioDecisorId = d.UsuarioDecisorId,
+            DecisionFinal    = d.DecisionFinal,
+            Comentario       = d.Comentario,
+            FechaDecision    = d.FechaDecision
+        }).ToList());
+    }
+
     [HttpPost]
     public async Task<ActionResult<DecisionDespliegueDto>> Create([FromBody] CreateDecisionDespliegueDto request)
     {

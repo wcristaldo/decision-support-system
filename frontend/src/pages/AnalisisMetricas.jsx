@@ -6,9 +6,17 @@ import '../styles/AnalisisMetricas.css'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Normaliza valores de la DB a las constantes usadas en el frontend */
+function normalizeRec(t) {
+  if (!t) return ''
+  const u = t.toUpperCase()
+  if (u === 'DESPLEGAR_CON_OBSERVACIONES') return 'REVISAR'
+  return u
+}
+
 function badgeClass(rec) {
   if (!rec) return 'am-badge--warn'
-  const r = rec.toUpperCase()
+  const r = normalizeRec(rec)
   if (r === 'DESPLEGAR')    return 'am-badge--ok'
   if (r === 'NO_DESPLEGAR') return 'am-badge--danger'
   return 'am-badge--warn'
@@ -16,7 +24,7 @@ function badgeClass(rec) {
 
 function badgeLabel(rec) {
   if (!rec) return '-'
-  const r = rec.toUpperCase()
+  const r = normalizeRec(rec)
   if (r === 'DESPLEGAR')    return 'Desplegar'
   if (r === 'NO_DESPLEGAR') return 'No desplegar'
   return 'Revisar'
@@ -73,14 +81,14 @@ function AnalisisMetricas() {
 
   const stats = useMemo(() => ({
     total:       historial.length,
-    desplegar:   historial.filter(h => h.recomendacion?.toUpperCase() === 'DESPLEGAR').length,
-    revisar:     historial.filter(h => h.recomendacion?.toUpperCase() === 'REVISAR').length,
-    noDesplegar: historial.filter(h => h.recomendacion?.toUpperCase() === 'NO_DESPLEGAR').length,
+    desplegar:   historial.filter(h => normalizeRec(h.recomendacion) === 'DESPLEGAR').length,
+    revisar:     historial.filter(h => normalizeRec(h.recomendacion) === 'REVISAR').length,
+    noDesplegar: historial.filter(h => normalizeRec(h.recomendacion) === 'NO_DESPLEGAR').length,
   }), [historial])
 
   const filas = useMemo(() => {
     if (filtro === 'Todos') return historial
-    return historial.filter(h => h.recomendacion?.toUpperCase() === filtro)
+    return historial.filter(h => normalizeRec(h.recomendacion) === filtro)
   }, [historial, filtro])
 
   return (
@@ -238,7 +246,7 @@ function AnalisisMetricas() {
                       </td>
                       <td>
                         <Link
-                          to={`/versiones/${h.versionId}/analisis`}
+                          to={`/versiones/${h.versionId}/analisis?resultado=${h.resultadoId}`}
                           className="am-btn-ver"
                         >
                           Ver →

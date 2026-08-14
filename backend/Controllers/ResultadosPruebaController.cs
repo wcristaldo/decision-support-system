@@ -16,19 +16,22 @@ public class ResultadosPruebaController : ControllerBase
     private readonly IRecommendationEngine _recommendationEngine;
     private readonly IAuditService _auditService;
     private readonly ISuscripcionService _suscripcionService;
+    private readonly IEmailService _emailService;
 
     public ResultadosPruebaController(
         ApplicationDbContext context,
         IMetricsCalculationService metricsService,
         IRecommendationEngine recommendationEngine,
         IAuditService auditService,
-        ISuscripcionService suscripcionService)
+        ISuscripcionService suscripcionService,
+        IEmailService emailService)
     {
         _context = context;
         _metricsService = metricsService;
         _recommendationEngine = recommendationEngine;
         _auditService = auditService;
         _suscripcionService = suscripcionService;
+        _emailService = emailService;
     }
 
     [HttpGet("version/{versionId}")]
@@ -58,10 +61,17 @@ public class ResultadosPruebaController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        // ── Verificar límite de plan ──────────────────────────────────────
+        // ── Verificar límites de plan ─────────────────────────────────────
         var limite = await _suscripcionService.VerificarLimiteEvaluacionesMesAsync();
         if (!limite.Permitido)
             return StatusCode(402, new { message = limite.Mensaje, codigo = "LIMITE_EVALUACIONES" });
+
+        if (request.TamanoBytes.HasValue)
+        {
+            var limiteArchivo = await _suscripcionService.VerificarTamanoArchivoAsync(request.TamanoBytes.Value);
+            if (!limiteArchivo.Permitido)
+                return StatusCode(402, new { message = limiteArchivo.Mensaje, codigo = "LIMITE_TAMANO_ARCHIVO" });
+        }
 
         // Validar coherencia de pruebas
         if (request.PruebasExitosas + request.PruebasFallidas > request.TotalPruebas)
@@ -94,6 +104,51 @@ public class ResultadosPruebaController : ControllerBase
             request.TiempoEjecucion);
 
         await _recommendationEngine.GenerateRecommendationsAsync(request.VersionId);
+
+        // ── Notificación automática si plan lo permite ────────────────────
+        try
+        {
+            var plan = await _suscripcionService.GetPlanActivoAsync();
+            if (plan?.NotificacionesEmail == true)
+            {
+                // Verificar si la recomendación generada es "no_desplegar"
+                var ultimaRec = await _context.Recomendaciones
+                    .Include(r => r.Evaluacion)
+                    .Where(r => r.Evaluacion != null && r.Evaluacion.ResultadoId == resultado.Id)
+                    .OrderByDescending(r => r.FechaGeneracion)
+                    .FirstOrDefaultAsync();
+
+                if (ultimaRec?.TipoRecomendacion == "no_desplegar")
+                {
+                    var ver = await _context.Versiones
+                        .Include(v => v.Proyecto)
+                        .FirstOrDefaultAsync(v => v.Id == request.VersionId);
+
+                    var adminEmails = await _context.Usuarios
+                        .Where(u => u.Estado == "activo"
+                                 && u.UsuarioRoles.Any(ur => ur.Estado == "activo"
+                                     && ur.Rol != null
+                                     && ur.Rol.NombreRol == "Administrador"))
+                        .Select(u => u.Email)
+                        .ToListAsync();
+
+                    if (adminEmails.Count > 0 && ver != null)
+                    {
+                        await _emailService.EnviarAlertaNoAptoAsync(
+                            ver.Proyecto?.Nombre ?? "—",
+                            ver.NumeroVersion,
+                            request.NombreArchivo,
+                            adminEmails);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // La notificación no debe interrumpir el flujo principal
+            _auditService.LogActionAsync(null, "ResultadoPrueba", "NOTIFICACION_ERROR",
+                $"Error al enviar alerta email: {ex.Message}");
+        }
 
         await _auditService.LogActionAsync(null, "ResultadoPrueba", "CARGAR",
             $"VersionId: {request.VersionId}, Archivo: {request.NombreArchivo}, " +

@@ -44,4 +44,10 @@ public class CreateResultadoPruebaDto
     /// <summary>Tiempo total de ejecución en segundos.</summary>
     [Required, Range(0, double.MaxValue)]
     public decimal TiempoEjecucion { get; set; }
+
+    /// <summary>
+    /// Tamaño del archivo JSON en bytes (opcional).
+    /// Si se incluye, se valida contra el límite del plan activo.
+    /// </summary>
+    public long? TamanoBytes { get; set; }
 }

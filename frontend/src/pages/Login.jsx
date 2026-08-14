@@ -13,13 +13,13 @@ function AboutContent() {
         <div className="lm-header-icon">DSS</div>
         <div>
           <h2 className="lm-title">Sobre el sistema</h2>
-          <p className="lm-subtitle">Decision Support System — SAD-Roshka</p>
+          <p className="lm-subtitle">Decision Support System — Roshka DSS</p>
         </div>
       </div>
 
       <div className="lm-section">
-        <h3>¿Qué es SAD-Roshka?</h3>
-        <p>El Sistema de Apoyo a la Toma de Decisiones para el Despliegue de Software (SAD-Roshka) es una plataforma interna desarrollada para Roshka S.A. que asiste al equipo técnico en la evaluación de la calidad del software antes de autorizar su despliegue a producción.</p>
+        <h3>¿Qué es Roshka DSS?</h3>
+        <p>Roshka DSS es una plataforma interna desarrollada para Roshka S.A. que asiste al equipo técnico en la evaluación de la calidad del software antes de autorizar su despliegue a producción, mediante el análisis automatizado de resultados de pruebas.</p>
       </div>
 
       <div className="lm-section">
@@ -104,11 +104,11 @@ function AboutContent() {
 const PLANS = [
   {
     nombre: 'Básico',
-    precio: 'Gs. 400.000',
+    precio: 'Gs. 250.000',
     color: 'basic',
     features: [
-      { label: '1 proyecto',              ok: true  },
-      { label: '3 usuarios',              ok: true  },
+      { label: '3 proyectos',             ok: true  },
+      { label: '10 usuarios',             ok: true  },
       { label: '100 evaluaciones/mes',    ok: true  },
       { label: 'Archivos hasta 5 MB',     ok: true  },
       { label: 'Historial 30 días',       ok: true  },
@@ -121,12 +121,12 @@ const PLANS = [
   },
   {
     nombre: 'Profesional',
-    precio: 'Gs. 1.000.000',
+    precio: 'Gs. 500.000',
     color: 'pro',
     badge: 'Recomendado',
     features: [
-      { label: '5 proyectos',             ok: true  },
-      { label: '10 usuarios',             ok: true  },
+      { label: '10 proyectos',            ok: true  },
+      { label: '25 usuarios',             ok: true  },
       { label: '500 evaluaciones/mes',    ok: true  },
       { label: 'Archivos hasta 20 MB',    ok: true  },
       { label: 'Historial completo',      ok: true  },
@@ -139,7 +139,7 @@ const PLANS = [
   },
   {
     nombre: 'Empresarial',
-    precio: 'Gs. 2.500.000',
+    precio: 'Gs. 900.000',
     color: 'enterprise',
     features: [
       { label: 'Proyectos ilimitados',       ok: true },
@@ -195,7 +195,7 @@ function PrivacyContent() {
   return (
     <div className="lm-body lm-body--privacy">
       <h2 className="lm-title">Política de Privacidad</h2>
-      <p className="lm-subtitle">Sistema SAD-Roshka — Versión 1.0 · Vigente desde enero de 2026</p>
+      <p className="lm-subtitle">Roshka DSS — Versión 1.0 · Vigente desde enero de 2026</p>
 
       <div className="lm-privacy-meta">
         <div><strong>Responsable:</strong> Roshka S.A.</div>
@@ -207,7 +207,7 @@ function PrivacyContent() {
       <div className="lm-privacy-sections">
         <section>
           <h3>1. Objeto</h3>
-          <p>La presente Política de Privacidad regula el tratamiento de los datos personales de los usuarios del Sistema SAD-Roshka, plataforma interna de Roshka S.A. destinada al apoyo a la toma de decisiones para el despliegue de software mediante el análisis automatizado de resultados de pruebas.</p>
+          <p>La presente Política de Privacidad regula el tratamiento de los datos personales de los usuarios de Roshka DSS, plataforma interna de Roshka S.A. destinada al apoyo a la toma de decisiones para el despliegue de software mediante el análisis automatizado de resultados de pruebas.</p>
           <p>Roshka S.A. actúa como responsable del tratamiento y se compromete a tratar los datos con pleno respeto a la Ley N.º 7593/2025 "De Protección de Datos Personales" de la República del Paraguay. El acceso y uso del Sistema implica la aceptación de esta Política.</p>
         </section>
 
@@ -277,7 +277,7 @@ function PrivacyContent() {
         </section>
       </div>
 
-      <p className="lm-privacy-footer">© 2026 Roshka S.A. — Todos los derechos reservados. Este documento tiene carácter vinculante para todos los usuarios del Sistema SAD-Roshka.</p>
+      <p className="lm-privacy-footer">© 2026 Roshka S.A. — Todos los derechos reservados. Este documento tiene carácter vinculante para todos los usuarios de Roshka DSS.</p>
     </div>
   )
 }

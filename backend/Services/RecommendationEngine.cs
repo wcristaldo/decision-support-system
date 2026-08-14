@@ -184,19 +184,19 @@ public class RecommendationEngine : IRecommendationEngine
 
             if (hayNoCumple)
             {
-                tipoRecomendacion = "NO_DESPLEGAR";
+                tipoRecomendacion = "no_desplegar";
                 resumen           = "No apto para despliegue: una o más métricas están por debajo del umbral mínimo requerido.";
                 evaluacion.EstadoEvaluacion = "completada";
             }
             else if (hayRevisar)
             {
-                tipoRecomendacion = "REVISAR";
+                tipoRecomendacion = "desplegar_con_observaciones";
                 resumen           = "Requiere revisión: algunas métricas están dentro del margen de tolerancia (±5%) pero no superan el umbral.";
                 evaluacion.EstadoEvaluacion = "completada";
             }
             else
             {
-                tipoRecomendacion = "DESPLEGAR";
+                tipoRecomendacion = "desplegar";
                 resumen           = "Apto para despliegue: todas las métricas cumplen los umbrales de calidad establecidos.";
                 evaluacion.EstadoEvaluacion = "completada";
             }

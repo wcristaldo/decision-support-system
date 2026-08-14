@@ -1,8 +1,18 @@
 ﻿import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
 import '../styles/AnalisisVersion.css'
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Normaliza valores de la DB a las constantes del frontend */
+function normalizeRec(t) {
+  if (!t) return ''
+  const u = t.toUpperCase()
+  if (u === 'DESPLEGAR_CON_OBSERVACIONES') return 'REVISAR'
+  return u
+}
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -31,8 +41,9 @@ const TIPO_RECOMENDACION = {
 }
 
 const DECISION_MAP = {
-  Aprobado:  { text: 'Aprobado',  cls: 'dec-aprobado' },
-  Rechazado: { text: 'Rechazado', cls: 'dec-rechazado' },
+  aprobado:   { text: 'Aprobado',    cls: 'dec-aprobado' },
+  rechazado:  { text: 'Rechazado',   cls: 'dec-rechazado' },
+  postergado: { text: 'Postergado',  cls: 'dec-rechazado' },
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -104,8 +115,6 @@ function validateDecision(fields) {
   const comentario = fields.comentario.trim()
   if (!comentario) {
     errors.comentario = 'La justificación es obligatoria.'
-  } else if (comentario.length < 10) {
-    errors.comentario = 'Debe tener al menos 10 caracteres.'
   } else if (comentario.length > 1000) {
     errors.comentario = 'No puede superar los 1000 caracteres.'
   }
@@ -154,7 +163,7 @@ function DecisionModal({ recomendaciones, onClose, onSaved }) {
     try {
       await api.post('/decisionesDespliegue', {
         recomendacionId,
-        decisionFinal: fields.decision,
+        decisionFinal: fields.decision.toLowerCase(),
         comentario:    fields.comentario.trim(),
       })
       onSaved()
@@ -172,7 +181,7 @@ function DecisionModal({ recomendaciones, onClose, onSaved }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-box modal-box-md" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">Registrar decisión de despliegue</h2>
           <button className="modal-close" onClick={onClose} aria-label="Cerrar">×</button>
@@ -212,7 +221,7 @@ function DecisionModal({ recomendaciones, onClose, onSaved }) {
                 ref={textRef}
                 value={fields.comentario}
                 onChange={set('comentario')}
-                placeholder="Explicá los motivos de esta decisión (mín. 10 caracteres)…"
+                placeholder="Explicá los motivos de esta decisión…"
                 rows={4}
                 maxLength={1001}
               />
@@ -249,6 +258,8 @@ function DecisionModal({ recomendaciones, onClose, onSaved }) {
 function AnalisisVersion() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const resultadoId = searchParams.get('resultado')
 
   const [version,          setVersion]          = useState(null)
   const [metricas,         setMetricas]         = useState([])
@@ -262,11 +273,19 @@ function AnalisisVersion() {
     setLoading(true)
     setError(null)
     try {
+      // Si venimos desde el historial con un resultadoId específico, cargamos
+      // datos de ESE resultado. Si no, cargamos el último resultado de la versión.
       const [vRes, mRes, rRes, dRes] = await Promise.all([
         api.get(`/versiones/${id}`),
-        api.get(`/metricas/version/${id}`),
-        api.get(`/recomendaciones/version/${id}`),
-        api.get(`/decisionesDespliegue/version/${id}`),
+        resultadoId
+          ? api.get(`/metricas/resultado/${resultadoId}`)
+          : api.get(`/metricas/version/${id}`),
+        resultadoId
+          ? api.get(`/recomendaciones/resultado/${resultadoId}`)
+          : api.get(`/recomendaciones/version/${id}`),
+        resultadoId
+          ? api.get(`/decisionesDespliegue/resultado/${resultadoId}`)
+          : api.get(`/decisionesDespliegue/version/${id}`),
       ])
       setVersion(vRes.data)
       setMetricas(mRes.data)
@@ -279,12 +298,12 @@ function AnalisisVersion() {
     }
   }
 
-  useEffect(() => { loadData() }, [id])
+  useEffect(() => { loadData() }, [id, resultadoId])
 
   // Prioridad: NO_DESPLEGAR > REVISAR > DESPLEGAR
   const semaforo = (() => {
     if (!recomendaciones.length) return null
-    const tipos = recomendaciones.map(r => (r.tipoRecomendacion || r.tipo || '').toUpperCase())
+    const tipos = recomendaciones.map(r => normalizeRec(r.tipoRecomendacion || r.tipo || ''))
     if (tipos.includes('NO_DESPLEGAR')) return TIPO_RECOMENDACION.NO_DESPLEGAR
     if (tipos.includes('REVISAR'))      return TIPO_RECOMENDACION.REVISAR
     if (tipos.includes('DESPLEGAR'))    return TIPO_RECOMENDACION.DESPLEGAR
@@ -388,23 +407,26 @@ function AnalisisVersion() {
           {decisiones.length === 0 ? (
             <p className="av-empty">No hay decisiones registradas para esta versión.</p>
           ) : (
-            <div className="dec-list">
+            <div className="av-dec-list">
               {[...decisiones]
                 .sort((a, b) => new Date(b.fechaDecision || b.fecha) - new Date(a.fechaDecision || a.fecha))
                 .map((d, i) => {
-                  const dm = DECISION_MAP[d.decisionFinal] || { text: d.decisionFinal, cls: '' }
+                  const dm = DECISION_MAP[d.decisionFinal?.toLowerCase()] || { text: d.decisionFinal, cls: '' }
+                  const fechaDecision = new Date(d.fechaDecision || d.fecha)
+                  const fechaStr = fechaDecision.toLocaleDateString('es-PY', {
+                    day: '2-digit', month: 'long', year: 'numeric',
+                  })
+                  const horaStr = fechaDecision.toLocaleTimeString('es-PY', {
+                    hour: '2-digit', minute: '2-digit',
+                  })
                   return (
-                    <div key={d.id ?? i} className="dec-item">
-                      <div className="dec-item-top">
-                        <span className={`dec-badge ${dm.cls}`}>{dm.text}</span>
-                        <span className="dec-date">
-                          {new Date(d.fechaDecision || d.fecha).toLocaleDateString('es-PY', {
-                            day: '2-digit', month: 'long', year: 'numeric',
-                          })}
-                        </span>
+                    <div key={d.id ?? i} className="av-dec-item">
+                      <div className="av-dec-header">
+                        <span className={`av-dec-badge ${dm.cls}`}>{dm.text}</span>
+                        <span className="av-dec-date">{fechaStr} · {horaStr}</span>
                       </div>
                       {d.comentario && (
-                        <p className="dec-comentario">{d.comentario}</p>
+                        <p className="av-dec-comentario">{d.comentario}</p>
                       )}
                     </div>
                   )

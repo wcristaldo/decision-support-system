@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
+import PaymentModal from '../components/PaymentModal'
 import '../styles/Suscripcion.css'
 
-// ── Íconos SVG inline ───────────────────────────────────────────────────────
+// ── Íconos SVG inline ────────────────────────────────────────────────────────
 
 const IcCheck = () => (
   <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2">
@@ -13,12 +14,6 @@ const IcCheck = () => (
 const IcX = () => (
   <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2">
     <line x1="5" y1="5" x2="15" y2="15" /><line x1="15" y1="5" x2="5" y2="15" />
-  </svg>
-)
-const IcCard = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <rect x="2" y="5" width="20" height="14" rx="2" />
-    <line x1="2" y1="10" x2="22" y2="10" />
   </svg>
 )
 const IcCrown = () => (
@@ -38,44 +33,67 @@ const IcAlert = () => (
     <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
   </svg>
 )
+const IcMail = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <rect x="2" y="4" width="20" height="16" rx="2"/>
+    <polyline points="2,4 12,13 22,4"/>
+  </svg>
+)
+const IcCalendar = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <rect x="3" y="4" width="18" height="18" rx="2"/>
+    <line x1="3" y1="10" x2="21" y2="10"/>
+    <line x1="8" y1="2" x2="8" y2="6"/>
+    <line x1="16" y1="2" x2="16" y2="6"/>
+  </svg>
+)
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatGs = (n) =>
   new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG', maximumFractionDigits: 0 }).format(n)
 
+const fmtFecha = (f) =>
+  f ? new Date(f).toLocaleDateString('es-PY', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+
+const fmtFechaLarga = (f) =>
+  f ? new Date(f).toLocaleDateString('es-PY', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'
+
 const pct = (v, max) => (max == null ? 0 : Math.min(100, (v / max) * 100))
 
-// ── Componente principal ────────────────────────────────────────────────────
+// ── Componente principal ─────────────────────────────────────────────────────
 
 export default function Suscripcion() {
-  const [planes, setPlanes]       = useState([])
-  const [actual, setActual]       = useState(null)
-  const [pagos, setPagos]         = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [error, setError]         = useState(null)
-  const [tab, setTab]             = useState('estado') // 'estado' | 'planes' | 'pagos' | 'tarjeta'
-  const [procesando, setProcesando] = useState(false)
-  const [msg, setMsg]             = useState(null)     // { tipo: 'ok'|'err', texto }
-  const [modal, setModal]         = useState(null)     // { type, title, message }
+  const [planes, setPlanes]           = useState([])
+  const [actual, setActual]           = useState(null)
+  const [pagos, setPagos]             = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState(null)
+  const [tab, setTab]                 = useState('estado')
+  const [procesando, setProcesando]   = useState(false)
+  const [msg, setMsg]                 = useState(null)
+  const [modal, setModal]             = useState(null)
+  // Modal de selección de pasarela
+  const [payModal, setPayModal]       = useState(null)   // { id, nombre, precioMensual }
 
-  // Form para pago recurrente
-  const [formRec, setFormRec] = useState({
-    nombre: '', email: '', documento: '', celular: '',
-    usuarioId: 1
-  })
+  // ── Historial: filtros + paginación ──────────────────────────────────────
+  const [paginaActual, setPaginaActual] = useState(1)
+  const [porPagina, setPorPagina]       = useState(10)
+  const [filtroEstado, setFiltroEstado] = useState('')
+  const [filtroPlan, setFiltroPlan]     = useState('')
+  const [filtroDesde, setFiltroDesde]   = useState('')
+  const [filtroHasta, setFiltroHasta]   = useState('')
 
-  // Estado de iframe de tarjeta
-  const [iframeUrl, setIframeUrl] = useState(null)
+  const roles   = JSON.parse(localStorage.getItem('userRoles') || '[]')
+  const esAdmin = roles.includes('Administrador')
 
-  // ── Cargar datos ─────────────────────────────────────────────────────────
+  // ── Cargar datos ──────────────────────────────────────────────────────────
 
   const cargar = useCallback(async () => {
     setLoading(true)
     setError(null)
     const errores = []
 
-    // Llamadas independientes para no fallar todo por un error parcial
     try {
       const r = await api.get('/suscripcion/planes')
       setPlanes(r.data)
@@ -97,99 +115,99 @@ export default function Suscripcion() {
       errores.push(`/pagos: ${e.response?.status ?? 'network'} ${e.response?.data?.message ?? e.message}`)
     }
 
-    if (errores.length > 0) {
-      setError('Errores al cargar: ' + errores.join(' | '))
-    }
-
+    if (errores.length > 0) setError('Errores al cargar: ' + errores.join(' | '))
     setLoading(false)
   }, [])
 
   useEffect(() => { cargar() }, [cargar])
 
-  // Detectar retorno del iframe de tarjeta
+  // ── Detectar retorno desde AdamsPay ──────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    if (params.get('accion') === 'tarjeta-resultado') {
-      const status = params.get('status')
-      if (status === 'add_new_card_success') {
-        setMsg({ tipo: 'ok', texto: 'Tarjeta catastrada exitosamente. Confirmando...' })
-        confirmarTarjeta()
-      } else if (status === 'add_new_card_fail') {
-        setMsg({ tipo: 'err', texto: 'No se pudo catastrar la tarjeta. Intentá nuevamente.' })
-      }
+    if (params.get('intent') === 'pay-debt') {
       window.history.replaceState({}, '', '/suscripcion')
+      setMsg({ tipo: 'ok', texto: 'Pago recibido por AdamsPay. Verificando estado de tu suscripción…' })
+      setTab('pagos')
+      setTimeout(() => cargar(), 2500)
     }
-  }, [])
+  }, [cargar])
 
-  // ── Acciones ─────────────────────────────────────────────────────────────
+  // ── Detectar retorno desde PayPal ─────────────────────────────────────────
+  useEffect(() => {
+    const params  = new URLSearchParams(window.location.search)
+    const ppStatus = params.get('pp_status')
+    const ppToken  = params.get('token')      // PayPal agrega ?token=ORDER_ID al retornar
+    const ppPlanId = params.get('pp_planId')
+
+    if (ppStatus === 'success' && ppToken) {
+      window.history.replaceState({}, '', '/suscripcion')
+      setTab('pagos')
+      setMsg({ tipo: 'ok', texto: 'Confirmando pago con PayPal…' })
+
+      api.post('/suscripcion/paypal-capture', { orderId: ppToken, planId: Number(ppPlanId) })
+        .then(() => {
+          setMsg({ tipo: 'ok', texto: '¡Pago PayPal confirmado! Tu suscripción está activa.' })
+          cargar()
+        })
+        .catch((e) => {
+          setModal({
+            type: 'error',
+            title: 'Error al confirmar el pago PayPal',
+            message: e.response?.data?.message ?? 'No se pudo confirmar el pago. Contactá al soporte.'
+          })
+        })
+    }
+
+    if (ppStatus === 'cancel') {
+      window.history.replaceState({}, '', '/suscripcion')
+      setMsg({ tipo: 'error', texto: 'Pago con PayPal cancelado. Podés intentarlo de nuevo.' })
+    }
+  }, [cargar])
+
+  // ── Acciones ──────────────────────────────────────────────────────────────
 
   const mostrarMsg = (tipo, texto) => {
     setMsg({ tipo, texto })
-    setTimeout(() => setMsg(null), 6000)
+    setTimeout(() => setMsg(null), 7000)
   }
 
-  const mostrarModal = (type, title, message) => {
-    setModal({ type, title, message })
+  // Abre el modal selector de pasarela
+  const contratarPlan = (plan) => {
+    setPayModal(plan)
   }
 
-  const registrarClienteYAbrirIframe = async () => {
-    if (!formRec.nombre || !formRec.email || !formRec.documento || !formRec.celular) {
-      mostrarMsg('err', 'Completá todos los campos.')
-      return
-    }
+  // Pago con AdamsPay (flujo original)
+  const pagarConAdamsPay = async (idPlan) => {
+    setPayModal(null)
     setProcesando(true)
     try {
-      // 1. Registrar cliente en Pagopar
-      await api.post('/suscripcion/recurrente/registrar-cliente', {
-        usuarioId:     formRec.usuarioId,
-        nombreApellido: formRec.nombre,
-        email:          formRec.email,
-        celular:        formRec.celular,
-      })
-      // 2. Obtener token de iframe
-      const { data } = await api.post('/suscripcion/recurrente/agregar-tarjeta', {
-        usuarioId: formRec.usuarioId,
-        proveedor: 'uPay',
-      })
-      setIframeUrl(data.iframeUrl)
-      setTab('tarjeta')
+      const { data } = await api.post('/suscripcion/iniciar-pago', { idPlan })
+      window.location.href = data.payUrl
     } catch (e) {
-      const msg = e.response?.data?.message ?? 'Error al registrar cliente en Pagopar.'
-      mostrarModal('error', 'Error al agregar tarjeta', msg)
+      setModal({
+        type: 'error',
+        title: 'Error al iniciar el pago con AdamsPay',
+        message: e.response?.data?.message ?? 'No se pudo conectar con AdamsPay. Intentá nuevamente.'
+      })
     } finally {
       setProcesando(false)
     }
   }
 
-  const confirmarTarjeta = async () => {
-    try {
-      await api.post('/suscripcion/recurrente/confirmar-tarjeta', {
-        usuarioId: formRec.usuarioId
-      })
-      mostrarMsg('ok', 'Tarjeta confirmada. Ya podés realizar cobros recurrentes.')
-      setIframeUrl(null)
-      cargar()
-    } catch (e) {
-      mostrarModal('error', 'Error al confirmar tarjeta', e.response?.data?.message ?? 'No se pudo confirmar la tarjeta.')
-    }
-  }
-
-  const cobrarRecurrente = async () => {
-    if (!formRec.nombre || !formRec.email || !formRec.documento) {
-      mostrarMsg('err', 'Completá los datos del comprobante.')
-      return
-    }
+  // Pago con PayPal — redirige al checkout de PayPal sandbox
+  const pagarConPayPal = async (idPlan) => {
+    setPayModal(null)
     setProcesando(true)
     try {
-      const { data } = await api.post('/suscripcion/recurrente/cobrar', {
-        nombreComprador:    formRec.nombre,
-        emailComprador:     formRec.email,
-        documentoComprador: formRec.documento,
-      })
-      mostrarMsg('ok', data.message)
-      cargar()
+      const frontendUrl = window.location.origin
+      const { data } = await api.post('/suscripcion/iniciar-pago-paypal', { idPlan, frontendUrl })
+      window.location.href = data.approvalUrl
     } catch (e) {
-      mostrarModal('error', 'Cobro rechazado', e.response?.data?.message ?? 'El cobro fue rechazado por Pagopar.')
+      setModal({
+        type: 'error',
+        title: 'Error al iniciar el pago con PayPal',
+        message: e.response?.data?.message ?? 'No se pudo conectar con PayPal. Intentá nuevamente.'
+      })
     } finally {
       setProcesando(false)
     }
@@ -203,20 +221,53 @@ export default function Suscripcion() {
   const planActual = actual?.activa ? actual.plan : null
   const uso = actual?.usoActual
 
+  // ── Historial derivado ───────────────────────────────────────────────────
+  const planesHistorial  = [...new Set(pagos.map(p => p.plan).filter(Boolean))].sort()
+  const estadosHistorial = [...new Set(pagos.map(p => p.estado).filter(Boolean))].sort()
+
+  const pagosFiltrados = pagos.filter(p => {
+    const okEstado = !filtroEstado || p.estado === filtroEstado
+    const okPlan   = !filtroPlan   || p.plan   === filtroPlan
+    const fecha     = p.fechaPago ? new Date(p.fechaPago) : null
+    // Comparar sólo la parte de la fecha local (sin hora) para evitar
+    // el desfase UTC↔local (new Date('YYYY-MM-DD') = medianoche UTC ≠ local)
+    const fechaLocal = fecha ? fecha.toLocaleDateString('en-CA') : null  // 'YYYY-MM-DD'
+    const okDesde   = !filtroDesde || (fechaLocal && fechaLocal >= filtroDesde)
+    const okHasta   = !filtroHasta || (fechaLocal && fechaLocal <= filtroHasta)
+    return okEstado && okPlan && okDesde && okHasta
+  })
+
+  const totalPaginas = Math.max(1, Math.ceil(pagosFiltrados.length / porPagina))
+  const pagosPagina  = pagosFiltrados.slice(
+    (paginaActual - 1) * porPagina,
+    paginaActual * porPagina
+  )
+
+  const paginasVisibles = (() => {
+    if (totalPaginas <= 7) return Array.from({ length: totalPaginas }, (_, i) => i + 1)
+    const pages = [1]
+    const left  = Math.max(2, paginaActual - 1)
+    const right = Math.min(totalPaginas - 1, paginaActual + 1)
+    if (left > 2) pages.push('…')
+    for (let i = left; i <= right; i++) pages.push(i)
+    if (right < totalPaginas - 1) pages.push('…')
+    pages.push(totalPaginas)
+    return pages
+  })()
+
   return (
     <div className="sus-page">
+
       {/* ── Encabezado ── */}
       <div className="sus-header">
         <div className="sus-header-icon"><IcCrown /></div>
         <div>
           <h1 className="sus-title">Suscripción</h1>
-          <p className="sus-subtitle">
-            Gestioná tu plan SAD-Roshka y los métodos de pago.
-          </p>
+          <p className="sus-subtitle">Gestioná tu plan Roshka DSS y los métodos de pago.</p>
         </div>
       </div>
 
-      {/* ── Banner de notificación inline (ok) ── */}
+      {/* ── Banner de notificación ── */}
       {msg && (
         <div className={`sus-banner sus-banner--${msg.tipo}`}>
           {msg.tipo === 'ok' ? <IcCheck /> : <IcAlert />}
@@ -233,12 +284,22 @@ export default function Suscripcion() {
         onClose={() => setModal(null)}
       />
 
+      {/* ── Modal selector de pasarela de pago ── */}
+      <PaymentModal
+        isOpen={!!payModal}
+        plan={payModal}
+        cargando={procesando}
+        onClose={() => setPayModal(null)}
+        onAdamsPay={pagarConAdamsPay}
+        onPayPal={pagarConPayPal}
+      />
+
       {/* ── Tabs ── */}
       <div className="sus-tabs">
         {[
-          { id: 'estado',  label: 'Estado actual' },
-          { id: 'planes',  label: 'Planes' },
-          { id: 'pagos',   label: 'Historial de pagos' },
+          { id: 'estado', label: 'Estado actual' },
+          { id: 'planes', label: 'Planes' },
+          { id: 'pagos',  label: 'Historial de pagos' },
         ].map(t => (
           <button
             key={t.id}
@@ -248,7 +309,7 @@ export default function Suscripcion() {
         ))}
       </div>
 
-      {/* ══ TAB: ESTADO ACTUAL ════════════════════════════════════════════ */}
+      {/* ══ TAB: ESTADO ACTUAL ═══════════════════════════════════════════════ */}
       {tab === 'estado' && (
         <div className="sus-content">
           {!actual?.activa ? (
@@ -256,151 +317,76 @@ export default function Suscripcion() {
               <IcShield />
               <h2>Sin suscripción activa</h2>
               <p>Seleccioná un plan en la pestaña <strong>Planes</strong> para activar el sistema.</p>
+              <button className="sus-btn sus-btn--primary" onClick={() => setTab('planes')}>
+                Ver planes disponibles
+              </button>
             </div>
           ) : (
             <>
-              {/* ── Badge de plan ── */}
-              <div className="sus-plan-badge">
-                <span className="sus-plan-nombre">{planActual?.nombre}</span>
-                <span className={`sus-estado sus-estado--${actual.estado}`}>{actual.estado}</span>
+              {/* ── Tarjeta de plan ── */}
+              <div className="sus-plan-hero">
+                <div className="sus-plan-hero-left">
+                  <span className="sus-plan-nombre">{planActual?.nombre}</span>
+                  <span className={`sus-estado sus-estado--${actual.estado}`}>{actual.estado.toUpperCase()}</span>
+                </div>
+                <div className="sus-plan-hero-right">
+                  <span className="sus-plan-precio">{formatGs(planActual?.precioMensual)}</span>
+                  <span className="sus-plan-periodo">/ mes</span>
+                </div>
               </div>
 
-              <p className="sus-plan-precio">{formatGs(planActual?.precioMensual)} / mes</p>
-
+              {/* ── Fechas de vigencia ── */}
               {actual.fechaVencimiento && (
-                <p className="sus-vencimiento">
-                  Vence el {new Date(actual.fechaVencimiento).toLocaleDateString('es-PY', { day: '2-digit', month: 'long', year: 'numeric' })}
-                </p>
+                <div className="sus-vigencia-row">
+                  <div className="sus-vigencia-item">
+                    <IcCalendar />
+                    <div>
+                      <span className="sus-vigencia-label">Inicio de vigencia</span>
+                      <span className="sus-vigencia-val">{fmtFechaLarga(actual.fechaInicio)}</span>
+                    </div>
+                  </div>
+                  <div className="sus-vigencia-sep" />
+                  <div className="sus-vigencia-item">
+                    <IcCalendar />
+                    <div>
+                      <span className="sus-vigencia-label">Vencimiento</span>
+                      <span className="sus-vigencia-val">{fmtFechaLarga(actual.fechaVencimiento)}</span>
+                    </div>
+                  </div>
+                  {actual.diasRestantes != null && (
+                    <div className="sus-vigencia-sep" />
+                  )}
+                  {actual.diasRestantes != null && (
+                    <div className={`sus-dias-restantes ${actual.diasRestantes <= 7 ? 'alerta' : ''}`}>
+                      <span className="sus-dias-num">{actual.diasRestantes}</span>
+                      <span className="sus-dias-label">días restantes</span>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* ── Barras de uso ── */}
               <div className="sus-uso-grid">
-                <UsoBar
-                  label="Proyectos activos"
-                  valor={uso?.proyectos}
-                  maximo={uso?.maxProyectos}
-                />
-                <UsoBar
-                  label="Usuarios activos"
-                  valor={uso?.usuarios}
-                  maximo={uso?.maxUsuarios}
-                />
-                <UsoBar
-                  label="Evaluaciones este mes"
-                  valor={uso?.evaluacionesMes}
-                  maximo={uso?.maxEvaluacionesMes}
-                />
+                <UsoBar label="Proyectos activos"   valor={uso?.proyectos}       maximo={uso?.maxProyectos} />
+                <UsoBar label="Usuarios activos"    valor={uso?.usuarios}         maximo={uso?.maxUsuarios} />
+                <UsoBar label="Evaluaciones este mes" valor={uso?.evaluacionesMes} maximo={uso?.maxEvaluacionesMes} />
               </div>
 
-              {/* ── Cobro recurrente ── */}
-              <div className="sus-recurrente">
-                <h3 className="sus-section-title"><IcCard /> Pago recurrente con tarjeta</h3>
-                <div className="sus-recurrente-aviso">
-                  <IcAlert />
-                  <span>Esta función requiere activación del módulo de catastro de tarjetas en el panel de Pagopar. Para la demo, usá la pestaña <strong>Planes</strong> → <strong>Contratar</strong>.</span>
+              {/* ── Acción renovar ── */}
+              {esAdmin && (
+                <div className="sus-renovar">
+                  <p>¿Querés cambiar o renovar tu plan?</p>
+                  <button className="sus-btn sus-btn--secondary" onClick={() => setTab('planes')}>
+                    Ver planes disponibles
+                  </button>
                 </div>
-
-                {actual.tieneTarjeta ? (
-                  <div className="sus-con-tarjeta">
-                    <p>Hay una tarjeta catastrada. Podés renovar ahora o esperar el vencimiento.</p>
-                    <div className="sus-form-row">
-                      <input
-                        placeholder="Nombre y apellido (comprobante)"
-                        value={formRec.nombre}
-                        onChange={e => setFormRec(f => ({ ...f, nombre: e.target.value }))}
-                      />
-                      <input
-                        placeholder="Email"
-                        type="email"
-                        value={formRec.email}
-                        onChange={e => setFormRec(f => ({ ...f, email: e.target.value }))}
-                      />
-                      <input
-                        placeholder="Nro. cédula"
-                        value={formRec.documento}
-                        onChange={e => setFormRec(f => ({ ...f, documento: e.target.value }))}
-                      />
-                    </div>
-                    <button
-                      className="sus-btn sus-btn--primary"
-                      onClick={cobrarRecurrente}
-                      disabled={procesando}
-                    >
-                      {procesando ? 'Procesando…' : `Renovar (${formatGs(planActual?.precioMensual)})`}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="sus-sin-tarjeta">
-                    <p>Registrá una tarjeta para activar el cobro automático mensual.</p>
-                    <div className="sus-form-row">
-                      <input
-                        placeholder="Nombre y apellido"
-                        value={formRec.nombre}
-                        onChange={e => setFormRec(f => ({ ...f, nombre: e.target.value }))}
-                      />
-                      <input
-                        placeholder="Email"
-                        type="email"
-                        value={formRec.email}
-                        onChange={e => setFormRec(f => ({ ...f, email: e.target.value }))}
-                      />
-                      <input
-                        placeholder="Nro. cédula"
-                        value={formRec.documento}
-                        onChange={e => setFormRec(f => ({ ...f, documento: e.target.value }))}
-                      />
-                      <input
-                        placeholder="Celular (ej: 0981000000)"
-                        value={formRec.celular}
-                        onChange={e => setFormRec(f => ({ ...f, celular: e.target.value }))}
-                      />
-                    </div>
-                    <button
-                      className="sus-btn sus-btn--secondary"
-                      onClick={registrarClienteYAbrirIframe}
-                      disabled={procesando}
-                    >
-                      {procesando ? 'Procesando…' : 'Agregar tarjeta (Pagopar)'}
-                    </button>
-                    <p className="sus-nota-staging">
-                      🧪 <strong>Entorno de prueba (staging):</strong> tarjetas de crédito VISA/Mastercard, QR ueno y Pix disponibles en staging.
-                    </p>
-                  </div>
-                )}
-              </div>
+              )}
             </>
           )}
         </div>
       )}
 
-      {/* ══ TAB: IFRAME DE TARJETA ═══════════════════════════════════════ */}
-      {tab === 'tarjeta' && (
-        <div className="sus-content">
-          <h3 className="sus-section-title"><IcCard /> Catastrar tarjeta en Pagopar</h3>
-          {iframeUrl ? (
-            <>
-              <p className="sus-iframe-desc">
-                Ingresá los datos de tu tarjeta. Pagopar procesará el catastro de forma segura.
-              </p>
-              <iframe
-                src={iframeUrl}
-                title="Pagopar — Agregar tarjeta"
-                className="sus-iframe"
-                width="100%"
-                height="350"
-                frameBorder="0"
-              />
-              <p className="sus-nota-staging">
-                🧪 <strong>Staging:</strong> Usá una tarjeta de prueba provista por Pagopar.
-              </p>
-            </>
-          ) : (
-            <p>No hay formulario de tarjeta activo. Volvé al estado actual e iniciá el proceso.</p>
-          )}
-        </div>
-      )}
-
-      {/* ══ TAB: PLANES ══════════════════════════════════════════════════ */}
+      {/* ══ TAB: PLANES ══════════════════════════════════════════════════════ */}
       {tab === 'planes' && (
         <div className="sus-content">
           <div className="sus-planes-grid">
@@ -413,11 +399,11 @@ export default function Suscripcion() {
                   <p className="sus-plan-card-precio">{formatGs(p.precioMensual)}<span>/mes</span></p>
 
                   <div className="sus-plan-limites">
-                    <LimitRow label="Proyectos activos"   valor={p.limites?.maxProyectos} />
-                    <LimitRow label="Usuarios"            valor={p.limites?.maxUsuarios} />
-                    <LimitRow label="Evaluaciones / mes"  valor={p.limites?.maxEvaluacionesMes} />
-                    <LimitRow label="Tamaño máx. archivo" valor={p.limites?.maxTamanoArchivoMb != null ? `${p.limites.maxTamanoArchivoMb} MB` : 'Ilimitado'} />
-                    <LimitRow label="Historial"           valor={p.limites?.historialDias} />
+                    <LimitRow label="Proyectos activos"    valor={p.limites?.maxProyectos} />
+                    <LimitRow label="Usuarios"             valor={p.limites?.maxUsuarios} />
+                    <LimitRow label="Evaluaciones / mes"   valor={p.limites?.maxEvaluacionesMes} />
+                    <LimitRow label="Tamaño máx. archivo"  valor={p.limites?.maxTamanoArchivoMb != null ? `${p.limites.maxTamanoArchivoMb} MB` : 'Ilimitado'} />
+                    <LimitRow label="Historial"            valor={p.limites?.historialDias} />
                   </div>
 
                   <div className="sus-plan-features">
@@ -435,9 +421,19 @@ export default function Suscripcion() {
 
                   {!esCurrent && (
                     <div className="sus-contratar">
-                      <p className="sus-nota-staging">
-                        Para contratar este plan contactá al administrador del sistema.
-                      </p>
+                      {esAdmin ? (
+                        <button
+                          className="sus-btn sus-btn--primary sus-btn--full"
+                          onClick={() => contratarPlan(p)}
+                          disabled={procesando}
+                        >
+                          {procesando ? 'Procesando…' : `Contratar — ${formatGs(p.precioMensual)}/mes`}
+                        </button>
+                      ) : (
+                        <p className="sus-nota-admin">
+                          Contactá al administrador del sistema para contratar este plan.
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -447,36 +443,148 @@ export default function Suscripcion() {
         </div>
       )}
 
-      {/* ══ TAB: HISTORIAL DE PAGOS ══════════════════════════════════════ */}
+      {/* ══ TAB: HISTORIAL DE PAGOS ══════════════════════════════════════════ */}
       {tab === 'pagos' && (
         <div className="sus-content">
+          <div className="sus-recibo-nota">
+            <IcMail />
+            <span>Los recibos de pago aprobados se envían automáticamente al correo del administrador.</span>
+          </div>
+
           {pagos.length === 0 ? (
             <p className="sus-empty">Sin pagos registrados aún.</p>
           ) : (
-            <table className="sus-pagos-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Plan</th>
-                  <th>Monto</th>
-                  <th>Estado</th>
-                  <th>Pedido Pagopar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pagos.map(p => (
-                  <tr key={p.id}>
-                    <td>{p.fechaCreacion ? new Date(p.fechaCreacion).toLocaleDateString('es-PY') : '—'}</td>
-                    <td>{p.plan}</td>
-                    <td>{formatGs(p.monto)}</td>
-                    <td>
-                      <span className={`sus-pago-estado sus-pago-estado--${p.estado}`}>{p.estado}</span>
-                    </td>
-                    <td className="sus-hash">{p.pagoparNumeroPedido ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <>
+              {/* ── Barra de filtros ── */}
+              <div className="sus-hist-filtros">
+                <div className="sus-hist-filtros-left">
+                  <select
+                    value={filtroEstado}
+                    onChange={e => { setFiltroEstado(e.target.value); setPaginaActual(1) }}
+                    className="sus-hist-select"
+                  >
+                    <option value="">Todos los estados</option>
+                    {estadosHistorial.map(e => (
+                      <option key={e} value={e}>
+                        {e.charAt(0).toUpperCase() + e.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={filtroPlan}
+                    onChange={e => { setFiltroPlan(e.target.value); setPaginaActual(1) }}
+                    className="sus-hist-select"
+                  >
+                    <option value="">Todos los planes</option>
+                    {planesHistorial.map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+
+                  <label style={{fontSize:'0.8rem',color:'#5d6d7e',display:'flex',alignItems:'center',gap:'0.3rem'}}>
+                    Desde <input type="date" value={filtroDesde} onChange={e=>{setFiltroDesde(e.target.value);setPaginaActual(1)}} className="sus-hist-select" style={{paddingLeft:'0.5rem'}} />
+                  </label>
+                  <label style={{fontSize:'0.8rem',color:'#5d6d7e',display:'flex',alignItems:'center',gap:'0.3rem'}}>
+                    Hasta <input type="date" value={filtroHasta} onChange={e=>{setFiltroHasta(e.target.value);setPaginaActual(1)}} className="sus-hist-select" style={{paddingLeft:'0.5rem'}} />
+                  </label>
+                  {(filtroEstado || filtroPlan || filtroDesde || filtroHasta) && (
+                    <button
+                      className="sus-hist-clear"
+                      onClick={() => { setFiltroEstado(''); setFiltroPlan(''); setFiltroDesde(''); setFiltroHasta(''); setPaginaActual(1) }}
+                    >
+                      ✕ Limpiar filtros
+                    </button>
+                  )}
+                </div>
+
+                <span className="sus-hist-info">
+                  {pagosFiltrados.length > 0
+                    ? `Mostrando ${Math.min((paginaActual - 1) * porPagina + 1, pagosFiltrados.length)}–${Math.min(paginaActual * porPagina, pagosFiltrados.length)} de ${pagosFiltrados.length} registro${pagosFiltrados.length !== 1 ? 's' : ''}`
+                    : 'Sin resultados'}
+                </span>
+              </div>
+
+              {pagosFiltrados.length === 0 ? (
+                <p className="sus-empty">No hay pagos que coincidan con los filtros.</p>
+              ) : (
+                <>
+                  <table className="sus-pagos-table">
+                    <thead>
+                      <tr>
+                        <th>Fecha de pago</th>
+                        <th>Plan</th>
+                        <th>Monto</th>
+                        <th>Estado</th>
+                        <th>Vence el</th>
+                        <th>Referencia</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagosPagina.map(p => (
+                        <tr key={p.id}>
+                          <td>{p.fechaPago ? fmtFecha(p.fechaPago) : <span className="sus-nd">—</span>}</td>
+                          <td>{p.plan}</td>
+                          <td><strong>{formatGs(p.monto)}</strong></td>
+                          <td>
+                            <span className={`sus-pago-estado sus-pago-estado--${p.estado}`}>
+                              {p.estado}
+                            </span>
+                          </td>
+                          <td>{fmtFecha(p.fechaVencimiento)}</td>
+                          <td className="sus-hash">{p.referencia ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* ── Paginación ── */}
+                  <div className="sus-paginacion">
+                    <button
+                      className="sus-pag-btn"
+                      onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+                      disabled={paginaActual === 1}
+                    >
+                      ← Anterior
+                    </button>
+
+                    <div className="sus-pag-nums">
+                      {paginasVisibles.map((n, i) =>
+                        n === '…' ? (
+                          <span key={`e${i}`} className="sus-pag-ellipsis">…</span>
+                        ) : (
+                          <button
+                            key={n}
+                            className={`sus-pag-btn sus-pag-num ${paginaActual === n ? 'active' : ''}`}
+                            onClick={() => setPaginaActual(n)}
+                          >
+                            {n}
+                          </button>
+                        )
+                      )}
+                    </div>
+
+                    <button
+                      className="sus-pag-btn"
+                      onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+                      disabled={paginaActual === totalPaginas}
+                    >
+                      Siguiente →
+                    </button>
+
+                    <select
+                      value={porPagina}
+                      onChange={e => { setPorPagina(Number(e.target.value)); setPaginaActual(1) }}
+                      className="sus-hist-select sus-pag-size"
+                    >
+                      {[5, 10, 15, 20].map(n => (
+                        <option key={n} value={n}>{n} por página</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+            </>
           )}
         </div>
       )}
@@ -484,7 +592,7 @@ export default function Suscripcion() {
   )
 }
 
-// ── Sub-componentes ─────────────────────────────────────────────────────────
+// ── Sub-componentes ───────────────────────────────────────────────────────────
 
 function UsoBar({ label, valor, maximo }) {
   const ilimitado = maximo == null
@@ -501,10 +609,7 @@ function UsoBar({ label, valor, maximo }) {
       </div>
       {!ilimitado && (
         <div className="sus-uso-track">
-          <div
-            className={`sus-uso-fill ${alerta ? 'alerta' : ''}`}
-            style={{ width: `${p}%` }}
-          />
+          <div className={`sus-uso-fill ${alerta ? 'alerta' : ''}`} style={{ width: `${p}%` }} />
         </div>
       )}
     </div>

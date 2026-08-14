@@ -189,6 +189,7 @@ function CargarResultados() {
         pruebasFallidas: metricas.pruebasFallidas,
         cobertura:       metricas.cobertura,
         tiempoEjecucion: metricas.tiempoEjecucion,
+        tamanoBytes:     archivo.size ?? null,
       })
       showNotification('success', 'Éxito', 'El resultado fue registrado correctamente.')
       handleNuevo()

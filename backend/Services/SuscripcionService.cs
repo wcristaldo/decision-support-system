@@ -29,6 +29,11 @@ public interface ISuscripcionService
 
     /// <summary>Verifica el tamaño de archivo permitido (en bytes).</summary>
     Task<LimiteVerificacion> VerificarTamanoArchivoAsync(long tamanoBytes);
+
+    /// <summary>Verifica si una feature booleana está habilitada en el plan activo.</summary>
+    Task<LimiteVerificacion> VerificarFeatureAsync(
+        Func<PlanSuscripcion, bool> selector,
+        string nombreFeature);
 }
 
 // ── Implementación ─────────────────────────────────────────────────────────
@@ -123,6 +128,20 @@ public class SuscripcionService : ISuscripcionService
         var maxBytes = (long)plan.MaxTamanoArchivoMb * 1024 * 1024;
         if (tamanoBytes > maxBytes)
             return new(false, $"Tu plan {plan.Nombre} permite archivos de hasta {plan.MaxTamanoArchivoMb} MB. El archivo supera ese límite.");
+
+        return new(true);
+    }
+
+    public async Task<LimiteVerificacion> VerificarFeatureAsync(
+        Func<PlanSuscripcion, bool> selector,
+        string nombreFeature)
+    {
+        var plan = await GetPlanActivoAsync();
+        if (plan == null)
+            return new(false, "No hay suscripción activa. Contratá un plan para continuar.");
+
+        if (!selector(plan))
+            return new(false, $"La funcionalidad '{nombreFeature}' no está disponible en tu plan {plan.Nombre}. Actualizá tu plan para acceder.");
 
         return new(true);
     }
