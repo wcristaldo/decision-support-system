@@ -500,6 +500,112 @@
 
 .sus-nd { color: var(--gray-200); }
 
+/* ── Historial: filtros ── */
+.sus-hist-filtros {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.sus-hist-filtros-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sus-hist-select {
+  padding: 0.45rem 0.85rem;
+  border: 1.5px solid var(--gray-100);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 0.84rem;
+  color: var(--text-dark);
+  cursor: pointer;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  height: 36px;
+}
+.sus-hist-select:focus { border-color: var(--blue-300); }
+
+.sus-hist-clear {
+  padding: 0.4rem 0.85rem;
+  border: 1.5px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  height: 36px;
+}
+.sus-hist-clear:hover { background: #fee2e2; }
+
+.sus-hist-info {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Historial: paginación ── */
+.sus-paginacion {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.sus-pag-btn {
+  padding: 0.42rem 0.8rem;
+  border: 1.5px solid var(--gray-100);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--text-dark);
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+  height: 36px;
+}
+.sus-pag-btn:hover:not(:disabled) {
+  border-color: var(--blue-300);
+  color: var(--blue-400);
+}
+.sus-pag-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+.sus-pag-btn.active {
+  background: var(--blue-400);
+  border-color: var(--blue-400);
+  color: var(--white);
+  font-weight: 700;
+}
+
+.sus-pag-nums {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.sus-pag-num { min-width: 36px; justify-content: center; display: inline-flex; }
+
+.sus-pag-ellipsis {
+  padding: 0 0.3rem;
+  color: var(--text-light);
+  font-size: 0.84rem;
+  line-height: 36px;
+}
+
+.sus-pag-size { margin-left: auto; }
+
 /* ── Sección de título ── */
 .sus-section-title {
   font-family: 'Plus Jakarta Sans', sans-serif;

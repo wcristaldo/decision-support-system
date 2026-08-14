@@ -76,6 +76,12 @@ export default function Suscripcion() {
   // Modal de selección de pasarela
   const [payModal, setPayModal]       = useState(null)   // { id, nombre, precioMensual }
 
+  // ── Historial: filtros + paginación ──────────────────────────────────────
+  const [paginaActual, setPaginaActual] = useState(1)
+  const [porPagina, setPorPagina]       = useState(10)
+  const [filtroEstado, setFiltroEstado] = useState('')
+  const [filtroPlan, setFiltroPlan]     = useState('')
+
   const roles   = JSON.parse(localStorage.getItem('userRoles') || '[]')
   const esAdmin = roles.includes('Administrador')
 
@@ -212,6 +218,34 @@ export default function Suscripcion() {
 
   const planActual = actual?.activa ? actual.plan : null
   const uso = actual?.usoActual
+
+  // ── Historial derivado ───────────────────────────────────────────────────
+  const planesHistorial  = [...new Set(pagos.map(p => p.plan).filter(Boolean))].sort()
+  const estadosHistorial = [...new Set(pagos.map(p => p.estado).filter(Boolean))].sort()
+
+  const pagosFiltrados = pagos.filter(p => {
+    const okEstado = !filtroEstado || p.estado === filtroEstado
+    const okPlan   = !filtroPlan   || p.plan   === filtroPlan
+    return okEstado && okPlan
+  })
+
+  const totalPaginas = Math.max(1, Math.ceil(pagosFiltrados.length / porPagina))
+  const pagosPagina  = pagosFiltrados.slice(
+    (paginaActual - 1) * porPagina,
+    paginaActual * porPagina
+  )
+
+  const paginasVisibles = (() => {
+    if (totalPaginas <= 7) return Array.from({ length: totalPaginas }, (_, i) => i + 1)
+    const pages = [1]
+    const left  = Math.max(2, paginaActual - 1)
+    const right = Math.min(totalPaginas - 1, paginaActual + 1)
+    if (left > 2) pages.push('…')
+    for (let i = left; i <= right; i++) pages.push(i)
+    if (right < totalPaginas - 1) pages.push('…')
+    pages.push(totalPaginas)
+    return pages
+  })()
 
   return (
     <div className="sus-page">
@@ -404,7 +438,6 @@ export default function Suscripcion() {
       {/* ══ TAB: HISTORIAL DE PAGOS ══════════════════════════════════════════ */}
       {tab === 'pagos' && (
         <div className="sus-content">
-          {/* Nota sobre recibos */}
           <div className="sus-recibo-nota">
             <IcMail />
             <span>Los recibos de pago aprobados se envían automáticamente al correo del administrador.</span>
@@ -413,34 +446,131 @@ export default function Suscripcion() {
           {pagos.length === 0 ? (
             <p className="sus-empty">Sin pagos registrados aún.</p>
           ) : (
-            <table className="sus-pagos-table">
-              <thead>
-                <tr>
-                  <th>Fecha de pago</th>
-                  <th>Plan</th>
-                  <th>Monto</th>
-                  <th>Estado</th>
-                  <th>Vence el</th>
-                  <th>Referencia</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pagos.map(p => (
-                  <tr key={p.id}>
-                    <td>{p.fechaPago ? fmtFecha(p.fechaPago) : <span className="sus-nd">—</span>}</td>
-                    <td>{p.plan}</td>
-                    <td><strong>{formatGs(p.monto)}</strong></td>
-                    <td>
-                      <span className={`sus-pago-estado sus-pago-estado--${p.estado}`}>
-                        {p.estado}
-                      </span>
-                    </td>
-                    <td>{fmtFecha(p.fechaVencimiento)}</td>
-                    <td className="sus-hash">{p.referencia ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <>
+              {/* ── Barra de filtros ── */}
+              <div className="sus-hist-filtros">
+                <div className="sus-hist-filtros-left">
+                  <select
+                    value={filtroEstado}
+                    onChange={e => { setFiltroEstado(e.target.value); setPaginaActual(1) }}
+                    className="sus-hist-select"
+                  >
+                    <option value="">Todos los estados</option>
+                    {estadosHistorial.map(e => (
+                      <option key={e} value={e}>
+                        {e.charAt(0).toUpperCase() + e.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={filtroPlan}
+                    onChange={e => { setFiltroPlan(e.target.value); setPaginaActual(1) }}
+                    className="sus-hist-select"
+                  >
+                    <option value="">Todos los planes</option>
+                    {planesHistorial.map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+
+                  {(filtroEstado || filtroPlan) && (
+                    <button
+                      className="sus-hist-clear"
+                      onClick={() => { setFiltroEstado(''); setFiltroPlan(''); setPaginaActual(1) }}
+                    >
+                      ✕ Limpiar filtros
+                    </button>
+                  )}
+                </div>
+
+                <span className="sus-hist-info">
+                  {pagosFiltrados.length > 0
+                    ? `Mostrando ${Math.min((paginaActual - 1) * porPagina + 1, pagosFiltrados.length)}–${Math.min(paginaActual * porPagina, pagosFiltrados.length)} de ${pagosFiltrados.length} registro${pagosFiltrados.length !== 1 ? 's' : ''}`
+                    : 'Sin resultados'}
+                </span>
+              </div>
+
+              {pagosFiltrados.length === 0 ? (
+                <p className="sus-empty">No hay pagos que coincidan con los filtros.</p>
+              ) : (
+                <>
+                  <table className="sus-pagos-table">
+                    <thead>
+                      <tr>
+                        <th>Fecha de pago</th>
+                        <th>Plan</th>
+                        <th>Monto</th>
+                        <th>Estado</th>
+                        <th>Vence el</th>
+                        <th>Referencia</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagosPagina.map(p => (
+                        <tr key={p.id}>
+                          <td>{p.fechaPago ? fmtFecha(p.fechaPago) : <span className="sus-nd">—</span>}</td>
+                          <td>{p.plan}</td>
+                          <td><strong>{formatGs(p.monto)}</strong></td>
+                          <td>
+                            <span className={`sus-pago-estado sus-pago-estado--${p.estado}`}>
+                              {p.estado}
+                            </span>
+                          </td>
+                          <td>{fmtFecha(p.fechaVencimiento)}</td>
+                          <td className="sus-hash">{p.referencia ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* ── Paginación ── */}
+                  <div className="sus-paginacion">
+                    <button
+                      className="sus-pag-btn"
+                      onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
+                      disabled={paginaActual === 1}
+                    >
+                      ← Anterior
+                    </button>
+
+                    <div className="sus-pag-nums">
+                      {paginasVisibles.map((n, i) =>
+                        n === '…' ? (
+                          <span key={`e${i}`} className="sus-pag-ellipsis">…</span>
+                        ) : (
+                          <button
+                            key={n}
+                            className={`sus-pag-btn sus-pag-num ${paginaActual === n ? 'active' : ''}`}
+                            onClick={() => setPaginaActual(n)}
+                          >
+                            {n}
+                          </button>
+                        )
+                      )}
+                    </div>
+
+                    <button
+                      className="sus-pag-btn"
+                      onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
+                      disabled={paginaActual === totalPaginas}
+                    >
+                      Siguiente →
+                    </button>
+
+                    <select
+                      value={porPagina}
+                      onChange={e => { setPorPagina(Number(e.target.value)); setPaginaActual(1) }}
+                      className="sus-hist-select sus-pag-size"
+                    >
+                      {[5, 10, 15, 20].map(n => (
+                        <option key={n} value={n}>{n} por página</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+            </>
           )}
         </div>
       )}

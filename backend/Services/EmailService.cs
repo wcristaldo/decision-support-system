@@ -12,8 +12,15 @@ public record ReciboData(
     DateTime  FechaPago,
     DateTime? FechaInicio,
     DateTime? FechaVencimiento,
-    string?   NombreCliente  = null,
-    string?   EmailCliente   = null
+    string?   NombreCliente    = null,
+    string?   EmailCliente     = null,
+    string    NumeroRecibo     = "REC-000000",
+    DateTime? FechaEmision     = null,          // null → usa FechaPago
+    string    MetodoPago       = "AdamsPay",
+    string    EstadoRecibo     = "Emitido",
+    string?   DocumentoCliente = null,
+    string?   TelefonoCliente  = null,
+    string?   DireccionCliente = null
 );
 
 // ── Interfaz ─────────────────────────────────────────────────────────────────

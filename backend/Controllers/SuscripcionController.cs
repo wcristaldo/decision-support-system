@@ -267,7 +267,10 @@ public class SuscripcionController : ControllerBase
                             FechaInicio:      pago.Suscripcion?.FechaInicio,
                             FechaVencimiento: pago.Suscripcion?.FechaVencimiento,
                             NombreCliente:    $"{primerAdmin.Nombre} {primerAdmin.Apellido}".Trim(),
-                            EmailCliente:     primerAdmin.Email
+                            EmailCliente:     primerAdmin.Email,
+                            NumeroRecibo:     $"REC-{DateTime.UtcNow.Year}-{pago.Id:D6}",
+                            FechaEmision:     DateTime.UtcNow,
+                            MetodoPago:       "AdamsPay"
                         );
 
                         var pdfBytes = _receipt.GenerarReciboPdf(recibo);
@@ -375,7 +378,11 @@ public class SuscripcionController : ControllerBase
                 Monto:            999_000m,
                 FechaPago:        DateTime.UtcNow,
                 FechaInicio:      DateTime.UtcNow,
-                FechaVencimiento: DateTime.UtcNow.AddMonths(1)
+                FechaVencimiento: DateTime.UtcNow.AddMonths(1),
+                NombreCliente:    "Administrador",
+                NumeroRecibo:     "REC-TEST-000000",
+                FechaEmision:     DateTime.UtcNow,
+                MetodoPago:       "Prueba"
             );
             var pdfBytes = _receipt.GenerarReciboPdf(recibo);
             await _email.EnviarReciboAsync(recibo, adminEmails, pdfBytes);
@@ -521,7 +528,10 @@ public class SuscripcionController : ControllerBase
                     FechaInicio:      pago.Suscripcion?.FechaInicio,
                     FechaVencimiento: pago.Suscripcion?.FechaVencimiento,
                     NombreCliente:    $"{primer.Nombre} {primer.Apellido}".Trim(),
-                    EmailCliente:     primer.Email
+                    EmailCliente:     primer.Email,
+                    NumeroRecibo:     $"REC-{DateTime.UtcNow.Year}-{pago.Id:D6}",
+                    FechaEmision:     DateTime.UtcNow,
+                    MetodoPago:       "PayPal"
                 );
                 var pdfBytes = _receipt.GenerarReciboPdf(recibo);
                 await _email.EnviarReciboAsync(recibo, adminEmails, pdfBytes);
@@ -645,7 +655,10 @@ public class SuscripcionController : ControllerBase
                         FechaInicio:      pago.Suscripcion?.FechaInicio,
                         FechaVencimiento: pago.Suscripcion?.FechaVencimiento,
                         NombreCliente:    $"{primer.Nombre} {primer.Apellido}".Trim(),
-                        EmailCliente:     primer.Email
+                        EmailCliente:     primer.Email,
+                        NumeroRecibo:     $"REC-{DateTime.UtcNow.Year}-{pago.Id:D6}",
+                        FechaEmision:     DateTime.UtcNow,
+                        MetodoPago:       "PayPal"
                     );
                     var pdfBytes = _receipt.GenerarReciboPdf(recibo);
                     await _email.EnviarReciboAsync(recibo, adminEmails, pdfBytes);
