@@ -65,6 +65,12 @@ builder.Services.AddHttpClient("PayPal", client =>
     client.Timeout = TimeSpan.FromSeconds(30);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
+builder.Services.AddHttpClient("ExchangeRate", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+builder.Services.AddMemoryCache();
 
 // Email + PDF receipt
 builder.Services.AddScoped<IEmailService, EmailService>();

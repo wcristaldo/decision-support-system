@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace DecisionSupportAPI.Services;
 
@@ -29,15 +30,18 @@ public class PayPalService : IPayPalService
     private readonly IHttpClientFactory      _httpFactory;
     private readonly IConfiguration          _config;
     private readonly ILogger<PayPalService>  _logger;
+    private readonly IMemoryCache            _cache;
 
     public PayPalService(
         IHttpClientFactory      httpFactory,
         IConfiguration          config,
-        ILogger<PayPalService>  logger)
+        ILogger<PayPalService>  logger,
+        IMemoryCache            cache)
     {
         _httpFactory = httpFactory;
         _config      = config;
         _logger      = logger;
+        _cache       = cache;
     }
 
     // ── Helpers privados ──────────────────────────────────────────────────────
@@ -45,10 +49,62 @@ public class PayPalService : IPayPalService
     private string BaseUrl =>
         _config["PayPal:BaseUrl"] ?? "https://api-m.sandbox.paypal.com";
 
-    private decimal ConvertirPygAUsd(decimal montoGs)
+    /// <summary>
+    /// Obtiene la tasa de cambio PYG/USD desde open.er-api.com.
+    /// Cachea el resultado 1 hora. Si falla, usa el valor configurado (fallback).
+    /// </summary>
+    private async Task<decimal> ObtenerTasaPygUsdAsync()
     {
+        const string cacheKey = "paypal_tasa_pyg_usd";
+        if (_cache.TryGetValue(cacheKey, out decimal tasaCacheada))
+            return tasaCacheada;
+
+        // Fallback configurado
         var tasaStr = _config["PayPal:TasaPygUsd"] ?? "7500";
-        if (!decimal.TryParse(tasaStr, out var tasa) || tasa <= 0) tasa = 7500m;
+        if (!decimal.TryParse(tasaStr, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var tasaFallback) || tasaFallback <= 0)
+            tasaFallback = 7500m;
+
+        try
+        {
+            var client = _httpFactory.CreateClient("ExchangeRate");
+            var res    = await client.GetAsync("https://open.er-api.com/v6/latest/USD");
+
+            if (!res.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("ExchangeRate API devolvió {Status}. Usando fallback {Tasa}",
+                    res.StatusCode, tasaFallback);
+                return tasaFallback;
+            }
+
+            var body = await res.Content.ReadAsStringAsync();
+            var doc  = JsonDocument.Parse(body);
+
+            if (doc.RootElement.TryGetProperty("rates", out var rates) &&
+                rates.TryGetProperty("PYG", out var pygProp))
+            {
+                var tasa = pygProp.GetDecimal();
+                if (tasa > 0)
+                {
+                    _cache.Set(cacheKey, tasa, TimeSpan.FromHours(1));
+                    _logger.LogInformation("Tasa USD→PYG actualizada: {Tasa} (cacheada 1h)", tasa);
+                    return tasa;
+                }
+            }
+
+            _logger.LogWarning("No se pudo extraer PYG de la API. Usando fallback {Tasa}", tasaFallback);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error al obtener cotización. Usando fallback {Tasa}", tasaFallback);
+        }
+
+        return tasaFallback;
+    }
+
+    private async Task<decimal> ConvertirPygAUsdAsync(decimal montoGs)
+    {
+        var tasa = await ObtenerTasaPygUsdAsync();
         return Math.Round(montoGs / tasa, 2);
     }
 
@@ -95,7 +151,7 @@ public class PayPalService : IPayPalService
         if (token == null)
             return (false, null, null, "No se pudo obtener token de PayPal. Verificá la configuración.");
 
-        var montoUsd = ConvertirPygAUsd(montoGs);
+        var montoUsd = await ConvertirPygAUsdAsync(montoGs);
 
         // Payload de la orden según la API v2 de PayPal
         var orderPayload = new
@@ -115,12 +171,13 @@ public class PayPalService : IPayPalService
             },
             application_context = new
             {
-                return_url   = returnUrl,
-                cancel_url   = cancelUrl,
-                brand_name   = "Roshka DSS",
-                landing_page = "NO_PREFERENCE",
-                user_action  = "PAY_NOW",
-                locale       = "es-PY"
+                return_url           = returnUrl,
+                cancel_url           = cancelUrl,
+                brand_name           = "Roshka DSS",
+                landing_page         = "BILLING",
+                user_action          = "PAY_NOW",
+                shipping_preference  = "NO_SHIPPING",
+                locale               = "es-PY"
             }
         };
 

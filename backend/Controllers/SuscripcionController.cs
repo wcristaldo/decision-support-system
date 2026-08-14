@@ -138,21 +138,23 @@ public class SuscripcionController : ControllerBase
         if (!success || payUrl == null)
             return BadRequest(new { message = $"Error al crear deuda en AdamsPay: {error}" });
 
-        // Obtener o crear suscripción
-        var sub = await _db.Suscripciones
+        // Si hay suscripción activa, crear una nueva pendiente sin tocarla.
+        // Si solo hay pendiente, reutilizarla. Si no hay ninguna, crear nueva.
+        var subExistente = await _db.Suscripciones
             .Where(s => s.Estado == "pendiente" || s.Estado == "activa")
             .OrderByDescending(s => s.FechaCreacion)
             .FirstOrDefaultAsync();
 
-        if (sub == null)
+        Suscripcion sub;
+        if (subExistente == null || subExistente.Estado == "activa")
         {
             sub = new Suscripcion { IdPlan = plan.Id, Estado = "pendiente", FechaCreacion = DateTime.UtcNow };
             _db.Suscripciones.Add(sub);
         }
         else
         {
+            sub = subExistente;
             sub.IdPlan = plan.Id;
-            sub.Estado = "pendiente";
         }
 
         await _db.SaveChangesAsync();
@@ -392,7 +394,6 @@ public class SuscripcionController : ControllerBase
             });
         }
     }
-}
 
     // ── POST /api/suscripcion/iniciar-pago-paypal ────────────────────────────
     /// <summary>
@@ -418,21 +419,23 @@ public class SuscripcionController : ControllerBase
         if (!success || approvalUrl == null)
             return BadRequest(new { message = $"Error al crear orden en PayPal: {error}" });
 
-        // Obtener o crear suscripción pendiente
-        var sub = await _db.Suscripciones
+        // Si hay suscripción activa, crear una nueva pendiente sin tocarla.
+        // Si solo hay pendiente, reutilizarla. Si no hay ninguna, crear nueva.
+        var subExistentePayPal = await _db.Suscripciones
             .Where(s => s.Estado == "pendiente" || s.Estado == "activa")
             .OrderByDescending(s => s.FechaCreacion)
             .FirstOrDefaultAsync();
 
-        if (sub == null)
+        Suscripcion sub;
+        if (subExistentePayPal == null || subExistentePayPal.Estado == "activa")
         {
             sub = new Suscripcion { IdPlan = plan.Id, Estado = "pendiente", FechaCreacion = DateTime.UtcNow };
             _db.Suscripciones.Add(sub);
         }
         else
         {
+            sub = subExistentePayPal;
             sub.IdPlan = plan.Id;
-            sub.Estado = "pendiente";
         }
 
         await _db.SaveChangesAsync();
@@ -532,6 +535,134 @@ public class SuscripcionController : ControllerBase
 
         _logger.LogInformation("Suscripción activada via PayPal, orderId={OrderId}", req.OrderId);
         return Ok(new { message = "¡Pago confirmado! Tu suscripción está activa." });
+    }
+
+    // ── POST /api/suscripcion/webhook/paypal ─────────────────────────────────
+    /// <summary>
+    /// Webhook de PayPal. Procesa PAYMENT.CAPTURE.COMPLETED y activa la suscripción.
+    /// Configurar en Webhook Simulator con:
+    ///   URL: https://{ngrok}/api/suscripcion/webhook/paypal
+    ///   Event Type: PAYMENT.CAPTURE.COMPLETED
+    /// </summary>
+    [HttpPost("webhook/paypal")]
+    [AllowAnonymous]
+    public async Task<IActionResult> WebhookPayPal()
+    {
+        string body;
+        using (var reader = new System.IO.StreamReader(Request.Body))
+            body = await reader.ReadToEndAsync();
+
+        _logger.LogInformation("Webhook PayPal recibido: {Body}", body);
+
+        try
+        {
+            var doc       = JsonDocument.Parse(body);
+            var root      = doc.RootElement;
+            var eventType = root.TryGetProperty("event_type", out var et) ? et.GetString() : null;
+
+            if (eventType != "PAYMENT.CAPTURE.COMPLETED")
+            {
+                _logger.LogInformation("Webhook PayPal ignorado: event_type={EventType}", eventType);
+                return Ok();
+            }
+
+            // Intentar extraer orderId desde resource.supplementary_data.related_ids.order_id
+            string? orderId = null;
+            if (root.TryGetProperty("resource", out var resource) &&
+                resource.TryGetProperty("supplementary_data", out var suppData) &&
+                suppData.TryGetProperty("related_ids", out var relIds) &&
+                relIds.TryGetProperty("order_id", out var oid))
+            {
+                orderId = oid.GetString();
+            }
+
+            // Buscar pago por orderId; si no se encuentra (ej. Webhook Simulator con ID mock),
+            // usar el pago pendiente de PayPal más reciente
+            PagoSuscripcion? pago = null;
+
+            if (!string.IsNullOrEmpty(orderId))
+            {
+                pago = await _db.PagosSuscripcion
+                    .Include(p => p.Suscripcion)
+                    .Include(p => p.Plan)
+                    .FirstOrDefaultAsync(p => p.PagoparIdPedidoComercio == $"PP-{orderId}");
+            }
+
+            if (pago == null)
+            {
+                pago = await _db.PagosSuscripcion
+                    .Include(p => p.Suscripcion)
+                    .Include(p => p.Plan)
+                    .Where(p => p.Estado == "pendiente" && p.PagoparIdPedidoComercio!.StartsWith("PP-"))
+                    .OrderByDescending(p => p.FechaCreacion)
+                    .FirstOrDefaultAsync();
+
+                if (pago == null)
+                {
+                    _logger.LogWarning("Webhook PayPal: no hay pagos pendientes de PayPal en la BD");
+                    return Ok();
+                }
+
+                _logger.LogInformation("Webhook PayPal: fallback al pago pendiente más reciente {DocId}",
+                    pago.PagoparIdPedidoComercio);
+            }
+
+            pago.Estado           = "aprobado";
+            pago.FechaPago        = DateTime.UtcNow;
+            pago.PagoparRespuesta = body.Length > 2000 ? body[..2000] : body;
+
+            if (pago.Suscripcion != null)
+            {
+                pago.Suscripcion.IdPlan           = pago.IdPlan;
+                pago.Suscripcion.Estado           = "activa";
+                pago.Suscripcion.FechaInicio      = DateTime.UtcNow;
+                pago.Suscripcion.FechaVencimiento = DateTime.UtcNow.AddDays(30);
+            }
+
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Suscripción activada via webhook PayPal, docId={DocId}",
+                pago.PagoparIdPedidoComercio);
+
+            // Enviar recibo por email (no interrumpe el webhook si falla)
+            try
+            {
+                var admins = await _db.Usuarios
+                    .Where(u => u.Estado == "activo"
+                             && u.UsuarioRoles.Any(ur => ur.Estado == "activo"
+                                                      && ur.Rol!.NombreRol == "Administrador"))
+                    .Select(u => new { u.Nombre, u.Apellido, u.Email })
+                    .ToListAsync();
+
+                if (admins.Count > 0)
+                {
+                    var adminEmails = admins.Select(a => a.Email).ToList();
+                    var primer      = admins.First();
+                    var recibo = new ReciboData(
+                        DocId:            pago.PagoparIdPedidoComercio ?? "PP-WEBHOOK",
+                        PlanNombre:       pago.Plan?.Nombre ?? "—",
+                        Monto:            pago.Monto,
+                        FechaPago:        pago.FechaPago!.Value,
+                        FechaInicio:      pago.Suscripcion?.FechaInicio,
+                        FechaVencimiento: pago.Suscripcion?.FechaVencimiento,
+                        NombreCliente:    $"{primer.Nombre} {primer.Apellido}".Trim(),
+                        EmailCliente:     primer.Email
+                    );
+                    var pdfBytes = _receipt.GenerarReciboPdf(recibo);
+                    await _email.EnviarReciboAsync(recibo, adminEmails, pdfBytes);
+                    _logger.LogInformation("Recibo PayPal (webhook) enviado a {Count} admin(s)", admins.Count);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error enviando recibo via webhook PayPal");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error procesando webhook PayPal");
+        }
+
+        return Ok();
     }
 }
 
