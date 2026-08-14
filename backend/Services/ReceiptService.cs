@@ -16,7 +16,7 @@ public class ReceiptService : IReceiptService
     private const string EmisorEmpresa  = "Roshka S.A.";
     private const string EmisorRuc      = "80012345-6";
     private const string EmisorDir      = "Aviadores del Chaco 1669, Asunción, Paraguay";
-    private const string EmisorEmail    = "soporte@roshka.com";
+    private const string EmisorEmail    = "soporte-dss@roshka.com";
     private const string SistemaLeyenda = "Sistema Roshka DSS";
 
     // ── Paleta ────────────────────────────────────────────────────────────────
@@ -298,7 +298,7 @@ public class ReceiptService : IReceiptService
                          .Text("FORMA DE PAGO").FontSize(8.5f).Bold().FontColor(ColorBlanco);
                         c.Item().Padding(10).Row(row =>
                         {
-                            var metodos = new[] { "Efectivo", "Transferencia bancaria", "Tarjeta de crédito/débito", "AdamsPay", "PayPal", "Otro" };
+                            var metodos = new[] { "Tarjeta de crédito/débito", "AdamsPay", "PayPal" };
                             foreach (var m in metodos)
                             {
                                 var sel = string.Equals(m, recibo.MetodoPago, StringComparison.OrdinalIgnoreCase);
@@ -352,7 +352,7 @@ public class ReceiptService : IReceiptService
                     .PaddingTop(5).Row(r =>
                     {
                         r.RelativeItem()
-                         .Text($"{EmisorNombre}  ·  {EmisorEmpresa}  ·  {EmisorEmail}")
+                         .Text($"{EmisorNombre}  ·  {EmisorEmpresa}  ·  soporte-dss@roshka.com")
                          .FontSize(7.5f).FontColor("#aaaaaa");
                         r.AutoItem().AlignRight()
                          .Text("Página 1 de 1")

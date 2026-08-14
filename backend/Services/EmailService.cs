@@ -130,16 +130,16 @@ public class EmailService : IEmailService
                   <tr><td>Plan contratado</td><td>{{recibo.PlanNombre}}</td></tr>
                   <tr><td>Inicio de vigencia</td><td>{{fechaInicio}}</td></tr>
                   <tr><td>Vencimiento</td><td>{{fechaVenc}}</td></tr>
-                  <tr><td>Método de pago</td><td>AdamsPay</td></tr>
+                  <tr><td>Método de pago</td><td>{{recibo.MetodoPago}}</td></tr>
                   <tr><td colspan="2"><hr class="divider" /></td></tr>
                   <tr class="total-row"><td>Total pagado</td><td>Gs. {{montoStr}}</td></tr>
                 </table>
                 <p style="color:#7e9ab2;font-size:0.82rem;margin-top:8px;">
-                  El recibo en PDF se adjunta a este correo. Conservalo para tus registros.
+                  El recibo electrónico en PDF se adjunta a este correo. Conservalo para tus registros.
                 </p>
               </div>
               <div class="footer">
-                Roshka DSS &copy; {{anio}} &nbsp;|&nbsp; Powered by <a href="https://adamspay.com">AdamsPay</a>
+                Roshka DSS &copy; {{anio}} &nbsp;|&nbsp; soporte-dss@roshka.com
               </div>
             </div>
             </body></html>
