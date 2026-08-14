@@ -505,11 +505,6 @@ export default function UserManagement() {
                       <td style={{fontSize:'0.78rem',color:'#5d6d7e',fontFamily:'monospace',whiteSpace:'nowrap'}}>
                         {u.fechaCreacion ? new Date(u.fechaCreacion).toLocaleString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'}
                       </td>
-                      <td
-                        <span className={`um-badge ${esActivo ? 'um-badge-ok' : 'um-badge-off'}`}>
-                          {esActivo ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </td>
                       <td>
                         <div className="um-actions">
                           <button className="um-btn-action um-btn-edit"

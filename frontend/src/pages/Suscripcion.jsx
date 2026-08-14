@@ -228,9 +228,12 @@ export default function Suscripcion() {
   const pagosFiltrados = pagos.filter(p => {
     const okEstado = !filtroEstado || p.estado === filtroEstado
     const okPlan   = !filtroPlan   || p.plan   === filtroPlan
-    const fecha    = p.fechaPago ? new Date(p.fechaPago) : null
-    const okDesde  = !filtroDesde || (fecha && fecha >= new Date(filtroDesde))
-    const okHasta  = !filtroHasta || (fecha && fecha <= new Date(filtroHasta + 'T23:59:59'))
+    const fecha     = p.fechaPago ? new Date(p.fechaPago) : null
+    // Comparar sólo la parte de la fecha local (sin hora) para evitar
+    // el desfase UTC↔local (new Date('YYYY-MM-DD') = medianoche UTC ≠ local)
+    const fechaLocal = fecha ? fecha.toLocaleDateString('en-CA') : null  // 'YYYY-MM-DD'
+    const okDesde   = !filtroDesde || (fechaLocal && fechaLocal >= filtroDesde)
+    const okHasta   = !filtroHasta || (fechaLocal && fechaLocal <= filtroHasta)
     return okEstado && okPlan && okDesde && okHasta
   })
 
