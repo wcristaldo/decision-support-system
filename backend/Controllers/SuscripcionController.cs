@@ -95,7 +95,7 @@ public class SuscripcionController : ControllerBase
 
         // Días restantes para vencimiento
         int? diasRestantes = sub.FechaVencimiento.HasValue
-            ? Math.Max(0, (int)(sub.FechaVencimiento.Value - DateTime.UtcNow).TotalDays)
+            ? Math.Max(0, (sub.FechaVencimiento.Value.Date - DateTime.UtcNow.Date).Days)
             : null;
 
         return Ok(new
@@ -237,7 +237,7 @@ public class SuscripcionController : ControllerBase
                     pago.Suscripcion.IdPlan           = pago.IdPlan;
                     pago.Suscripcion.Estado           = "activa";
                     pago.Suscripcion.FechaInicio      = DateTime.UtcNow;
-                    pago.Suscripcion.FechaVencimiento = DateTime.UtcNow.AddDays(30);
+                    pago.Suscripcion.FechaVencimiento = DateTime.UtcNow.AddMonths(1);
                 }
 
                 await _db.SaveChangesAsync();
@@ -375,7 +375,7 @@ public class SuscripcionController : ControllerBase
                 Monto:            999_000m,
                 FechaPago:        DateTime.UtcNow,
                 FechaInicio:      DateTime.UtcNow,
-                FechaVencimiento: DateTime.UtcNow.AddDays(30)
+                FechaVencimiento: DateTime.UtcNow.AddMonths(1)
             );
             var pdfBytes = _receipt.GenerarReciboPdf(recibo);
             await _email.EnviarReciboAsync(recibo, adminEmails, pdfBytes);
@@ -494,7 +494,7 @@ public class SuscripcionController : ControllerBase
             pago.Suscripcion.IdPlan           = pago.IdPlan;
             pago.Suscripcion.Estado           = "activa";
             pago.Suscripcion.FechaInicio      = DateTime.UtcNow;
-            pago.Suscripcion.FechaVencimiento = DateTime.UtcNow.AddDays(30);
+            pago.Suscripcion.FechaVencimiento = DateTime.UtcNow.AddMonths(1);
         }
 
         await _db.SaveChangesAsync();
@@ -616,7 +616,7 @@ public class SuscripcionController : ControllerBase
                 pago.Suscripcion.IdPlan           = pago.IdPlan;
                 pago.Suscripcion.Estado           = "activa";
                 pago.Suscripcion.FechaInicio      = DateTime.UtcNow;
-                pago.Suscripcion.FechaVencimiento = DateTime.UtcNow.AddDays(30);
+                pago.Suscripcion.FechaVencimiento = DateTime.UtcNow.AddMonths(1);
             }
 
             await _db.SaveChangesAsync();
