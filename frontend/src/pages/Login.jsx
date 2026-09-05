@@ -100,70 +100,59 @@ function AboutContent() {
 
 /* ─────────────────────────────────────────────────────────────────────
    Contenido: Planes
+   Se traen SIEMPRE desde /api/suscripcion/planes (endpoint público) —
+   la misma fuente que usa la pantalla de Suscripción una vez logueado.
+   No hay una segunda copia hardcodeada: si cambia un límite o una
+   funcionalidad en la base, se refleja acá automáticamente.
 ───────────────────────────────────────────────────────────────────── */
-const PLANS = [
-  {
-    nombre: 'Básico',
-    precio: 'Gs. 250.000',
-    color: 'basic',
+const PLAN_COLOR = ['basic', 'pro', 'enterprise']
+
+function planToCard(p, idx) {
+  const lim = p.limites || {}
+  const fn  = p.funcionalidades || {}
+  return {
+    nombre: p.nombre,
+    precio: `Gs. ${Number(p.precioMensual).toLocaleString('es-PY')}`,
+    color:  PLAN_COLOR[idx] || 'basic',
+    badge:  idx === 1 ? 'Recomendado' : null,
     features: [
-      { label: '3 proyectos',             ok: true  },
-      { label: '10 usuarios',             ok: true  },
-      { label: '100 evaluaciones/mes',    ok: true  },
-      { label: 'Archivos hasta 5 MB',     ok: true  },
-      { label: 'Historial 30 días',       ok: true  },
-      { label: 'Exportación PDF',         ok: false },
-      { label: 'Dashboard avanzado',      ok: false },
-      { label: 'Notificaciones email',    ok: false },
-      { label: 'API pública / Webhooks',  ok: false },
-      { label: 'Soporte prioritario',     ok: false },
+      { label: `Proyectos: ${lim.maxProyectos}`,            ok: true },
+      { label: `Usuarios: ${lim.maxUsuarios}`,               ok: true },
+      { label: `Evaluaciones/mes: ${lim.maxEvaluacionesMes}`, ok: true },
+      { label: lim.maxTamanoArchivoMb != null ? `Archivos hasta ${lim.maxTamanoArchivoMb} MB` : 'Archivos sin límite', ok: true },
+      { label: `Historial: ${lim.historialDias}`,            ok: true },
+      { label: 'Dashboard avanzado',       ok: !!fn.dashboardAvanzado },
+      { label: 'Exportar PDF',             ok: !!fn.exportarPdf },
+      { label: 'Exportar Excel/CSV',       ok: !!fn.exportarExcel },
+      { label: 'Alertas email/Slack',      ok: !!fn.notificacionesEmail || !!fn.notificacionesSlack },
+      { label: 'Integración CI/CD nativa', ok: !!fn.integracionCicd },
+      { label: 'Soporte prioritario',      ok: !!fn.soportePrioritario },
     ],
-  },
-  {
-    nombre: 'Profesional',
-    precio: 'Gs. 500.000',
-    color: 'pro',
-    badge: 'Recomendado',
-    features: [
-      { label: '10 proyectos',            ok: true  },
-      { label: '25 usuarios',             ok: true  },
-      { label: '500 evaluaciones/mes',    ok: true  },
-      { label: 'Archivos hasta 20 MB',    ok: true  },
-      { label: 'Historial completo',      ok: true  },
-      { label: 'Exportación PDF',         ok: true  },
-      { label: 'Dashboard avanzado',      ok: true  },
-      { label: 'Notificaciones email',    ok: true  },
-      { label: 'API pública / Webhooks',  ok: false },
-      { label: 'Soporte prioritario',     ok: false },
-    ],
-  },
-  {
-    nombre: 'Empresarial',
-    precio: 'Gs. 900.000',
-    color: 'enterprise',
-    features: [
-      { label: 'Proyectos ilimitados',       ok: true },
-      { label: 'Usuarios ilimitados',        ok: true },
-      { label: 'Evaluaciones ilimitadas',    ok: true },
-      { label: 'Archivos hasta 100 MB',      ok: true },
-      { label: 'Historial completo',         ok: true },
-      { label: 'Exportación PDF + Excel',    ok: true },
-      { label: 'Dashboard avanzado',         ok: true },
-      { label: 'Notif. email + Slack',       ok: true },
-      { label: 'API + CI/CD + Webhooks',     ok: true },
-      { label: 'Soporte prioritario',        ok: true },
-    ],
-  },
-]
+  }
+}
 
 function PlansContent() {
+  const [planes, setPlanes]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState(false)
+
+  useEffect(() => {
+    api.get('/suscripcion/planes')
+      .then(res => setPlanes(res.data.map(planToCard)))
+      .catch(() => setError(true))
+      .finally(() => setLoading(false))
+  }, [])
+
   return (
     <div className="lm-body lm-body--plans">
       <h2 className="lm-title">Planes disponibles</h2>
       <p className="lm-subtitle">Elegí el plan que mejor se adapte a las necesidades de tu equipo.</p>
 
+      {loading && <p className="lm-plans-note">Cargando planes…</p>}
+      {error && <p className="lm-plans-note">No se pudieron cargar los planes. Intentá de nuevo más tarde.</p>}
+
       <div className="lm-plans-grid">
-        {PLANS.map(plan => (
+        {planes.map(plan => (
           <div key={plan.nombre} className={`lm-plan-card lm-plan-card--${plan.color}`}>
             {plan.badge && <span className="lm-plan-badge">{plan.badge}</span>}
             <div className="lm-plan-name">{plan.nombre}</div>
@@ -283,6 +272,34 @@ function PrivacyContent() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────
+   Contenido: Olvidé mi contraseña
+───────────────────────────────────────────────────────────────────── */
+function ForgotPasswordContent() {
+  return (
+    <div className="lm-body">
+      <div className="lm-header">
+        <div className="lm-header-icon">DSS</div>
+        <div>
+          <h2 className="lm-title">¿Olvidaste tu contraseña?</h2>
+          <p className="lm-subtitle">Restablecimiento de contraseña</p>
+        </div>
+      </div>
+
+      <div className="lm-section">
+        <p>
+          Por seguridad, Roshka DSS no envía enlaces de restablecimiento por correo. El restablecimiento de tu
+          contraseña lo realiza un <strong>Administrador del sistema</strong> desde la pantalla de Gestión de Usuarios.
+        </p>
+        <p style={{ marginTop: '0.6rem' }}>
+          Contactate con el administrador de tu equipo para que te asigne una contraseña temporal, y cambiala por una
+          propia desde "Mi perfil" apenas ingreses.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────────────
    Modal wrapper
 ───────────────────────────────────────────────────────────────────── */
 function InfoModal({ type, onClose }) {
@@ -299,6 +316,7 @@ function InfoModal({ type, onClose }) {
         {type === 'about'   && <AboutContent />}
         {type === 'plans'   && <PlansContent />}
         {type === 'privacy' && <PrivacyContent />}
+        {type === 'forgot'  && <ForgotPasswordContent />}
       </div>
     </div>
   )
@@ -307,13 +325,16 @@ function InfoModal({ type, onClose }) {
 /* ─────────────────────────────────────────────────────────────────────
    Login principal
 ───────────────────────────────────────────────────────────────────── */
+const RECORDAR_EMAIL_KEY = 'dss-recordar-email'
+
 function Login({ onLogin }) {
-  const [email, setEmail]           = useState('')
+  const [email, setEmail]           = useState(() => localStorage.getItem(RECORDAR_EMAIL_KEY) || '')
   const [password, setPassword]     = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState(null)
   const [activeModal, setActiveModal] = useState(null)
+  const [recordar, setRecordar]     = useState(() => !!localStorage.getItem(RECORDAR_EMAIL_KEY))
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -323,8 +344,10 @@ function Login({ onLogin }) {
 
     try {
       const response = await api.post('/auth/login', { email, password })
-      localStorage.setItem('token', response.data.token)
-      localStorage.setItem('userRoles', JSON.stringify(response.data.usuario.roles))
+      sessionStorage.setItem('token', response.data.token)
+      sessionStorage.setItem('userRoles', JSON.stringify(response.data.usuario.roles))
+      if (recordar) localStorage.setItem(RECORDAR_EMAIL_KEY, email)
+      else localStorage.removeItem(RECORDAR_EMAIL_KEY)
       onLogin()
       navigate('/')
     } catch (err) {
