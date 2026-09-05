@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using DecisionSupportAPI.Data;
 using DecisionSupportAPI.Services;
+using DecisionSupportAPI.Auth;
 
 // Fix: Npgsql requiere DateTimeKind.Utc para timestamptz.
 // Habilitar comportamiento legacy para que acepte Kind=Unspecified (leído de PG).
@@ -39,11 +40,33 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Reconstruye rol/permiso desde la base en cada request (no desde el JWT
+// congelado): revocar un permiso, cambiar un rol o desactivar un usuario se
+// aplica de inmediato, sin esperar a que ese usuario vuelva a iniciar sesión.
+builder.Services.AddScoped<Microsoft.AspNetCore.Authentication.IClaimsTransformation, DbClaimsTransformation>();
+
+// Autorización basada en permisos (RF14 / RBAC): cada política exige el claim
+// "permission" correspondiente, emitido en el JWT según rol_permiso (seed.sql).
+builder.Services.AddAuthorization(options =>
+{
+    string[] permisos =
+    {
+        "gestionar_usuarios", "ver_usuarios",
+        "gestionar_proyectos", "ver_proyectos",
+        "cargar_resultados", "ver_resultados",
+        "ejecutar_evaluacion", "ver_evaluacion", "gestionar_reglas",
+        "registrar_decision", "ver_decisiones",
+        "ver_auditoria",
+    };
+    foreach (var permiso in permisos)
+        options.AddPolicy(permiso, policy => policy.RequireClaim("permission", permiso));
+});
+
 // Services registration
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IMetricsCalculationService, MetricsCalculationService>();
 builder.Services.AddScoped<IRecommendationEngine, RecommendationEngine>();
-builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IIngestaResultadosService, IngestaResultadosService>();
 builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
 builder.Services.AddHttpContextAccessor();
 
@@ -75,6 +98,8 @@ builder.Services.AddMemoryCache();
 // Email + PDF receipt
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSingleton<IReceiptService, ReceiptService>();
+builder.Services.AddSingleton<IActaPdfService, ActaPdfService>();
+builder.Services.AddSingleton<IReporteExportService, ReporteExportService>();
 
 // CORS configuration
 builder.Services.AddCors(options =>

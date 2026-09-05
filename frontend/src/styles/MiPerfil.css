@@ -1,0 +1,217 @@
+.mp-page {
+  min-height: 100vh;
+  background: var(--gray-50);
+}
+
+.mp-header {
+  background: var(--white);
+  border-bottom: 1.5px solid var(--gray-100);
+}
+
+.mp-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.75rem 1.5rem;
+}
+
+.mp-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-300), var(--blue-400));
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.mp-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.mp-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  margin: 0.15rem 0 0;
+}
+
+.mp-body {
+  max-width: 640px;
+  margin: 1.5rem auto;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.mp-section {
+  background: var(--white);
+  border: 1.5px solid var(--gray-100);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+}
+
+.mp-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-mid);
+  margin: 0 0 0.75rem;
+}
+
+.mp-roles { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+.mp-role-badge {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  border-radius: 50px;
+  background: #e8f0f7;
+  color: var(--blue-500);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.mp-permisos-list {
+  list-style: none;
+  margin: 0; padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.mp-permisos-list li {
+  font-size: 0.87rem;
+  color: var(--text-dark);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.mp-check { color: #1a7a4e; font-weight: 700; flex-shrink: 0; }
+
+.mp-empty { font-size: 0.87rem; color: var(--text-light); margin: 0; }
+
+/* ── Filas de perfil (estilo "Nombre / Correo / Contraseña ... Cambiar") ── */
+.mp-row {
+  padding: 0.95rem 0;
+  border-bottom: 1px solid var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.mp-section > .mp-row:last-of-type { border-bottom: none; }
+
+.mp-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.mp-row-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-light);
+}
+
+.mp-row-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.mp-row-action {
+  border: none;
+  background: none;
+  color: var(--blue-500);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0.2rem 0;
+  flex-shrink: 0;
+}
+
+.mp-row-action:hover { text-decoration: underline; }
+
+/* ── Formulario de cambio de contraseña ── */
+.mp-pwd-form {
+  margin-top: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 360px;
+}
+
+.mp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mp-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.mp-field input {
+  padding: 0.6rem 0.8rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.mp-field input:focus {
+  border-color: var(--blue-500);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(126,154,178,0.15);
+}
+
+.mp-field.has-error input { border-color: #e74c3c; }
+
+.mp-field-error { font-size: 0.78rem; color: #c0392b; }
+
+.mp-pwd-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.mp-btn-save, .mp-btn-cancel {
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+}
+
+.mp-btn-save { background: var(--blue-400); color: var(--text-dark); }
+.mp-btn-save:hover:not(:disabled) { background: var(--blue-500); }
+.mp-btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.mp-btn-cancel { background: var(--gray-100); color: var(--text-mid); }
+.mp-btn-cancel:hover:not(:disabled) { background: var(--gray-200); }
+
+.mp-hint {
+  font-size: 0.78rem;
+  color: var(--text-light);
+  margin: 0.9rem 0 0;
+}

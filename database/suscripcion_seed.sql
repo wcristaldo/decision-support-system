@@ -11,7 +11,7 @@ INSERT INTO planes_suscripcion (
     historial_dias,
     exportar_pdf, exportar_excel, dashboard_avanzado, auditoria_detallada,
     notificaciones_email, notificaciones_slack,
-    api_publica, integracion_cicd, webhooks,
+    integracion_cicd,
     soporte_prioritario, estado
 ) VALUES
 -- ── Plan Básico ──────────────────────────────────────────────────────────
@@ -21,7 +21,7 @@ INSERT INTO planes_suscripcion (
     30,
     FALSE, FALSE, FALSE, FALSE,
     FALSE, FALSE,
-    FALSE, FALSE, FALSE,
+    FALSE,
     FALSE, 'activo'
 ),
 -- ── Plan Profesional ─────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ INSERT INTO planes_suscripcion (
     NULL,           -- historial completo
     TRUE, FALSE, TRUE, FALSE,
     TRUE, FALSE,
-    FALSE, FALSE, FALSE,
+    FALSE,
     FALSE, 'activo'
 ),
 -- ── Plan Empresarial ─────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ INSERT INTO planes_suscripcion (
     NULL,           -- historial completo
     TRUE, TRUE, TRUE, TRUE,
     TRUE, TRUE,
-    TRUE, TRUE, TRUE,
+    TRUE,
     TRUE, 'activo'
 )
 ON CONFLICT (nombre) DO NOTHING;

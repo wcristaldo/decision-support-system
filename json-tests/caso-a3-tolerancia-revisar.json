@@ -1,0 +1,32 @@
+{
+  "generator": "Robot 7.4 (Python 3.12.0 on win32)",
+  "generated": "2026-08-31T10:00:00.000000",
+  "rpa": false,
+  "suite": {
+    "id": "s1",
+    "name": "A3 - Dentro del margen de tolerancia ±5% (solo tasa_exito), debe recomendar REVISAR",
+    "status": "FAIL",
+    "start_time": "2026-08-31T10:00:00.000000",
+    "elapsed_time": 30
+  },
+  "statistics": {
+    "total": {
+      "label": "All Tests",
+      "pass": 77,
+      "fail": 15,
+      "skip": 8
+    },
+    "suites": [
+      {
+        "label": "A3 - Dentro del margen de tolerancia ±5% (solo tasa_exito), debe recomendar REVISAR",
+        "name": "A3 - Dentro del margen de tolerancia ±5% (solo tasa_exito), debe recomendar REVISAR",
+        "id": "s1",
+        "pass": 77,
+        "fail": 15,
+        "skip": 8
+      }
+    ],
+    "tags": []
+  },
+  "errors": []
+}

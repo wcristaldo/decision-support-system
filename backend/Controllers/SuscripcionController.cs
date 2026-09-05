@@ -19,6 +19,7 @@ public class SuscripcionController : ControllerBase
     private readonly IEmailService                  _email;
     private readonly IReceiptService                _receipt;
     private readonly ILogger<SuscripcionController> _logger;
+    private readonly IHostEnvironment               _env;
 
     public SuscripcionController(
         ApplicationDbContext            db,
@@ -27,7 +28,8 @@ public class SuscripcionController : ControllerBase
         IPayPalService                  paypal,
         IEmailService                   email,
         IReceiptService                 receipt,
-        ILogger<SuscripcionController>  logger)
+        ILogger<SuscripcionController>  logger,
+        IHostEnvironment                env)
     {
         _db                 = db;
         _suscripcionService = suscripcionService;
@@ -36,11 +38,16 @@ public class SuscripcionController : ControllerBase
         _email              = email;
         _receipt            = receipt;
         _logger             = logger;
+        _env                = env;
     }
 
     // ── GET /api/suscripcion/planes ──────────────────────────────────────
+    // Pública (sin autenticación): la pantalla de Login la necesita para
+    // mostrar los planes antes de que el usuario inicie sesión. Es la misma
+    // fuente que consume la pantalla de Suscripción — una sola tabla de
+    // planes, nunca dos copias desincronizadas.
     [HttpGet("planes")]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<IActionResult> GetPlanes()
     {
         var planes = await _db.PlanesSuscripcion
@@ -67,9 +74,7 @@ public class SuscripcionController : ControllerBase
                     p.AuditoriaDetallada,
                     p.NotificacionesEmail,
                     p.NotificacionesSlack,
-                    p.ApiPublica,
                     p.IntegracionCicd,
-                    p.Webhooks,
                     p.SoportePrioritario,
                 }
             })
@@ -391,14 +396,17 @@ public class SuscripcionController : ControllerBase
         }
         catch (Exception ex)
         {
-            // Expone el error real para diagnóstico
             _logger.LogError(ex, "test-email falló");
-            return StatusCode(500, new
+            if (_env.IsDevelopment())
             {
-                error  = ex.Message,
-                tipo   = ex.GetType().Name,
-                detalle = ex.InnerException?.Message
-            });
+                return StatusCode(500, new
+                {
+                    error   = ex.Message,
+                    tipo    = ex.GetType().Name,
+                    detalle = ex.InnerException?.Message
+                });
+            }
+            return StatusCode(500, new { error = "No se pudo enviar el email de prueba." });
         }
     }
 

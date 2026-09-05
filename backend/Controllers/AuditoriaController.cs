@@ -4,13 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using DecisionSupportAPI.Data;
 using DecisionSupportAPI.DTOs;
 using DecisionSupportAPI.Services;
-using System.Security.Claims;
 
 namespace DecisionSupportAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = "ver_auditoria")]
 public class AuditoriaController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -32,11 +31,6 @@ public class AuditoriaController : ControllerBase
         [FromQuery] int pagina = 1,
         [FromQuery] int limite = 50)
     {
-        var isAdmin = User.IsInRole("ADMIN") || User.IsInRole("Administrador");
-
-        if (!isAdmin)
-            return Forbid("Solo administradores pueden acceder a la auditoría");
-
         // ── Verificar feature auditoria_detallada ────────────────────────────
         var limiteAuditoria = await _suscripcionService.VerificarFeatureAsync(
             p => p.AuditoriaDetallada,
@@ -94,11 +88,6 @@ public class AuditoriaController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<AuditoriaDto>> GetById(int id)
     {
-        var isAdmin = User.IsInRole("ADMIN") || User.IsInRole("Administrador");
-
-        if (!isAdmin)
-            return Forbid("Solo administradores pueden acceder a la auditoría");
-
         var auditoria = await _context.Auditoria
             .Include(a => a.Usuario)
             .FirstOrDefaultAsync(a => a.Id == id);
@@ -123,11 +112,6 @@ public class AuditoriaController : ControllerBase
     [HttpGet("estadisticas")]
     public async Task<ActionResult<dynamic>> GetEstadisticas([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
     {
-        var isAdmin = User.IsInRole("ADMIN") || User.IsInRole("Administrador");
-
-        if (!isAdmin)
-            return Forbid("Solo administradores pueden acceder a la auditoría");
-
         var query = _context.Auditoria.AsQueryable();
 
         if (desde.HasValue)

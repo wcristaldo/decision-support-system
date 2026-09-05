@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using DecisionSupportAPI.DTOs;
 using DecisionSupportAPI.Services;
 
@@ -6,6 +7,7 @@ namespace DecisionSupportAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "ver_resultados")]
 public class MetricasController : ControllerBase
 {
     private readonly IMetricsCalculationService _metricsService;

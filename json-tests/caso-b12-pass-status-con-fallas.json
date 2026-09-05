@@ -1,0 +1,32 @@
+{
+  "generator": "Robot 7.4 (Python 3.12.0 on win32)",
+  "generated": "2026-08-31T10:00:00.000000",
+  "rpa": false,
+  "suite": {
+    "id": "s1",
+    "name": "B12 - suite.status PASS pero hay fallidas (inverso del bug reportado)",
+    "status": "PASS",
+    "start_time": "2026-08-31T10:00:00.000000",
+    "elapsed_time": 30
+  },
+  "statistics": {
+    "total": {
+      "label": "All Tests",
+      "pass": 45,
+      "fail": 5,
+      "skip": 0
+    },
+    "suites": [
+      {
+        "label": "B12 - suite.status PASS pero hay fallidas (inverso del bug reportado)",
+        "name": "B12 - suite.status PASS pero hay fallidas (inverso del bug reportado)",
+        "id": "s1",
+        "pass": 45,
+        "fail": 5,
+        "skip": 0
+      }
+    ],
+    "tags": []
+  },
+  "errors": []
+}

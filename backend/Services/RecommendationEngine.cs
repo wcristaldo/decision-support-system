@@ -7,6 +7,7 @@ namespace DecisionSupportAPI.Services;
 public interface IRecommendationEngine
 {
     Task GenerateRecommendationsAsync(int versionId);
+    Task GenerateRecommendationForResultadoAsync(int resultadoId);
     Task<List<Recomendacion>> GetRecommendationsByVersionAsync(int versionId);
 }
 
@@ -52,29 +53,47 @@ public class RecommendationEngine : IRecommendationEngine
 
     public async Task GenerateRecommendationsAsync(int versionId)
     {
-        // 1. Obtener todos los resultados de prueba de la versión
+        // Regenera la evaluación y recomendación de TODOS los resultados de la versión.
+        // Uso: acción manual "regenerar recomendaciones" (POST /api/recomendaciones/generar/{versionId}).
+        // No usar tras la carga de un único resultado: pisaría la fecha de evaluación
+        // de los resultados anteriores ya evaluados.
         var resultados = await _context.ResultadosPrueba
             .Where(r => r.VersionId == versionId)
             .ToListAsync();
 
-        if (!resultados.Any()) return;
+        foreach (var resultado in resultados)
+            await GenerateRecommendationForResultadoAsync(resultado.Id);
+    }
 
-        // 2. Cargar las reglas de evaluación activas
-        var reglas = await _context.ReglasEvaluacion
-            .Where(r => r.Estado == "activo")
+    public async Task GenerateRecommendationForResultadoAsync(int resultadoId)
+    {
+        var resultado = await _context.ResultadosPrueba.FirstOrDefaultAsync(r => r.Id == resultadoId);
+        if (resultado == null) return;
+
+        var version = await _context.Versiones.FirstOrDefaultAsync(v => v.Id == resultado.VersionId);
+        int? proyectoId = version?.ProyectoId;
+
+        // 1. Reglas efectivas (RF07/RF08/CU-03): si el proyecto tiene un umbral
+        // propio configurado para un criterio, ese override gana sobre la regla
+        // global equivalente (id_proyecto = NULL).
+        var reglasCandidatas = await _context.ReglasEvaluacion
+            .Where(r => r.Estado == "activo" && (r.ProyectoId == null || r.ProyectoId == proyectoId))
             .ToListAsync();
+
+        var reglas = reglasCandidatas
+            .GroupBy(r => r.Criterio ?? "", StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.OrderByDescending(r => r.ProyectoId.HasValue).First())
+            .ToList();
 
         if (!reglas.Any()) return;
 
-        // 3. Procesar cada resultado de prueba
-        foreach (var resultado in resultados)
         {
-            // 3a. Obtener las métricas calculadas para este resultado
+            // 2. Obtener las métricas calculadas para este resultado
             var metricas = await _context.Metricas
                 .Where(m => m.ResultadoId == resultado.Id)
                 .ToListAsync();
 
-            if (!metricas.Any()) continue;
+            if (!metricas.Any()) return;
 
             var metricaDict = metricas
                 .GroupBy(m => m.NombreMetrica, StringComparer.OrdinalIgnoreCase)
