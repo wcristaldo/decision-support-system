@@ -1,10 +1,29 @@
 ﻿import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+} from 'recharts'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
+import ResizableTh from '../components/ResizableTh'
+import { useResizableColumns } from '../hooks/useResizableColumns'
+import { fmtFechaCorta, fmtFechaCompleta } from '../utils/fecha'
 import '../styles/AnalisisMetricas.css'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+const AM_COLUMNS = [
+  { key: 'proyecto',    defaultWidth: 162, minWidth: 90 },
+  { key: 'version',     defaultWidth: 81,  minWidth: 60 },
+  { key: 'fecha',       defaultWidth: 130, minWidth: 90 },
+  { key: 'responsable', defaultWidth: 140, minWidth: 90 },
+  { key: 'exito',       defaultWidth: 81,  minWidth: 60 },
+  { key: 'cobertura',   defaultWidth: 90,  minWidth: 60 },
+  { key: 'tiempo',      defaultWidth: 81,  minWidth: 60 },
+  { key: 'pruebas',     defaultWidth: 81,  minWidth: 60 },
+  { key: 'rec',         defaultWidth: 150, minWidth: 100 },
+  { key: 'accion',      defaultWidth: 90,  minWidth: 70 },
+]
 
 /** Normaliza valores de la DB a las constantes usadas en el frontend */
 function normalizeRec(t) {
@@ -49,12 +68,6 @@ function fmt(val, decimales = 1) {
   return Number(val).toFixed(decimales)
 }
 
-function fmtFecha(dateStr) {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('es-PY', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
 // ── Componente ────────────────────────────────────────────────────────────────
 
 const FILTROS = ['Todos', 'DESPLEGAR', 'REVISAR', 'NO_DESPLEGAR']
@@ -64,12 +77,45 @@ function AnalisisMetricas() {
   const [loading,      setLoading]      = useState(true)
   const [notification, setNotification] = useState(null)
   const [filtro,       setFiltro]       = useState('Todos')
+  const [usuarioFiltro, setUsuarioFiltro] = useState('')
+  const [fechaDesde,    setFechaDesde]    = useState('')
+  const [fechaHasta,    setFechaHasta]    = useState('')
+  const { widths, startResize } = useResizableColumns('analisis-historial', AM_COLUMNS)
+  const [exportando, setExportando] = useState(null) // 'pdf' | 'xlsx' | 'csv' | null
 
   const showNotification = (type, title, message) => {
     setNotification({ type, title, message })
   }
   const closeNotification = () => {
     setNotification(null)
+  }
+
+  const handleExport = async (tipo) => {
+    setExportando(tipo)
+    try {
+      const url = tipo === 'pdf' ? '/analisis/historial/exportar-pdf' : `/analisis/historial/exportar?formato=${tipo}`
+      const res = await api.get(url, { responseType: 'blob' })
+      const blobUrl = window.URL.createObjectURL(res.data)
+      const a = document.createElement('a')
+      const ext = tipo === 'pdf' ? 'pdf' : tipo === 'xlsx' ? 'xlsx' : 'csv'
+      a.href = blobUrl
+      a.download = `roshka-dss-analisis-${new Date().toISOString().slice(0, 10)}.${ext}`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(blobUrl)
+    } catch (err) {
+      let msg = 'No se pudo generar el archivo. Intentá de nuevo.'
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text()
+          msg = JSON.parse(text)?.message || msg
+        } catch { /* blob no era JSON, se usa el mensaje genérico */ }
+      }
+      showNotification('error', 'No disponible', msg)
+    } finally {
+      setExportando(null)
+    }
   }
 
   useEffect(() => {
@@ -86,10 +132,38 @@ function AnalisisMetricas() {
     noDesplegar: historial.filter(h => normalizeRec(h.recomendacion) === 'NO_DESPLEGAR').length,
   }), [historial])
 
+  // RF10: tendencia histórica de indicadores de calidad
+  const tendencia = useMemo(() => {
+    return [...historial]
+      .filter(h => h.fechaCarga)
+      .sort((a, b) => new Date(a.fechaCarga) - new Date(b.fechaCarga))
+      .map(h => ({
+        fecha:     fmtFechaCorta(h.fechaCarga),
+        tasaExito: h.tasaExito != null ? Number(h.tasaExito) : null,
+        cobertura: h.cobertura != null ? Number(h.cobertura) : null,
+      }))
+  }, [historial])
+
+  // RF11: usuarios responsables disponibles para el filtro (derivados de los datos)
+  const usuariosDisponibles = useMemo(() => (
+    [...new Set(historial.map(h => h.usuarioCargaNombre).filter(Boolean))].sort()
+  ), [historial])
+
+  // RF11: historial filtrable por estado, fecha y usuario responsable
   const filas = useMemo(() => {
-    if (filtro === 'Todos') return historial
-    return historial.filter(h => normalizeRec(h.recomendacion) === filtro)
-  }, [historial, filtro])
+    return historial.filter(h => {
+      if (filtro !== 'Todos' && normalizeRec(h.recomendacion) !== filtro) return false
+      if (usuarioFiltro && h.usuarioCargaNombre !== usuarioFiltro) return false
+      if (fechaDesde && h.fechaCarga && h.fechaCarga.slice(0, 10) < fechaDesde) return false
+      if (fechaHasta && h.fechaCarga && h.fechaCarga.slice(0, 10) > fechaHasta) return false
+      return true
+    })
+  }, [historial, filtro, usuarioFiltro, fechaDesde, fechaHasta])
+
+  const hayFiltrosActivos = filtro !== 'Todos' || usuarioFiltro || fechaDesde || fechaHasta
+  const limpiarFiltros = () => {
+    setFiltro('Todos'); setUsuarioFiltro(''); setFechaDesde(''); setFechaHasta('')
+  }
 
   return (
     <div className="am-page">
@@ -139,6 +213,31 @@ function AnalisisMetricas() {
           </div>
         </div>
 
+        {/* ── Tendencia histórica (RF10) ── */}
+        {tendencia.length > 1 && (
+          <div className="am-table-card am-chart-card">
+            <div className="am-table-head">
+              <h2 className="am-table-head-title">Tendencia histórica</h2>
+            </div>
+            <div className="am-chart-wrap">
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={tendencia} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e9ecf1" />
+                  <XAxis dataKey="fecha" tick={{ fontSize: 11, fill: '#4a647a' }} axisLine={{ stroke: '#d7e0e7' }} tickLine={false} />
+                  <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 11, fill: '#4a647a' }} axisLine={{ stroke: '#d7e0e7' }} tickLine={false} width={42} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 10, border: '1px solid #e9ecf1', fontSize: '0.8rem' }}
+                    formatter={(value) => [`${value}%`, undefined]}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
+                  <Line type="monotone" dataKey="tasaExito" name="Tasa de éxito" stroke="#7e9ab2" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                  <Line type="monotone" dataKey="cobertura" name="Cobertura"    stroke="#1a7a4e" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
         {/* ── Tabla historial ── */}
         <div className="am-table-card">
           <div className="am-table-head">
@@ -165,6 +264,43 @@ function AnalisisMetricas() {
             </div>
           </div>
 
+          {/* RF11: filtros adicionales por fecha y usuario responsable */}
+          <div className="am-filters-row">
+            <select
+              className="am-filter-select"
+              value={usuarioFiltro}
+              onChange={(e) => setUsuarioFiltro(e.target.value)}
+            >
+              <option value="">Todos los responsables</option>
+              {usuariosDisponibles.map(u => <option key={u} value={u}>{u}</option>)}
+            </select>
+
+            <label className="am-filter-date">
+              Desde
+              <input type="date" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)} className="am-filter-select" />
+            </label>
+            <label className="am-filter-date">
+              Hasta
+              <input type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} className="am-filter-select" />
+            </label>
+
+            {hayFiltrosActivos && (
+              <button className="am-filter-clear" onClick={limpiarFiltros}>✕ Limpiar filtros</button>
+            )}
+
+            <div className="am-export-group">
+              <button className="am-export-btn" disabled={!!exportando} onClick={() => handleExport('pdf')}>
+                {exportando === 'pdf' ? <span className="am-spinner am-spinner-sm" /> : '📄'} PDF
+              </button>
+              <button className="am-export-btn" disabled={!!exportando} onClick={() => handleExport('xlsx')}>
+                {exportando === 'xlsx' ? <span className="am-spinner am-spinner-sm" /> : '📊'} Excel
+              </button>
+              <button className="am-export-btn" disabled={!!exportando} onClick={() => handleExport('csv')}>
+                {exportando === 'csv' ? <span className="am-spinner am-spinner-sm" /> : '📋'} CSV
+              </button>
+            </div>
+          </div>
+
           {loading ? (
             <div className="am-loading" style={{ padding: '3rem 1.5rem' }}>
               <span className="am-spinner" />
@@ -183,30 +319,32 @@ function AnalisisMetricas() {
               </p>
             </div>
           ) : (
-            <div className="am-table-wrap">
-              <table className="am-table">
+            <div className="am-table-wrap dss-table-wrap">
+              <table className="am-table dss-resizable">
                 <colgroup>
-                  <col className="am-col-proyecto"  />
-                  <col className="am-col-version"   />
-                  <col className="am-col-fecha"     />
-                  <col className="am-col-exito"     />
-                  <col className="am-col-cobertura" />
-                  <col className="am-col-tiempo"    />
-                  <col className="am-col-pruebas"   />
-                  <col className="am-col-rec"       />
-                  <col className="am-col-accion"    />
+                  <col style={{ width: widths.proyecto }}  />
+                  <col style={{ width: widths.version }}   />
+                  <col style={{ width: widths.fecha }}     />
+                  <col style={{ width: widths.responsable }} />
+                  <col style={{ width: widths.exito }}     />
+                  <col style={{ width: widths.cobertura }} />
+                  <col style={{ width: widths.tiempo }}    />
+                  <col style={{ width: widths.pruebas }}   />
+                  <col style={{ width: widths.rec }}       />
+                  <col style={{ width: widths.accion }}    />
                 </colgroup>
                 <thead>
                   <tr>
-                    <th>Proyecto</th>
-                    <th>Versión</th>
-                    <th>Fecha</th>
-                    <th>% Éxito</th>
-                    <th>Cobertura</th>
-                    <th>Tiempo (s)</th>
-                    <th>Pruebas</th>
-                    <th>Recomendación</th>
-                    <th>Detalle</th>
+                    <ResizableTh onResizeStart={startResize('proyecto', 90)}>Proyecto</ResizableTh>
+                    <ResizableTh onResizeStart={startResize('version', 60)}>Versión</ResizableTh>
+                    <ResizableTh onResizeStart={startResize('fecha', 90)}>Fecha</ResizableTh>
+                    <ResizableTh onResizeStart={startResize('responsable', 90)}>Responsable</ResizableTh>
+                    <ResizableTh onResizeStart={startResize('exito', 60)}>% Éxito</ResizableTh>
+                    <ResizableTh onResizeStart={startResize('cobertura', 60)}>Cobertura</ResizableTh>
+                    <ResizableTh onResizeStart={startResize('tiempo', 60)}>Tiempo (s)</ResizableTh>
+                    <ResizableTh onResizeStart={startResize('pruebas', 60)}>Pruebas</ResizableTh>
+                    <ResizableTh onResizeStart={startResize('rec', 100)}>Recomendación</ResizableTh>
+                    <ResizableTh onResizeStart={startResize('accion', 70)}>Detalle</ResizableTh>
                   </tr>
                 </thead>
                 <tbody>
@@ -219,7 +357,8 @@ function AnalisisMetricas() {
                       <td>
                         <span className="am-td-version">v{h.versionNumero}</span>
                       </td>
-                      <td className="am-td-fecha">{fmtFecha(h.fechaEvaluacion)}</td>
+                      <td className="am-td-fecha">{fmtFechaCompleta(h.fechaCarga)}</td>
+                      <td className="am-td-fecha">{h.usuarioCargaNombre || '—'}</td>
                       <td>
                         <span className={`am-td-metric ${metricColorClass(h.tasaExito, 'mayor')}`}>
                           {fmt(h.tasaExito)}%

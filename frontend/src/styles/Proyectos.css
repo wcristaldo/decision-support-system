@@ -37,7 +37,7 @@
   align-items: center;
   gap: 0.5rem;
   background: linear-gradient(135deg, var(--blue-400), var(--blue-500));
-  color: var(--white);
+  color: var(--text-dark);
   border: none;
   padding: 0.7rem 1.4rem;
   border-radius: 50px;
@@ -529,7 +529,7 @@
   align-items: center;
   gap: 0.5rem;
   background: linear-gradient(135deg, var(--blue-400), var(--blue-500));
-  color: var(--white);
+  color: var(--text-dark);
   border: none;
   padding: 0.65rem 1.5rem;
   border-radius: 50px;

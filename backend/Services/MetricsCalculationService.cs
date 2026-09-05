@@ -16,7 +16,8 @@ public interface IMetricsCalculationService
         int pruebasExitosas,
         int pruebasFallidas,
         decimal cobertura,
-        decimal tiempoEjecucion);
+        decimal tiempoEjecucion,
+        int pruebasOmitidas = 0);
 
     Task<List<Metrica>> GetMetricsByVersionAsync(int versionId);
     Task<List<Metrica>> GetMetricsByResultadoAsync(int resultadoId);
@@ -38,7 +39,8 @@ public class MetricsCalculationService : IMetricsCalculationService
         int pruebasExitosas,
         int pruebasFallidas,
         decimal cobertura,
-        decimal tiempoEjecucion)
+        decimal tiempoEjecucion,
+        int pruebasOmitidas = 0)
     {
         // Eliminar métricas anteriores de este resultado (en caso de recálculo)
         var anteriores = await _context.Metricas
@@ -55,12 +57,13 @@ public class MetricsCalculationService : IMetricsCalculationService
             ? Math.Round((decimal)pruebasFallidas / totalPruebas * 100, 2)
             : 0;
 
-        // Persistir las 7 métricas definidas en la tesis (Tablas 24 y 20)
+        // Persistir las métricas definidas en la tesis (RF06, Tablas 24 y 20)
         var metricas = new List<Metrica>
         {
             new() { ResultadoId = resultadoId, NombreMetrica = "total_pruebas",    ValorMetrica = totalPruebas,    Unidad = "casos",    FechaCalculo = DateTime.UtcNow },
             new() { ResultadoId = resultadoId, NombreMetrica = "pruebas_exitosas", ValorMetrica = pruebasExitosas, Unidad = "casos",    FechaCalculo = DateTime.UtcNow },
             new() { ResultadoId = resultadoId, NombreMetrica = "pruebas_fallidas", ValorMetrica = pruebasFallidas, Unidad = "casos",    FechaCalculo = DateTime.UtcNow },
+            new() { ResultadoId = resultadoId, NombreMetrica = "pruebas_omitidas", ValorMetrica = pruebasOmitidas, Unidad = "casos",    FechaCalculo = DateTime.UtcNow },
             new() { ResultadoId = resultadoId, NombreMetrica = "tasa_exito",       ValorMetrica = tasaExito,       Unidad = "%",        FechaCalculo = DateTime.UtcNow },
             new() { ResultadoId = resultadoId, NombreMetrica = "tasa_fallo",       ValorMetrica = tasaFallo,       Unidad = "%",        FechaCalculo = DateTime.UtcNow },
             new() { ResultadoId = resultadoId, NombreMetrica = "cobertura",        ValorMetrica = cobertura,       Unidad = "%",        FechaCalculo = DateTime.UtcNow },

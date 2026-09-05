@@ -2,9 +2,22 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
+import ResizableTh from '../components/ResizableTh'
+import { useResizableColumns } from '../hooks/useResizableColumns'
+import { fmtFechaCompleta } from '../utils/fecha'
 import '../styles/Proyectos.css'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
+
+const PROY_COLUMNS = [
+  { key: 'nombre',      defaultWidth: 200, minWidth: 100 },
+  { key: 'descripcion', defaultWidth: 220, minWidth: 100 },
+  { key: 'tipo',        defaultWidth: 110, minWidth: 80  },
+  { key: 'version',     defaultWidth: 90,  minWidth: 70  },
+  { key: 'estado',      defaultWidth: 90,  minWidth: 70  },
+  { key: 'creado',      defaultWidth: 150, minWidth: 100 },
+  { key: 'acciones',    defaultWidth: 150, minWidth: 100 },
+]
 
 const TIPO_OPCIONES = [
   { value: 'web',  label: 'Aplicación Web' },
@@ -266,6 +279,8 @@ function DeleteModal({ proyecto, onClose, onDeleted, showNotification }) {
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'No se pudo eliminar el proyecto.'
       showNotification('error', 'Error al eliminar proyecto', errorMsg)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -304,6 +319,7 @@ function Proyectos() {
   const [modal,          setModal]          = useState(null)
   const [target,         setTarget]         = useState(null)
   const [togglingId,     setTogglingId]     = useState(null)
+  const { widths, startResize } = useResizableColumns('proyectos-lista', PROY_COLUMNS)
 
   const showNotification = (type, title, message) => {
     setNotification({ type, title, message })
@@ -391,25 +407,26 @@ function Proyectos() {
             <button className="btn-nuevo" onClick={() => setModal('create')}>Crear el primero</button>
           </div>
         ) : (
-          <div className="proy-table-wrap">
-            <table className="proy-table">
+          <div className="proy-table-wrap dss-table-wrap">
+            <table className="proy-table dss-resizable">
               <colgroup>
-                <col style={{ width: '22%' }} />
-                <col style={{ width: '24%' }} />
-                <col style={{ width: '12%' }} />
-                <col style={{ width: '10%' }} />
-                <col style={{ width: '10%' }} />
-                <col style={{ width: '22%' }} />
+                <col style={{ width: widths.nombre }} />
+                <col style={{ width: widths.descripcion }} />
+                <col style={{ width: widths.tipo }} />
+                <col style={{ width: widths.version }} />
+                <col style={{ width: widths.estado }} />
+                <col style={{ width: widths.creado }} />
+                <col style={{ width: widths.acciones }} />
               </colgroup>
               <thead>
                 <tr>
-                  <th>Nombre</th>
-                  <th>Descripción</th>
-                  <th>Tipo</th>
-                  <th>Versión</th>
-                  <th>Estado</th>
-                  <th>Creado el</th>
-                  <th>Acciones</th>
+                  <ResizableTh onResizeStart={startResize('nombre', 100)}>Nombre</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('descripcion', 100)}>Descripción</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('tipo', 80)}>Tipo</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('version', 70)}>Versión</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('estado', 70)}>Estado</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('creado', 100)}>Creado el</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('acciones', 100)}>Acciones</ResizableTh>
                 </tr>
               </thead>
               <tbody>
@@ -433,8 +450,8 @@ function Proyectos() {
                       <td>
                         <span className={`proy-badge ${est.cls}`}>{est.text}</span>
                       </td>
-                      <td style={{fontSize:'0.78rem',color:'#5d6d7e',fontFamily:'monospace',whiteSpace:'nowrap'}}>
-                        {p.fechaCreacion ? new Date(p.fechaCreacion).toLocaleString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'}
+                      <td className="dss-td-fecha">
+                        {fmtFechaCompleta(p.fechaCreacion)}
                       </td>
                       <td>
                         <div className="proy-actions">

@@ -96,7 +96,7 @@ WHERE r.nombre_rol = 'Gerente QA'
 
 -- =============================================================
 -- USUARIOS DE PRUEBA
--- Contraseñas hasheadas con SHA-256 (algoritmo del backend)
+-- Contraseñas hasheadas con BCrypt factor de costo 12 (RNF04)
 --
 --   wcristaldo@roshka.com →  Admin2026!
 --   lider@roshka.com    →  Lider2026!
@@ -104,10 +104,10 @@ WHERE r.nombre_rol = 'Gerente QA'
 --   gerente@roshka.com  →  Gerente2026!
 -- =============================================================
 INSERT INTO usuarios (nombre, apellido, email, password_hash, estado) VALUES
-('Administrador', 'Sistema',   'wcristaldo@roshka.com',    '04445e6487736590d1ef50186b414e737e0164683cbbec64e00e73c000fd3bef', 'activo'),
-('Carlos',        'Martínez',  'lider@roshka.com',    'b38d86c738c217f1f4defd35387e1f79f272ec74e69ef2ed780cee6050f68f64', 'activo'),
-('Ana',           'López',     'analista@roshka.com', '025f2eb2238c0859a9abd20c0e12a5dbfc7a7fb7d26d4274a29dba85ea4bd4e3', 'activo'),
-('María',         'González',  'gerente@roshka.com',  'bfc703cf6551ccc8f506a64522af86ce8c691c0cec46814663ca9f7f41f14443', 'activo');
+('Administrador', 'Sistema',   'wcristaldo@roshka.com',    '$2a$12$G90FaR7nQ3EgN7r87nzkLOBxco.yetJNDD5TNqST47CbaOQ68KQGq', 'activo'),
+('Carlos',        'Martínez',  'lider@roshka.com',    '$2a$12$OPsoaffAAoQumCLg.y/AKuesrRKfh.lJhlo/SMheZPWF4lxxqKdXe', 'activo'),
+('Ana',           'López',     'analista@roshka.com', '$2a$12$h9NtjoA93RI.7S77TgCRZOODMf9BjiAuMsilt3P/v2VeRovR6T9N2', 'activo'),
+('María',         'González',  'gerente@roshka.com',  '$2a$12$4MqsVKKNu2KA0gAxlOiZwOCKL.lSMGgdmhVGaQamRl96GvzIyiunK', 'activo');
 
 
 -- =============================================================
@@ -163,4 +163,4 @@ FROM (VALUES
      'El tiempo total de ejecución del pipeline no debe exceder el umbral en segundos.',
      'tiempo_ejecucion', 120.00)
 ) AS r(nombre_regla, descripcion, criterio, umbral)
-CROSS JOIN (SELECT id_usuario FROM usuarios WHERE email = 'admin@roshka.com') u;
+CROSS JOIN (SELECT id_usuario FROM usuarios WHERE email = 'wcristaldo@roshka.com') u;
