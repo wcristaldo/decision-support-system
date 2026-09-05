@@ -1,7 +1,21 @@
 ﻿import { useState, useEffect, useRef } from 'react'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
+import ResizableTh from '../components/ResizableTh'
+import { useResizableColumns } from '../hooks/useResizableColumns'
+import RolesPermisosPanel from '../components/RolesPermisosPanel'
+import { permisoLabel } from '../utils/permisos'
+import { fmtFechaCompleta } from '../utils/fecha'
 import '../styles/UserManagement.css'
+
+const UM_COLUMNS = [
+  { key: 'nombre',   defaultWidth: 170, minWidth: 100 },
+  { key: 'correo',   defaultWidth: 230, minWidth: 120 },
+  { key: 'rol',      defaultWidth: 160, minWidth: 90  },
+  { key: 'estado',   defaultWidth: 90,  minWidth: 70  },
+  { key: 'creado',   defaultWidth: 150, minWidth: 100 },
+  { key: 'acciones', defaultWidth: 200, minWidth: 120 },
+]
 
 // ── Icono ojo ─────────────────────────────────────────────────────────────────
 
@@ -56,6 +70,47 @@ function validatePasswordReset(nueva, confirmar) {
   if (!confirmar) e.confirmar = 'Confirmá la nueva contraseña.'
   else if (nueva && confirmar && nueva !== confirmar) e.confirmar = 'Las contraseñas no coinciden.'
   return e
+}
+
+// ── Vista previa de permisos del rol seleccionado (solo lectura) ──────────────
+// Los permisos se editan únicamente desde la pestaña "Roles y permisos" (se
+// asignan al rol, no a la persona) — esto es solo para que el Admin vea, al
+// elegir un rol, qué le va a habilitar a ese usuario sin tener que adivinar.
+
+function RolPermisosPreview({ roles, nombreRol }) {
+  const [permisos, setPermisos] = useState(null)
+  const [loading, setLoading]   = useState(false)
+
+  useEffect(() => {
+    const rol = roles.find(r => r.nombreRol === nombreRol)
+    if (!rol) { setPermisos(null); return }
+    setLoading(true)
+    api.get(`/roles/${rol.idRol}/permisos`)
+      .then(res => setPermisos(res.data.permisos.filter(p => p.asignado)))
+      .catch(() => setPermisos(null))
+      .finally(() => setLoading(false))
+  }, [nombreRol, roles])
+
+  if (!nombreRol) return null
+
+  return (
+    <div className="um-rol-preview">
+      <p className="um-rol-preview-title">Este rol incluye:</p>
+      {loading ? (
+        <span className="um-rol-preview-loading">Cargando permisos…</span>
+      ) : !permisos || permisos.length === 0 ? (
+        <span className="um-rol-preview-loading">Sin permisos asignados a este rol.</span>
+      ) : (
+        <ul className="um-rol-preview-list">
+          {permisos.map(p => (
+            <li key={p.idPermiso} title={p.nombrePermiso}>
+              <span className="um-rol-preview-check">✓</span> {permisoLabel(p.nombrePermiso)}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 // ── Modal: Crear usuario ──────────────────────────────────────────────────────
@@ -140,6 +195,7 @@ function CreateUserModal({ onClose, onSaved, roles }) {
                 {roles.map(r => <option key={r.idRol} value={r.nombreRol}>{r.nombreRol}</option>)}
               </select>
               {errors.rol && <span className="um-field-error">{errors.rol}</span>}
+              <RolPermisosPreview roles={roles} nombreRol={fields.rol} />
             </div>
 
             <div className={`um-form-group ${errors.password ? 'has-error' : ''}`}>
@@ -267,6 +323,7 @@ function EditUserModal({ usuario, onClose, onSaved, roles }) {
                 {roles.map(r => <option key={r.idRol} value={r.nombreRol}>{r.nombreRol}</option>)}
               </select>
               {errors.rol && <span className="um-field-error">{errors.rol}</span>}
+              <RolPermisosPreview roles={roles} nombreRol={fields.rol} />
             </div>
 
           </div>
@@ -389,6 +446,8 @@ export default function UserManagement() {
   const [modal,         setModal]         = useState(null)
   const [target,        setTarget]        = useState(null)
   const [togglingId,    setTogglingId]    = useState(null)
+  const [tab,           setTab]           = useState('usuarios')
+  const { widths, startResize } = useResizableColumns('usuarios-lista', UM_COLUMNS)
 
   const showNotification = (type, title, message) => {
     setNotification({ type, title, message })
@@ -454,40 +513,63 @@ export default function UserManagement() {
               {loading ? '' : `${usuarios.length} usuario${usuarios.length !== 1 ? 's' : ''} registrado${usuarios.length !== 1 ? 's' : ''}`}
             </p>
           </div>
-          <button className="um-btn-nuevo" onClick={openCreate}>
-            + Nuevo usuario
-          </button>
+          {tab === 'usuarios' && (
+            <button className="um-btn-nuevo" onClick={openCreate}>
+              + Nuevo usuario
+            </button>
+          )}
         </div>
       </div>
 
+      <div className="um-tabs">
+        {[
+          { id: 'usuarios', label: 'Usuarios' },
+          { id: 'roles',    label: 'Roles y permisos' },
+        ].map(t => (
+          <button
+            key={t.id}
+            className={`um-tab ${tab === t.id ? 'active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >{t.label}</button>
+        ))}
+      </div>
+
+      {tab === 'roles' && (
+        <div className="um-body">
+          <RolesPermisosPanel roles={roles} />
+        </div>
+      )}
+
+      {tab === 'usuarios' && (
       <div className="um-body">
 
         {loading ? (
           <div className="um-loading"><span className="um-spinner" /> Cargando usuarios…</div>
         ) : (
-          <div className="um-table-wrap">
-            <table className="um-table">
+          <div className="um-table-wrap dss-table-wrap">
+            <table className="um-table dss-resizable">
               <colgroup>
-                <col style={{ width: '18%' }} />
-                <col style={{ width: '25%' }} />
-                <col style={{ width: '17%' }} />
-                <col style={{ width: '9%' }}  />
-                <col style={{ width: '31%' }} />
+                <col style={{ width: widths.nombre }} />
+                <col style={{ width: widths.correo }} />
+                <col style={{ width: widths.rol }} />
+                <col style={{ width: widths.estado }}  />
+                <col style={{ width: widths.creado }} />
+                <col style={{ width: widths.acciones }} />
               </colgroup>
               <thead>
                 <tr>
-                  <th>Nombre</th>
-                  <th>Correo</th>
-                  <th>Rol</th>
-                  <th>Estado</th>
-                  <th>Creado el</th>
-                  <th>Acciones</th>
+                  <ResizableTh onResizeStart={startResize('nombre', 100)}>Nombre</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('correo', 120)}>Correo</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('rol', 90)}>Rol</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('estado', 70)}>Estado</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('creado', 100)}>Creado el</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('acciones', 120)}>Acciones</ResizableTh>
                 </tr>
               </thead>
               <tbody>
                 {usuarios.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="um-empty-row">No hay usuarios registrados.</td>
+                    <td colSpan={6} className="um-empty-row">No hay usuarios registrados.</td>
                   </tr>
                 )}
                 {usuarios.map((u) => {
@@ -502,8 +584,8 @@ export default function UserManagement() {
                       <td>
                         <span className={`um-estado-badge um-estado-badge--${u.estado}`}>{u.estado}</span>
                       </td>
-                      <td style={{fontSize:'0.78rem',color:'#5d6d7e',fontFamily:'monospace',whiteSpace:'nowrap'}}>
-                        {u.fechaCreacion ? new Date(u.fechaCreacion).toLocaleString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'}
+                      <td className="dss-td-fecha">
+                        {fmtFechaCompleta(u.fechaCreacion)}
                       </td>
                       <td>
                         <div className="um-actions">
@@ -533,6 +615,7 @@ export default function UserManagement() {
           </div>
         )}
       </div>
+      )}
 
       {modal === 'create' && (
         <CreateUserModal onClose={closeModal} onSaved={handleSaved} roles={roles} showNotification={showNotification} />

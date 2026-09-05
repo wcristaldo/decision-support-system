@@ -1,0 +1,135 @@
+.rp-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.rp-hint {
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  background: var(--gray-50);
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.rp-role-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.rp-role-btn {
+  padding: 0.5rem 1.1rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 50px;
+  background: var(--white);
+  color: var(--text-dark);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.rp-role-btn:hover { background: var(--gray-50); }
+.rp-role-btn.active { background: var(--blue-400); border-color: var(--blue-400); color: var(--white); }
+
+.rp-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text-mid);
+  font-size: 0.9rem;
+  padding: 2rem 0;
+}
+
+/* ── Lista de permisos (tabla) ── */
+.rp-list-card {
+  background: var(--white);
+  border: 1.5px solid var(--gray-100);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.rp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.rp-table thead {
+  background: var(--gray-50);
+  border-bottom: 1.5px solid var(--gray-100);
+}
+
+.rp-table th {
+  text-align: left;
+  padding: 0.7rem 1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-mid);
+}
+
+.rp-table td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--gray-100);
+  vertical-align: middle;
+}
+
+.rp-table tbody tr:last-child td { border-bottom: none; }
+.rp-table tbody tr:hover { background: var(--gray-50); }
+
+.rp-col-check { width: 44px; text-align: center; }
+.rp-col-check input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--blue-400);
+  cursor: pointer;
+}
+
+.rp-nombre-cell {
+  font-weight: 600;
+  color: var(--text-dark);
+  white-space: nowrap;
+}
+
+.rp-desc-cell {
+  color: var(--text-mid);
+}
+
+/* Fila de encabezado de grupo (módulo) — reemplaza a la columna "Módulo",
+   que dejaba celdas vacías repetidas para cada permiso del mismo grupo. */
+.rp-modulo-row td {
+  background: var(--gray-50);
+  padding: 0.45rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--blue-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.rp-modulo-row:first-child td { border-top: none; }
+
+.rp-guardar-btn {
+  align-self: flex-start;
+  padding: 0.6rem 1.4rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--blue-400);
+  color: var(--text-dark);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.rp-guardar-btn:hover:not(:disabled) { background: var(--blue-500); }
+.rp-guardar-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+

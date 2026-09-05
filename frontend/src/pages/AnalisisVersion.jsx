@@ -46,6 +46,16 @@ const DECISION_MAP = {
   postergado: { text: 'Postergado',  cls: 'dec-rechazado' },
 }
 
+const MIN_LARGO_JUSTIFICACION_OVERRIDE = 20
+
+/** Misma regla que el backend (DecisionesDespliegueController.CalcularEsOverride):
+ *  aprobar algo "no apto" o rechazar algo "apto" contradice la recomendación. */
+function esOverrideCliente(decisionOpt, tipoRecomendacionNormalizado) {
+  if (decisionOpt === 'Aprobado' && tipoRecomendacionNormalizado === 'NO_DESPLEGAR') return true
+  if (decisionOpt === 'Rechazado' && tipoRecomendacionNormalizado === 'DESPLEGAR') return true
+  return false
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getRawValue(m) {
@@ -64,27 +74,23 @@ function formatMetricValue(m) {
   return m.unidad ? `${v.toFixed(3)} ${m.unidad}` : `${v.toFixed(3)}`
 }
 
-function metricColorClass(m) {
-  const nombre = (m.nombreMetrica || '').toLowerCase()
-  const v = getRawValue(m)
-  if (isNaN(v)) return 'mc-neutral'
-  if (nombre.includes('exito') || nombre.includes('éxito') || nombre.includes('cobertura')) {
-    if (v >= 95) return 'mc-ok'
-    if (v >= 80) return 'mc-warn'
-    return 'mc-danger'
-  }
-  if (nombre.includes('fallo') || nombre.includes('error') || nombre.includes('fail')) {
-    if (v <= 5)  return 'mc-ok'
-    if (v <= 20) return 'mc-warn'
-    return 'mc-danger'
-  }
-  // tiempo_ejecucion: umbral por defecto 120s
-  if (nombre.includes('tiempo')) {
-    if (v <= 120) return 'mc-ok'
-    if (v <= 126) return 'mc-warn'  // dentro del margen de tolerancia ±5%
-    return 'mc-danger'
-  }
-  return 'mc-neutral'
+const VEREDICTO_A_CLASE = {
+  cumple:    'mc-ok',
+  revisar:   'mc-warn',
+  no_cumple: 'mc-danger',
+}
+
+/**
+ * Colorea cada métrica según el veredicto REAL que aplicó el motor de
+ * recomendación (tabla evaluacion_regla) contra el umbral configurado —
+ * no una escala fija propia del frontend. Las métricas que no son criterio
+ * de evaluación (conteos como "pruebas exitosas", "total de pruebas")
+ * quedan siempre neutrales: no tiene sentido pintarlas de rojo/verde.
+ */
+function metricColorClass(m, reglasPorCriterio) {
+  const nombre = (m.nombreMetrica || m.nombre || '').toLowerCase().trim()
+  const veredicto = reglasPorCriterio?.[nombre]
+  return VEREDICTO_A_CLASE[veredicto] || 'mc-neutral'
 }
 
 const METRIC_LABELS = {
@@ -93,6 +99,7 @@ const METRIC_LABELS = {
   total_pruebas:    'Total de pruebas',
   pruebas_exitosas: 'Pruebas exitosas',
   pruebas_fallidas: 'Pruebas fallidas',
+  pruebas_omitidas: 'Pruebas omitidas',
   cobertura:        'Cobertura',
   cobertura_codigo: 'Cobertura de código',
   tiempo_ejecucion: 'Tiempo de ejecución',
@@ -107,7 +114,7 @@ function metricLabel(nombre) {
 
 // ── Validación decisión ───────────────────────────────────────────────────────
 
-function validateDecision(fields) {
+function validateDecision(fields, esOverride) {
   const errors = {}
   if (!fields.decision) {
     errors.decision = 'Seleccioná una decisión.'
@@ -117,6 +124,8 @@ function validateDecision(fields) {
     errors.comentario = 'La justificación es obligatoria.'
   } else if (comentario.length > 1000) {
     errors.comentario = 'No puede superar los 1000 caracteres.'
+  } else if (esOverride && comentario.length < MIN_LARGO_JUSTIFICACION_OVERRIDE) {
+    errors.comentario = `Esta decisión contradice la recomendación del sistema: la justificación debe tener al menos ${MIN_LARGO_JUSTIFICACION_OVERRIDE} caracteres.`
   }
   return errors
 }
@@ -131,6 +140,8 @@ function DecisionModal({ recomendaciones, onClose, onSaved }) {
   const textRef = useRef(null)
 
   const recomendacionId = recomendaciones?.[0]?.id ?? null
+  const tipoRecomendacionNorm = normalizeRec(recomendaciones?.[0]?.tipoRecomendacion || recomendaciones?.[0]?.tipo || '')
+  const esOverride = esOverrideCliente(fields.decision, tipoRecomendacionNorm)
 
   const showNotification = (type, title, message) => {
     setNotification({ type, title, message })
@@ -153,7 +164,7 @@ function DecisionModal({ recomendaciones, onClose, onSaved }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const errs = validateDecision(fields)
+    const errs = validateDecision(fields, esOverride)
     if (Object.keys(errs).length) { setErrors(errs); return }
     if (!recomendacionId) {
       showNotification('error', 'Error', 'No hay recomendación disponible para registrar la decisión.')
@@ -211,6 +222,17 @@ function DecisionModal({ recomendaciones, onClose, onSaved }) {
               {errors.decision && <span className="field-error">{errors.decision}</span>}
             </div>
 
+            {esOverride && (
+              <div className="dec-override-warning">
+                <span className="dec-override-warning-icon">⚠</span>
+                <span>
+                  Esta decisión va <strong>en contra</strong> de la recomendación del sistema.
+                  Detallá con claridad el motivo (mínimo {MIN_LARGO_JUSTIFICACION_OVERRIDE} caracteres) —
+                  quedará marcada como excepción en el historial.
+                </span>
+              </div>
+            )}
+
             <div className={`proy-form-group ${errors.comentario ? 'has-error' : ''}`}>
               <label htmlFor="dec-comentario">
                 Justificación <span className="required">*</span>
@@ -263,15 +285,20 @@ function AnalisisVersion() {
 
   const [version,          setVersion]          = useState(null)
   const [metricas,         setMetricas]         = useState([])
+  const [reglasPorCriterio, setReglasPorCriterio] = useState({})
   const [recomendaciones,  setRecomendaciones]  = useState([])
   const [decisiones,       setDecisiones]       = useState([])
+  const [archivoInfo,      setArchivoInfo]      = useState(null)
   const [loading,          setLoading]          = useState(true)
   const [error,            setError]            = useState(null)
   const [showModal,        setShowModal]        = useState(false)
+  const [descargandoActaId, setDescargandoActaId] = useState(null)
+  const [notification,     setNotification]     = useState(null)
 
   const loadData = async () => {
     setLoading(true)
     setError(null)
+    setArchivoInfo(null)
     try {
       // Si venimos desde el historial con un resultadoId específico, cargamos
       // datos de ESE resultado. Si no, cargamos el último resultado de la versión.
@@ -291,6 +318,25 @@ function AnalisisVersion() {
       setMetricas(mRes.data)
       setRecomendaciones(rRes.data)
       setDecisiones(dRes.data)
+
+      // Detalles del archivo de origen (RF06): el resultadoId real viene de las
+      // propias métricas si no vino por query string.
+      const rid = resultadoId || mRes.data[0]?.resultadoId
+      if (rid) {
+        try {
+          const aRes = await api.get(`/resultadosprueba/${rid}`)
+          setArchivoInfo(aRes.data)
+        } catch { /* no crítico si falla */ }
+
+        try {
+          const reglasRes = await api.get(`/recomendaciones/resultado/${rid}/reglas`)
+          const lookup = {}
+          for (const r of reglasRes.data) {
+            if (r.criterio) lookup[r.criterio.toLowerCase().trim()] = r.resultadoRegla
+          }
+          setReglasPorCriterio(lookup)
+        } catch { /* sin veredicto real, las tarjetas quedan neutrales */ }
+      }
     } catch {
       setError('No se pudo cargar la información de esta versión.')
     } finally {
@@ -313,6 +359,25 @@ function AnalisisVersion() {
   const handleDecisionSaved = () => {
     setShowModal(false)
     loadData()
+  }
+
+  const descargarActa = async (decisionId) => {
+    setDescargandoActaId(decisionId)
+    try {
+      const res = await api.get(`/decisionesDespliegue/${decisionId}/acta`, { responseType: 'blob' })
+      const blobUrl = window.URL.createObjectURL(res.data)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = `Acta-Despliegue-${String(decisionId).padStart(6, '0')}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(blobUrl)
+    } catch {
+      setNotification({ type: 'error', title: 'Error', message: 'No se pudo generar el acta en PDF. Intentá de nuevo.' })
+    } finally {
+      setDescargandoActaId(null)
+    }
   }
 
   const backPath = version?.proyectoId ? `/proyectos/${version.proyectoId}` : '/proyectos'
@@ -382,13 +447,40 @@ function AnalisisVersion() {
         {metricas.length > 0 && (
           <section className="av-section">
             <h2 className="av-section-title">Métricas de calidad</h2>
-            <div className="mc-grid">
+            <div className="av-metrics-grid">
               {metricas.map((m, i) => (
-                <div key={m.id ?? i} className={`mc-card ${metricColorClass(m)}`}>
-                  <p className="mc-name">{metricLabel(m.nombreMetrica || m.nombre)}</p>
-                  <p className="mc-value">{formatMetricValue(m)}</p>
+                <div key={m.id ?? i} className={`av-metric-card ${metricColorClass(m, reglasPorCriterio)}`}>
+                  <p className="av-metric-name">{metricLabel(m.nombreMetrica || m.nombre)}</p>
+                  <p className="av-metric-value">{formatMetricValue(m)}</p>
                 </div>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── Archivo de origen ── */}
+        {archivoInfo && (
+          <section className="av-section">
+            <h2 className="av-section-title">Archivo de origen</h2>
+            <div className="av-file-info">
+              <div className="av-file-row">
+                <span className="av-file-label">Archivo</span>
+                <span className="av-file-value">{archivoInfo.nombreArchivo || '—'}</span>
+              </div>
+              <div className="av-file-row">
+                <span className="av-file-label">Cargado el</span>
+                <span className="av-file-value">
+                  {archivoInfo.fechaCarga
+                    ? new Date(archivoInfo.fechaCarga).toLocaleString('es-PY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                    : '—'}
+                </span>
+              </div>
+              {archivoInfo.observaciones && (
+                <div className="av-file-row av-file-row-full">
+                  <span className="av-file-label">Observaciones</span>
+                  <span className="av-file-value">{archivoInfo.observaciones}</span>
+                </div>
+              )}
             </div>
           </section>
         )}
@@ -420,14 +512,32 @@ function AnalisisVersion() {
                     hour: '2-digit', minute: '2-digit',
                   })
                   return (
-                    <div key={d.id ?? i} className="av-dec-item">
+                    <div key={d.id ?? i} className={`av-dec-item ${d.esOverride ? 'av-dec-item--override' : ''}`}>
                       <div className="av-dec-header">
-                        <span className={`av-dec-badge ${dm.cls}`}>{dm.text}</span>
+                        <div className="av-dec-badges">
+                          <span className={`av-dec-badge ${dm.cls}`}>{dm.text}</span>
+                          {d.esOverride && (
+                            <span className="av-dec-badge av-dec-badge--override" title="Esta decisión fue en contra de la recomendación del sistema">
+                              ⚠ Contradice la recomendación
+                            </span>
+                          )}
+                        </div>
                         <span className="av-dec-date">{fechaStr} · {horaStr}</span>
                       </div>
                       {d.comentario && (
                         <p className="av-dec-comentario">{d.comentario}</p>
                       )}
+                      <div className="av-dec-footer">
+                        <button
+                          className="av-dec-acta-btn"
+                          onClick={() => descargarActa(d.id)}
+                          disabled={descargandoActaId === d.id}
+                        >
+                          {descargandoActaId === d.id
+                            ? <><span className="btn-spinner" /> Generando…</>
+                            : '⬇ Descargar acta (PDF)'}
+                        </button>
+                      </div>
                     </div>
                   )
                 })}
@@ -443,6 +553,14 @@ function AnalisisVersion() {
           onSaved={handleDecisionSaved}
         />
       )}
+
+      <NotificationModal
+        isOpen={!!notification}
+        type={notification?.type}
+        title={notification?.title}
+        message={notification?.message}
+        onClose={() => setNotification(null)}
+      />
     </div>
   )
 }

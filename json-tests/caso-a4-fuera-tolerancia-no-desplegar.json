@@ -1,0 +1,32 @@
+{
+  "generator": "Robot 7.4 (Python 3.12.0 on win32)",
+  "generated": "2026-08-31T10:00:00.000000",
+  "rpa": false,
+  "suite": {
+    "id": "s1",
+    "name": "A4 - Muy por debajo del umbral, debe recomendar NO DESPLEGAR",
+    "status": "FAIL",
+    "start_time": "2026-08-31T10:00:00.000000",
+    "elapsed_time": 30
+  },
+  "statistics": {
+    "total": {
+      "label": "All Tests",
+      "pass": 40,
+      "fail": 60,
+      "skip": 0
+    },
+    "suites": [
+      {
+        "label": "A4 - Muy por debajo del umbral, debe recomendar NO DESPLEGAR",
+        "name": "A4 - Muy por debajo del umbral, debe recomendar NO DESPLEGAR",
+        "id": "s1",
+        "pass": 40,
+        "fail": 60,
+        "skip": 0
+      }
+    ],
+    "tags": []
+  },
+  "errors": []
+}

@@ -128,8 +128,16 @@ CREATE TABLE reglas_evaluacion (
     estado              VARCHAR(20)   NOT NULL DEFAULT 'activo'
                             CHECK (estado IN ('activo','inactivo')),
     fecha_creacion      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    id_usuario_creacion INTEGER       REFERENCES usuarios(id_usuario) ON DELETE SET NULL
+    id_usuario_creacion INTEGER       REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
+    -- RF07/RF08/CU-03: NULL = regla global; con valor = override por proyecto
+    id_proyecto         INTEGER       REFERENCES proyectos(id_proyecto) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_reglas_evaluacion_proyecto ON reglas_evaluacion(id_proyecto, criterio);
+
+CREATE UNIQUE INDEX uq_reglas_evaluacion_proyecto_criterio
+    ON reglas_evaluacion(id_proyecto, criterio)
+    WHERE id_proyecto IS NOT NULL;
 
 
 -- =============================================================
@@ -209,7 +217,11 @@ CREATE TABLE decisiones_despliegue (
     id_usuario_decisor INTEGER      REFERENCES usuarios(id_usuario)              ON DELETE SET NULL,
     decision_final     VARCHAR(30)  NOT NULL
                            CHECK (decision_final IN ('aprobado','rechazado','postergado')),
-    comentario         VARCHAR(255),
+    comentario         VARCHAR(1000),
+    -- TRUE cuando la decisión final contradice la recomendación del sistema
+    -- (aprobar algo que el motor marcó "no_desplegar", o rechazar algo que
+    -- marcó "desplegar"). Prueba concreta de que "el sistema asiste, no decide".
+    es_override        BOOLEAN      NOT NULL DEFAULT FALSE,
     fecha_decision     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

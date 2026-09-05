@@ -2,7 +2,19 @@ import { useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
 import PaymentModal from '../components/PaymentModal'
+import ResizableTh from '../components/ResizableTh'
+import { useResizableColumns } from '../hooks/useResizableColumns'
+import { isAdmin } from '../utils/auth'
 import '../styles/Suscripcion.css'
+
+const PAGOS_COLUMNS = [
+  { key: 'fecha',       defaultWidth: 150, minWidth: 100 },
+  { key: 'plan',        defaultWidth: 150, minWidth: 90  },
+  { key: 'monto',       defaultWidth: 140, minWidth: 90  },
+  { key: 'estado',      defaultWidth: 110, minWidth: 80  },
+  { key: 'vence',       defaultWidth: 150, minWidth: 100 },
+  { key: 'referencia',  defaultWidth: 220, minWidth: 100 },
+]
 
 // ── Íconos SVG inline ────────────────────────────────────────────────────────
 
@@ -79,13 +91,13 @@ export default function Suscripcion() {
   // ── Historial: filtros + paginación ──────────────────────────────────────
   const [paginaActual, setPaginaActual] = useState(1)
   const [porPagina, setPorPagina]       = useState(10)
+  const { widths: pagosWidths, startResize: startPagosResize } = useResizableColumns('suscripcion-pagos', PAGOS_COLUMNS)
   const [filtroEstado, setFiltroEstado] = useState('')
   const [filtroPlan, setFiltroPlan]     = useState('')
   const [filtroDesde, setFiltroDesde]   = useState('')
   const [filtroHasta, setFiltroHasta]   = useState('')
 
-  const roles   = JSON.parse(localStorage.getItem('userRoles') || '[]')
-  const esAdmin = roles.includes('Administrador')
+  const esAdmin = isAdmin()
 
   // ── Cargar datos ──────────────────────────────────────────────────────────
 
@@ -412,9 +424,7 @@ export default function Suscripcion() {
                     <FeatRow label="Exportar Excel/CSV"         ok={p.funcionalidades?.exportarExcel} />
                     <FeatRow label="Alertas por email"          ok={p.funcionalidades?.notificacionesEmail} />
                     <FeatRow label="Alertas Slack/Teams"        ok={p.funcionalidades?.notificacionesSlack} />
-                    <FeatRow label="API REST pública"           ok={p.funcionalidades?.apiPublica} />
                     <FeatRow label="Integración CI/CD nativa"   ok={p.funcionalidades?.integracionCicd} />
-                    <FeatRow label="Webhooks"                   ok={p.funcionalidades?.webhooks} />
                     <FeatRow label="Auditoría detallada"        ok={p.funcionalidades?.auditoriaDetallada} />
                     <FeatRow label="Soporte prioritario (24 h)" ok={p.funcionalidades?.soportePrioritario} />
                   </div>
@@ -509,15 +519,24 @@ export default function Suscripcion() {
                 <p className="sus-empty">No hay pagos que coincidan con los filtros.</p>
               ) : (
                 <>
-                  <table className="sus-pagos-table">
+                  <div className="dss-table-wrap">
+                  <table className="sus-pagos-table dss-resizable">
+                    <colgroup>
+                      <col style={{ width: pagosWidths.fecha }} />
+                      <col style={{ width: pagosWidths.plan }} />
+                      <col style={{ width: pagosWidths.monto }} />
+                      <col style={{ width: pagosWidths.estado }} />
+                      <col style={{ width: pagosWidths.vence }} />
+                      <col style={{ width: pagosWidths.referencia }} />
+                    </colgroup>
                     <thead>
                       <tr>
-                        <th>Fecha de pago</th>
-                        <th>Plan</th>
-                        <th>Monto</th>
-                        <th>Estado</th>
-                        <th>Vence el</th>
-                        <th>Referencia</th>
+                        <ResizableTh onResizeStart={startPagosResize('fecha', 100)}>Fecha de pago</ResizableTh>
+                        <ResizableTh onResizeStart={startPagosResize('plan', 90)}>Plan</ResizableTh>
+                        <ResizableTh onResizeStart={startPagosResize('monto', 90)}>Monto</ResizableTh>
+                        <ResizableTh onResizeStart={startPagosResize('estado', 80)}>Estado</ResizableTh>
+                        <ResizableTh onResizeStart={startPagosResize('vence', 100)}>Vence el</ResizableTh>
+                        <ResizableTh onResizeStart={startPagosResize('referencia', 100)}>Referencia</ResizableTh>
                       </tr>
                     </thead>
                     <tbody>
@@ -537,6 +556,7 @@ export default function Suscripcion() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
 
                   {/* ── Paginación ── */}
                   <div className="sus-paginacion">

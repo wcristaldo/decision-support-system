@@ -1,37 +1,51 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using DecisionSupportAPI.Data;
 using DecisionSupportAPI.DTOs;
 using DecisionSupportAPI.Models;
 using DecisionSupportAPI.Services;
+using System.Security.Claims;
 
 namespace DecisionSupportAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "ver_resultados")]
 public class ResultadosPruebaController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IMetricsCalculationService _metricsService;
-    private readonly IRecommendationEngine _recommendationEngine;
-    private readonly IAuditService _auditService;
-    private readonly ISuscripcionService _suscripcionService;
-    private readonly IEmailService _emailService;
+    private readonly IAuditoriaService _auditoriaService;
+    private readonly IIngestaResultadosService _ingesta;
 
     public ResultadosPruebaController(
         ApplicationDbContext context,
-        IMetricsCalculationService metricsService,
-        IRecommendationEngine recommendationEngine,
-        IAuditService auditService,
-        ISuscripcionService suscripcionService,
-        IEmailService emailService)
+        IAuditoriaService auditoriaService,
+        IIngestaResultadosService ingesta)
     {
         _context = context;
-        _metricsService = metricsService;
-        _recommendationEngine = recommendationEngine;
-        _auditService = auditService;
-        _suscripcionService = suscripcionService;
-        _emailService = emailService;
+        _auditoriaService = auditoriaService;
+        _ingesta = ingesta;
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<ResultadoPruebaDto>> GetById(int id)
+    {
+        var r = await _context.ResultadosPrueba.FirstOrDefaultAsync(x => x.Id == id);
+        if (r == null) return NotFound();
+
+        return Ok(new ResultadoPruebaDto
+        {
+            Id = r.Id,
+            VersionId = r.VersionId,
+            UsuarioCargaId = r.UsuarioCargaId,
+            NombreArchivo = r.NombreArchivo,
+            FormatoArchivo = r.FormatoArchivo,
+            RutaArchivo = r.RutaArchivo,
+            FechaCarga = r.FechaCarga,
+            EstadoValidacion = r.EstadoValidacion,
+            Observaciones = r.Observaciones
+        });
     }
 
     [HttpGet("version/{versionId}")]
@@ -56,122 +70,27 @@ public class ResultadosPruebaController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "cargar_resultados")]
     public async Task<ActionResult<ResultadoPruebaDto>> Create([FromBody] CreateResultadoPruebaDto request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        // ── Verificar límites de plan ─────────────────────────────────────
-        var limite = await _suscripcionService.VerificarLimiteEvaluacionesMesAsync();
-        if (!limite.Permitido)
-            return StatusCode(402, new { message = limite.Mensaje, codigo = "LIMITE_EVALUACIONES" });
+        var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+        int? usuarioCargaId = usuarioIdClaim != null && int.TryParse(usuarioIdClaim.Value, out var uid) ? uid : null;
 
-        if (request.TamanoBytes.HasValue)
-        {
-            var limiteArchivo = await _suscripcionService.VerificarTamanoArchivoAsync(request.TamanoBytes.Value);
-            if (!limiteArchivo.Permitido)
-                return StatusCode(402, new { message = limiteArchivo.Mensaje, codigo = "LIMITE_TAMANO_ARCHIVO" });
-        }
+        var resultado = await _ingesta.IngestarAsync(request, usuarioCargaId);
 
-        // Validar coherencia de pruebas
-        if (request.PruebasExitosas + request.PruebasFallidas > request.TotalPruebas)
-            return BadRequest(new { message = "La suma de exitosas y fallidas no puede superar el total de pruebas." });
+        if (resultado.StatusCode == 201 && resultado.Body is ResultadoPruebaDto dto)
+            return CreatedAtAction(nameof(GetByVersion), new { versionId = dto.VersionId }, dto);
 
-        var version = await _context.Versiones.FirstOrDefaultAsync(v => v.Id == request.VersionId);
-        if (version == null)
-            return NotFound(new { message = "Versión no encontrada." });
-
-        var resultado = new ResultadoPrueba
-        {
-            VersionId        = request.VersionId,
-            NombreArchivo    = request.NombreArchivo,
-            FormatoArchivo   = request.FormatoArchivo ?? "JSON",
-            RutaArchivo      = request.RutaArchivo,
-            Observaciones    = request.Observaciones,
-            EstadoValidacion = "valido"    // se marca válido al ingresar los datos
-        };
-
-        _context.ResultadosPrueba.Add(resultado);
-        await _context.SaveChangesAsync();
-
-        // Calcular métricas reales y generar recomendación automática
-        await _metricsService.CalculateMetricsAsync(
-            resultado.Id,
-            request.TotalPruebas,
-            request.PruebasExitosas,
-            request.PruebasFallidas,
-            request.Cobertura,
-            request.TiempoEjecucion);
-
-        await _recommendationEngine.GenerateRecommendationsAsync(request.VersionId);
-
-        // ── Notificación automática si plan lo permite ────────────────────
-        try
-        {
-            var plan = await _suscripcionService.GetPlanActivoAsync();
-            if (plan?.NotificacionesEmail == true)
-            {
-                // Verificar si la recomendación generada es "no_desplegar"
-                var ultimaRec = await _context.Recomendaciones
-                    .Include(r => r.Evaluacion)
-                    .Where(r => r.Evaluacion != null && r.Evaluacion.ResultadoId == resultado.Id)
-                    .OrderByDescending(r => r.FechaGeneracion)
-                    .FirstOrDefaultAsync();
-
-                if (ultimaRec?.TipoRecomendacion == "no_desplegar")
-                {
-                    var ver = await _context.Versiones
-                        .Include(v => v.Proyecto)
-                        .FirstOrDefaultAsync(v => v.Id == request.VersionId);
-
-                    var adminEmails = await _context.Usuarios
-                        .Where(u => u.Estado == "activo"
-                                 && u.UsuarioRoles.Any(ur => ur.Estado == "activo"
-                                     && ur.Rol != null
-                                     && ur.Rol.NombreRol == "Administrador"))
-                        .Select(u => u.Email)
-                        .ToListAsync();
-
-                    if (adminEmails.Count > 0 && ver != null)
-                    {
-                        await _emailService.EnviarAlertaNoAptoAsync(
-                            ver.Proyecto?.Nombre ?? "—",
-                            ver.NumeroVersion,
-                            request.NombreArchivo,
-                            adminEmails);
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            // La notificación no debe interrumpir el flujo principal
-            _auditService.LogActionAsync(null, "ResultadoPrueba", "NOTIFICACION_ERROR",
-                $"Error al enviar alerta email: {ex.Message}");
-        }
-
-        await _auditService.LogActionAsync(null, "ResultadoPrueba", "CARGAR",
-            $"VersionId: {request.VersionId}, Archivo: {request.NombreArchivo}, " +
-            $"Total: {request.TotalPruebas}, Exitosas: {request.PruebasExitosas}, " +
-            $"Cobertura: {request.Cobertura}%");
-
-        return CreatedAtAction(nameof(GetByVersion), new { versionId = request.VersionId }, new ResultadoPruebaDto
-        {
-            Id               = resultado.Id,
-            VersionId        = resultado.VersionId,
-            UsuarioCargaId   = resultado.UsuarioCargaId,
-            NombreArchivo    = resultado.NombreArchivo,
-            FormatoArchivo   = resultado.FormatoArchivo,
-            RutaArchivo      = resultado.RutaArchivo,
-            FechaCarga       = resultado.FechaCarga,
-            EstadoValidacion = resultado.EstadoValidacion,
-            Observaciones    = resultado.Observaciones
-        });
+        return StatusCode(resultado.StatusCode, resultado.Body);
     }
 
     // El endpoint /validar queda disponible para correcciones manuales de estado,
     // pero ya no recalcula métricas (los valores provienen del POST original).
     [HttpPut("{id}/validar")]
+    [Authorize(Policy = "cargar_resultados")]
     public async Task<IActionResult> Validar(int id, [FromBody] ValidarResultadoDto request)
     {
         var resultado = await _context.ResultadosPrueba.FirstOrDefaultAsync(r => r.Id == id);
@@ -184,8 +103,8 @@ public class ResultadosPruebaController : ControllerBase
         _context.ResultadosPrueba.Update(resultado);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "ResultadoPrueba", "VALIDAR",
-            $"ID: {id}, Estado: {request.EstadoValidacion}");
+        await _auditoriaService.RegistrarAsync("Update", "ResultadoPrueba", id,
+            $"Validación manual, Estado: {request.EstadoValidacion}");
 
         return NoContent();
     }

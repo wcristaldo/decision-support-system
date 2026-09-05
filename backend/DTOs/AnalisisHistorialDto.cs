@@ -13,6 +13,7 @@ public class AnalisisHistorialDto
     public string? Justificacion   { get; set; }
     public DateTime FechaCarga      { get; set; }
     public DateTime FechaEvaluacion { get; set; }
+    public string? UsuarioCargaNombre { get; set; }
 
     // Métricas clave
     public decimal? TasaExito       { get; set; }

@@ -60,6 +60,18 @@ function parsearRobotFramework(texto) {
     throw new Error('El total de pruebas (pass + fail + skip) debe ser al menos 1.')
   }
 
+  // 4b. Consistencia entre "suite.status" y "statistics.total" (RF04/RF05).
+  // En un output.json real de Robot Framework, suite.status = FAIL si y solo si
+  // hubo al menos una prueba fallida. Un archivo que dice FAIL con 0 fallidas
+  // (o PASS con alguna fallida) no es un reporte válido — puede ser un archivo
+  // corrupto, editado a mano o generado por una herramienta incompatible.
+  if (json.suite.status === 'FAIL' && fail === 0) {
+    throw new Error('Inconsistencia: "suite.status" es "FAIL" pero "statistics.total.fail" es 0. El archivo no es un output.json válido de Robot Framework.')
+  }
+  if (json.suite.status === 'PASS' && fail > 0) {
+    throw new Error(`Inconsistencia: "suite.status" es "PASS" pero "statistics.total.fail" es ${fail}. El archivo no es un output.json válido de Robot Framework.`)
+  }
+
   // 5. Calcular métricas
   const cobertura = parseFloat(((pass + fail) / total * 100).toFixed(2))
   // Extraer nombre corto de herramienta: "Robot 7.4 (Python...)" → "Robot 7.4"
@@ -187,6 +199,7 @@ function CargarResultados() {
         totalPruebas:    metricas.totalPruebas,
         pruebasExitosas: metricas.pruebasExitosas,
         pruebasFallidas: metricas.pruebasFallidas,
+        pruebasOmitidas: metricas.pruebasOmitidas,
         cobertura:       metricas.cobertura,
         tiempoEjecucion: metricas.tiempoEjecucion,
         tamanoBytes:     archivo.size ?? null,

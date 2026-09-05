@@ -1,0 +1,32 @@
+{
+  "generator": "Robot 7.4 (Python 3.12.0 on win32)",
+  "generated": "2026-08-31T10:00:00.000000",
+  "rpa": false,
+  "suite": {
+    "id": "s1",
+    "name": "A8 - Con pruebas omitidas pero cumple igual",
+    "status": "PASS",
+    "start_time": "2026-08-31T10:00:00.000000",
+    "elapsed_time": 40
+  },
+  "statistics": {
+    "total": {
+      "label": "All Tests",
+      "pass": 90,
+      "fail": 0,
+      "skip": 10
+    },
+    "suites": [
+      {
+        "label": "A8 - Con pruebas omitidas pero cumple igual",
+        "name": "A8 - Con pruebas omitidas pero cumple igual",
+        "id": "s1",
+        "pass": 90,
+        "fail": 0,
+        "skip": 10
+      }
+    ],
+    "tags": []
+  },
+  "errors": []
+}

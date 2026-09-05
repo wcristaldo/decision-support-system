@@ -7,6 +7,7 @@ public class DecisionDespliegue
     public int? UsuarioDecisorId { get; set; }
     public string? DecisionFinal { get; set; }
     public string? Comentario { get; set; }
+    public bool EsOverride { get; set; }
     public DateTime FechaDecision { get; set; } = DateTime.UtcNow;
 
     public Recomendacion? Recomendacion { get; set; }

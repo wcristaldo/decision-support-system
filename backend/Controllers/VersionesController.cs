@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using DecisionSupportAPI.Data;
 using DecisionSupportAPI.DTOs;
@@ -9,15 +10,16 @@ namespace DecisionSupportAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "ver_proyectos")]
 public class VersionesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IAuditService _auditService;
+    private readonly IAuditoriaService _auditoriaService;
 
-    public VersionesController(ApplicationDbContext context, IAuditService auditService)
+    public VersionesController(ApplicationDbContext context, IAuditoriaService auditoriaService)
     {
         _context = context;
-        _auditService = auditService;
+        _auditoriaService = auditoriaService;
     }
 
     [HttpGet("proyecto/{proyectoId}")]
@@ -57,6 +59,7 @@ public class VersionesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "gestionar_proyectos")]
     public async Task<ActionResult<VersionDto>> Create([FromBody] CreateVersionDto request)
     {
         if (!ModelState.IsValid)
@@ -72,7 +75,7 @@ public class VersionesController : ControllerBase
         _context.Versiones.Add(version);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "Version", "CREAR", $"ID: {version.Id}, Numero: {version.NumeroVersion}");
+        await _auditoriaService.RegistrarAsync("Create", "Version", version.Id, $"Numero: {version.NumeroVersion}");
 
         return CreatedAtAction(nameof(GetById), new { id = version.Id }, new VersionDto
         {
@@ -86,6 +89,7 @@ public class VersionesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Policy = "gestionar_proyectos")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateVersionDto request)
     {
         var version = await _context.Versiones.FirstOrDefaultAsync(v => v.Id == id);
@@ -101,13 +105,14 @@ public class VersionesController : ControllerBase
         _context.Versiones.Update(version);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "Version", "ACTUALIZAR",
+        await _auditoriaService.RegistrarAsync("Update", "Version", id,
             $"Antes: [{anterior}] → Después: Numero: {version.NumeroVersion}");
 
         return NoContent();
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Policy = "gestionar_proyectos")]
     public async Task<IActionResult> Delete(int id)
     {
         var version = await _context.Versiones.FirstOrDefaultAsync(v => v.Id == id);
@@ -117,7 +122,7 @@ public class VersionesController : ControllerBase
         _context.Versiones.Remove(version);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "Version", "ELIMINAR", $"ID: {version.Id}, Numero: {version.NumeroVersion}");
+        await _auditoriaService.RegistrarAsync("Delete", "Version", id, $"Numero: {version.NumeroVersion}");
 
         return NoContent();
     }

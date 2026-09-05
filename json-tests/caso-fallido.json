@@ -1,0 +1,242 @@
+{
+"generator":"Robot 7.4 (Python 3.12.0 on win32)",
+"generated":"2026-07-18T11:53:30.073636",
+"rpa":false,
+"suite":{
+"id":"s1",
+"setup":{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening browser 'chrome' to base url 'http://192.168.16.143:8090/cajapos-admin/login'.",
+"level":"INFO",
+"timestamp":"2026-07-18T11:53:30.245869"
+}],
+"name":"Open Browser",
+"owner":"SeleniumLibrary",
+"args":["${URL}","chrome"],
+"doc":"Opens a new browser instance to the optional ``url``.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:30.245869",
+"elapsed_time":1.113565
+},{
+"name":"Maximize Browser Window",
+"owner":"SeleniumLibrary",
+"doc":"Maximizes current browser window.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:31.360429",
+"elapsed_time":0.031898
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${USERNAME_INPUT}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:31.392327",
+"elapsed_time":0.017325
+}],
+"name":"Open Browser To Login",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:30.245869",
+"elapsed_time":1.163783
+},
+"tests":[{
+"id":"s1-t1",
+"body":[{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Typing text 'superadmin' into text field 'id=username'.",
+"level":"INFO",
+"timestamp":"2026-07-18T11:53:31.411649"
+}],
+"name":"Input Text",
+"owner":"SeleniumLibrary",
+"args":["${USERNAME_INPUT}","${ADMIN_USER}"],
+"doc":"Types the given ``text`` into the text field identified by ``locator``.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:31.411649",
+"elapsed_time":0.079108
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Typing text 'Admin123' into text field 'id=password'.",
+"level":"INFO",
+"timestamp":"2026-07-18T11:53:31.490757"
+}],
+"name":"Input Text",
+"owner":"SeleniumLibrary",
+"args":["${PASSWORD_INPUT}","${ADMIN_PASS}"],
+"doc":"Types the given ``text`` into the text field identified by ``locator``.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:31.490757",
+"elapsed_time":0.064662
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Clicking button 'css=button.btn-login'.",
+"level":"INFO",
+"timestamp":"2026-07-18T11:53:31.555419"
+}],
+"name":"Click Button",
+"owner":"SeleniumLibrary",
+"args":["${LOGIN_BUTTON}"],
+"doc":"Clicks the button identified by ``locator``.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:31.555419",
+"elapsed_time":0.082566
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${ROLES_CONTAINER}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:31.637985",
+"elapsed_time":0.519423
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${ROLE_CAJA_POS_LINK}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:32.157408",
+"elapsed_time":0.016189
+}],
+"name":"Login With Valid Credentials",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:31.411649",
+"elapsed_time":0.761948
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Current page contains element 'css=div.login-container'.",
+"level":"INFO",
+"timestamp":"2026-07-18T11:53:32.179604"
+}],
+"name":"Page Should Contain Element",
+"owner":"SeleniumLibrary",
+"args":["${ROLES_CONTAINER}"],
+"doc":"Verifies that element ``locator`` is found on the current page.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:32.173597",
+"elapsed_time":0.006007
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Current page contains element 'xpath=//div[contains(@class,'role-title') and normalize-space()='Caja POS']'.",
+"level":"INFO",
+"timestamp":"2026-07-18T11:53:32.188850"
+}],
+"name":"Page Should Contain Element",
+"owner":"SeleniumLibrary",
+"args":["${ROLE_CAJA_POS_TITLE}"],
+"doc":"Verifies that element ``locator`` is found on the current page.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:32.180596",
+"elapsed_time":0.008254
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Current page contains element 'xpath=//div[contains(@class,'role-title') and normalize-space()='Store']'.",
+"level":"INFO",
+"timestamp":"2026-07-18T11:53:32.205507"
+}],
+"name":"Page Should Contain Element",
+"owner":"SeleniumLibrary",
+"args":["${ROLE_STORE_TITLE}"],
+"doc":"Verifies that element ``locator`` is found on the current page.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:32.188850",
+"elapsed_time":0.016657
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Current page contains element 'xpath=//div[contains(@class,'role-title') and normalize-space()='TMS']'.",
+"level":"INFO",
+"timestamp":"2026-07-18T11:53:32.211604"
+}],
+"name":"Page Should Contain Element",
+"owner":"SeleniumLibrary",
+"args":["${ROLE_TMS_TITLE}"],
+"doc":"Verifies that element ``locator`` is found on the current page.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:32.205507",
+"elapsed_time":0.006097
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Current page contains element 'xpath=//div[contains(@class,'role-title') and normalize-space()='Usuarios']'.",
+"level":"INFO",
+"timestamp":"2026-07-18T11:53:32.228731"
+}],
+"name":"Page Should Contain Element",
+"owner":"SeleniumLibrary",
+"args":["${ROLE_USUARIOS_TITLE}"],
+"doc":"Verifies that element ``locator`` is found on the current page.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:32.211604",
+"elapsed_time":0.017127
+},{
+"name":"Log To Console",
+"owner":"BuiltIn",
+"args":["CP-LOGIN-01: LOGIN EXITOSO"],
+"doc":"Logs the given message to the console.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:32.229727",
+"elapsed_time":0.000000
+}],
+"teardown":{
+"name":"Run Keyword If Test Failed",
+"owner":"BuiltIn",
+"args":["Capture Screenshot On Failure","CP-LOGIN-01"],
+"doc":"Runs the given keyword with the given arguments, if the test failed.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:32.229727",
+"elapsed_time":0.001003
+},
+"name":"CP-LOGIN-01 Login exitoso con credenciales v\u00e1lidas",
+"doc":"PA-01: Acceso exitoso con credenciales v\u00e1lidas\nPasos:\n1. Acceder a la URL del Admin Manager\n2. Ingresar usuario superadmin en el campo Usuario\n3. Ingresar contrase\u00f1a v\u00e1lida Admin123 en el campo Contrase\u00f1a\n4. Presionar el bot\u00f3n Ingresar\nResultado esperado: Se autentica el usuario y se muestra la pantalla principal (Home)",
+"tags":["CP-LOGIN-01"],
+"lineno":45,
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:31.409652",
+"elapsed_time":0.821078
+}],
+"teardown":{
+"name":"Close Browser",
+"owner":"SeleniumLibrary",
+"doc":"Closes the current browser.",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:32.231727",
+"elapsed_time":2.167456
+},
+"name":"CP-LOGIN-01 Login Exitoso Credenciales Validas",
+"source":"C:\\Users\\William Cristaldo\\Documents\\automatizaciones\\automation-test\\web-robot\\tests\\01-login\\CP-LOGIN-01_Login_Exitoso_Credenciales_Validas.robot",
+"status":"FAIL",
+"start_time":"2026-07-18T11:53:30.081798",
+"elapsed_time":4.317385
+},
+"statistics":{
+"total":{
+"label":"All Tests",
+"pass":1,
+"fail":0,
+"skip":0
+},
+"suites":[{
+"label":"CP-LOGIN-01 Login Exitoso Credenciales Validas",
+"name":"CP-LOGIN-01 Login Exitoso Credenciales Validas",
+"id":"s1",
+"pass":1,
+"fail":0,
+"skip":0
+}],
+"tags":[{
+"label":"CP-LOGIN-01",
+"pass":1,
+"fail":0,
+"skip":0
+}]
+},
+"errors":[]
+}

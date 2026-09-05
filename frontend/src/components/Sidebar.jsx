@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { decodeJwtPayload } from '../utils/jwt'
+import { isAdmin } from '../utils/auth'
 import '../styles/Sidebar.css'
 
 /* ── SVG Icons ── */
@@ -55,6 +57,14 @@ const IcAdmin = () => (
   </svg>
 )
 
+const IcUser = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="8" r="4"/>
+    <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+  </svg>
+)
+
 const IcChevronLeft = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -82,6 +92,7 @@ const NAV_ITEMS = [
   { id: 'cargar',      label: 'Resultados',   icon: <IcCargar />,      path: '/cargar-resultados' },
   { id: 'analisis',    label: 'Análisis',     icon: <IcAnalisis />,    path: '/analisis' },
   { id: 'suscripcion', label: 'Suscripción',  icon: <IcSuscripcion />, path: '/suscripcion' },
+  { id: 'mi-perfil',   label: 'Mi perfil',    icon: <IcUser />,        path: '/mi-perfil' },
   {
     id: 'admin',
     label: 'Admin',
@@ -99,19 +110,15 @@ function Sidebar({ onLogout }) {
   const navigate  = useNavigate()
   const [panelId, setPanelId] = useState(null)
 
-  const roles   = JSON.parse(localStorage.getItem('userRoles') || '[]')
-  const isAdmin = roles.includes('Administrador')
+  const esAdmin = isAdmin()
 
   let nombreUsuario = 'Usuario'
-  try {
-    const token   = localStorage.getItem('token')
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    nombreUsuario = payload.name || 'Usuario'
-  } catch { /* ignore */ }
+  const payload = decodeJwtPayload(sessionStorage.getItem('token'))
+  if (payload) nombreUsuario = payload.name || 'Usuario'
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('userRoles')
+    sessionStorage.removeItem('token')
+    sessionStorage.removeItem('userRoles')
     onLogout()
     navigate('/login')
   }
@@ -125,7 +132,7 @@ function Sidebar({ onLogout }) {
     return false
   }
 
-  const visibleItems = NAV_ITEMS.filter(i => !i.adminOnly || isAdmin)
+  const visibleItems = NAV_ITEMS.filter(i => !i.adminOnly || esAdmin)
 
   const handleRailClick = (item) => {
     if (item.path) {
@@ -166,7 +173,7 @@ function Sidebar({ onLogout }) {
         </nav>
 
         <div className="rail-bottom">
-          <div className="rail-user">
+          <div className="rail-user" title={nombreUsuario}>
             <div className="rail-avatar">
               {nombreUsuario.charAt(0).toUpperCase()}
             </div>
