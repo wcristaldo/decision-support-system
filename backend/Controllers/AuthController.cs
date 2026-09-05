@@ -14,12 +14,16 @@ public class AuthController : ControllerBase
     private readonly IAuthenticationService _authService;
     private readonly ApplicationDbContext _context;
     private readonly IAuditoriaService _auditoriaService;
+    private readonly IHostEnvironment _env;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthenticationService authService, ApplicationDbContext context, IAuditoriaService auditoriaService)
+    public AuthController(IAuthenticationService authService, ApplicationDbContext context, IAuditoriaService auditoriaService, IHostEnvironment env, ILogger<AuthController> logger)
     {
         _authService = authService;
         _context = context;
         _auditoriaService = auditoriaService;
+        _env = env;
+        _logger = logger;
     }
 
     [HttpPost("login")]
@@ -41,11 +45,24 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPost("debug/hash")]
-    public IActionResult GetHash([FromBody] LoginRequestDto request)
+    /// <summary>
+    /// GET /api/auth/me — datos del usuario autenticado, con rol y permisos
+    /// LEÍDOS EN VIVO (los mismos claims que DbClaimsTransformation reconstruye
+    /// desde la base en cada request), no los que trae el JWT original. Así,
+    /// la pantalla "Mi perfil" siempre coincide con lo que el backend realmente
+    /// va a autorizar, aunque un permiso se haya revocado recién.
+    /// </summary>
+    [Authorize]
+    [HttpGet("me")]
+    public IActionResult Me()
     {
-        var hash = _authService.HashPassword(request.Password);
-        return Ok(new { password = request.Password, hash });
+        return Ok(new
+        {
+            nombre   = User.FindFirst("name")?.Value ?? User.FindFirst(ClaimTypes.Name)?.Value ?? "",
+            email    = User.FindFirst("email")?.Value ?? "",
+            roles    = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList(),
+            permisos = User.FindAll("permission").Select(c => c.Value).ToList(),
+        });
     }
 
     [Authorize]
@@ -74,25 +91,24 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpPost("reset-password/{usuarioId}")]
-    public async Task<IActionResult> ResetPassword(int usuarioId, [FromBody] Dictionary<string, string> request)
+    public async Task<IActionResult> ResetPassword(int usuarioId, [FromBody] ResetPasswordDto request)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (!User.IsInRole("Administrador"))
+            return StatusCode(403, new { message = "No eres administrador" });
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword))
+            return BadRequest(new { message = "Contraseña vacía" });
+
         try
         {
-            if (!User.IsInRole("ADMIN") && !User.IsInRole("Administrador"))
-                return Forbid("No eres administrador");
-
-            if (!request.ContainsKey("newPassword"))
-                return BadRequest(new { message = "newPassword requerido" });
-
-            var pwd = request["newPassword"];
-            if (string.IsNullOrWhiteSpace(pwd))
-                return BadRequest(new { message = "Contraseña vacía" });
-
             var user = _context.Usuarios.FirstOrDefault(u => u.IdUsuario == usuarioId);
             if (user == null)
                 return NotFound(new { message = "Usuario no encontrado" });
 
-            user.PasswordHash = _authService.HashPassword(pwd);
+            user.PasswordHash = _authService.HashPassword(request.NewPassword);
             _context.SaveChanges();
 
             await _auditoriaService.RegistrarAsync("Password Change", "Usuario", usuarioId, $"Reset de contraseña por administrador");
@@ -101,7 +117,10 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { error = ex.Message });
+            _logger.LogError(ex, "reset-password falló para usuarioId {UsuarioId}", usuarioId);
+            if (_env.IsDevelopment())
+                return StatusCode(500, new { error = ex.Message });
+            return StatusCode(500, new { error = "No se pudo actualizar la contraseña." });
         }
     }
 }

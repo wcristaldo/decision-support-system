@@ -39,6 +39,11 @@ public class AuthenticationService : IAuthenticationService
         if (!VerifyPassword(request.Password, usuario.PasswordHash))
             return null;
 
+        // Migración transparente: si el hash todavía es el algoritmo legado (SHA-256),
+        // se re-hashea con BCrypt en el primer login exitoso tras la migración a RNF04.
+        if (!usuario.PasswordHash.StartsWith("$2"))
+            usuario.PasswordHash = HashPassword(request.Password);
+
         // Actualizar fecha de último acceso
         usuario.FechaUltimoAcceso = DateTime.UtcNow;
         await _context.SaveChangesAsync();
@@ -95,7 +100,12 @@ public class AuthenticationService : IAuthenticationService
         };
 
         foreach (var role in roles)
+        {
             claims.Add(new(System.Security.Claims.ClaimTypes.Role, role));
+            // Alias simple para que el frontend pueda leer "role" al decodificar el
+            // token sin depender de la URI larga que .NET usa para ClaimTypes.Role.
+            claims.Add(new("role", role));
+        }
 
         foreach (var permiso in permisos)
             claims.Add(new("permission", permiso));
@@ -112,15 +122,23 @@ public class AuthenticationService : IAuthenticationService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    // RNF04: hash BCrypt con factor de costo 12 (≥10 exigido por la tesis).
     public string HashPassword(string password)
-    {
-        using var sha256 = SHA256.Create();
-        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToHexString(bytes).ToLower();
-    }
+        => BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
 
     public bool VerifyPassword(string password, string hash)
-        => HashPassword(password) == hash;
+    {
+        if (hash.StartsWith("$2"))
+            return BCrypt.Net.BCrypt.Verify(password, hash);
+
+        // Hash legado (SHA-256, algoritmo previo a la migración RNF04).
+        // Se mantiene solo para verificar contra hashes ya persistidos;
+        // HashPassword() ya no genera este formato.
+        using var sha256 = SHA256.Create();
+        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+        var legacyHash = Convert.ToHexString(bytes).ToLower();
+        return legacyHash == hash;
+    }
 
     public async Task<bool> ChangePasswordAsync(int usuarioId, string currentPassword, string newPassword)
     {

@@ -11,6 +11,7 @@ import AnalisisVersion from './pages/AnalisisVersion'
 import UserManagement from './pages/UserManagement'
 import Auditoria from './pages/Auditoria'
 import Suscripcion from './pages/Suscripcion'
+import MiPerfil from './pages/MiPerfil'
 import Sidebar from './components/Sidebar'
 
 function App() {
@@ -18,7 +19,7 @@ function App() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
+    const token = sessionStorage.getItem('token')
     setIsAuthenticated(!!token)
     setLoading(false)
   }, [])
@@ -34,7 +35,7 @@ function App() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
+    sessionStorage.removeItem('token')
     setIsAuthenticated(false)
   }
 
@@ -54,6 +55,7 @@ function App() {
             <Route path="/usuarios" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
             <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
             <Route path="/suscripcion" element={<ProtectedRoute><Suscripcion /></ProtectedRoute>} />
+            <Route path="/mi-perfil" element={<ProtectedRoute><MiPerfil /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>
