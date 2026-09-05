@@ -270,3 +270,19 @@
 .panel-link--active:visited {
   color: var(--text-dark) !important;
 }
+
+/* ═══════════════════════════════════
+   RESPONSIVE — pantallas angostas
+   El rail se mantiene fijo (92px), pero el sub-panel de Admin pasa a
+   flotar como overlay en vez de empujar el contenido principal, que
+   en un viewport chico quedaría reducido a un ancho inutilizable.
+═══════════════════════════════════ */
+@media (max-width: 768px) {
+  .sidebar-panel {
+    position: fixed;
+    top: 0;
+    left: 92px;
+    z-index: 50;
+    box-shadow: 6px 0 24px rgba(28, 43, 58, 0.3);
+  }
+}
