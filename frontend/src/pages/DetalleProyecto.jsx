@@ -2,6 +2,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
+import { isAdmin } from '../utils/auth'
 import '../styles/DetalleProyecto.css'
 
 const SEMVER_RE = /^\d+\.\d+\.\d+$/
@@ -158,6 +159,150 @@ function VersionModal({ proyectoId, onClose, onSaved }) {
   )
 }
 
+// ── Umbrales de calidad por proyecto (RF07/RF08/CU-03) ─────────────────────────
+
+const CRITERIO_LABEL = {
+  tasa_exito:       { nombre: 'Tasa de éxito mínima',    unidad: '%',  tipo: '≥' },
+  cobertura:        { nombre: 'Cobertura mínima',        unidad: '%',  tipo: '≥' },
+  tasa_fallo:       { nombre: 'Tasa de fallo máxima',    unidad: '%',  tipo: '≤' },
+  tiempo_ejecucion: { nombre: 'Tiempo de ejecución máx.', unidad: 's', tipo: '≤' },
+}
+
+function UmbralesPanel({ proyectoId, esAdmin }) {
+  const [reglas,   setReglas]   = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [editando, setEditando] = useState(null)   // criterio en edición
+  const [valor,    setValor]    = useState('')
+  const [saving,   setSaving]   = useState(false)
+  const [notification, setNotification] = useState(null)
+
+  const showNotification = (type, title, message) => setNotification({ type, title, message })
+  const closeNotification = () => setNotification(null)
+
+  const loadReglas = () => {
+    setLoading(true)
+    api.get(`/reglaEvaluacion/proyecto/${proyectoId}`)
+      .then(res => setReglas(res.data))
+      .catch(() => showNotification('error', 'Error', 'No se pudieron cargar los umbrales del proyecto.'))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { loadReglas() }, [proyectoId])
+
+  const startEdit = (r) => {
+    setEditando(r.criterio)
+    setValor(String(r.umbral ?? ''))
+  }
+
+  const cancelEdit = () => { setEditando(null); setValor('') }
+
+  const guardarUmbral = async (criterio) => {
+    const num = parseFloat(valor)
+    if (isNaN(num) || num < 0) {
+      showNotification('error', 'Valor inválido', 'Ingresá un número mayor o igual a 0.')
+      return
+    }
+    setSaving(true)
+    try {
+      await api.put(`/reglaEvaluacion/proyecto/${proyectoId}`, { criterio, umbral: num })
+      setEditando(null)
+      loadReglas()
+      showNotification('success', 'Umbral actualizado', 'El umbral personalizado del proyecto se guardó correctamente.')
+    } catch (err) {
+      showNotification('error', 'Error', err.response?.data?.message || 'No se pudo guardar el umbral.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const restablecer = async (criterio) => {
+    setSaving(true)
+    try {
+      await api.delete(`/reglaEvaluacion/proyecto/${proyectoId}/${criterio}`)
+      loadReglas()
+      showNotification('success', 'Restablecido', 'El proyecto vuelve a usar el umbral global para ese criterio.')
+    } catch (err) {
+      showNotification('error', 'Error', err.response?.data?.message || 'No se pudo restablecer el umbral.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) return null
+  if (reglas.length === 0) return null
+
+  return (
+    <div className="dp-umbrales-card">
+      <h2 className="dp-section-title">
+        Umbrales de calidad
+        {!esAdmin && <span className="dp-umbrales-readonly">Solo lectura</span>}
+      </h2>
+      <p className="dp-umbrales-hint">
+        Criterios que evalúa el motor de recomendación para las versiones de este proyecto.
+        {esAdmin && ' Podés personalizarlos; si no, se usa el umbral global del sistema.'}
+      </p>
+
+      <div className="dp-umbrales-list">
+        {reglas.map((r) => {
+          const meta = CRITERIO_LABEL[r.criterio] || { nombre: r.criterio, unidad: '', tipo: '' }
+          const enEdicion = editando === r.criterio
+          return (
+            <div key={r.criterio} className="dp-umbral-row">
+              <div className="dp-umbral-info">
+                <span className="dp-umbral-nombre">{meta.nombre}</span>
+                <span className={`dp-umbral-tag ${r.esPersonalizado ? 'tag-personalizado' : 'tag-global'}`}>
+                  {r.esPersonalizado ? 'Personalizado' : 'Global'}
+                </span>
+              </div>
+
+              {enEdicion ? (
+                <div className="dp-umbral-edit">
+                  <span className="dp-umbral-op">{meta.tipo}</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={valor}
+                    onChange={(e) => setValor(e.target.value)}
+                    autoFocus
+                  />
+                  <span className="dp-umbral-unidad">{meta.unidad}</span>
+                  <button className="btn-cancel dp-umbral-btn" onClick={cancelEdit} disabled={saving}>Cancelar</button>
+                  <button className="btn-save dp-umbral-btn" onClick={() => guardarUmbral(r.criterio)} disabled={saving}>
+                    {saving ? <span className="btn-spinner" /> : 'Guardar'}
+                  </button>
+                </div>
+              ) : (
+                <div className="dp-umbral-valor">
+                  <span>{meta.tipo} {r.umbral} {meta.unidad}</span>
+                  {esAdmin && (
+                    <>
+                      <button className="btn-analizar dp-umbral-btn" onClick={() => startEdit(r)}>Editar</button>
+                      {r.esPersonalizado && (
+                        <button className="btn-back-link dp-umbral-btn" onClick={() => restablecer(r.criterio)} disabled={saving}>
+                          Restablecer a global
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <NotificationModal
+        isOpen={!!notification}
+        type={notification?.type}
+        title={notification?.title}
+        message={notification?.message}
+        onClose={closeNotification}
+      />
+    </div>
+  )
+}
+
 // ── DetalleProyecto ───────────────────────────────────────────────────────────
 
 function DetalleProyecto() {
@@ -216,7 +361,8 @@ function DetalleProyecto() {
   }
 
   const estadoProy = ESTADO_PROY[proyecto.estado] || { text: proyecto.estado, cls: '' }
-  const tipoLabel  = TIPO_MAP[proyecto.tipo] || proyecto.tipo || '-'
+  const tipoLabel  = TIPO_MAP[proyecto.tipoSolucion] || proyecto.tipoSolucion || '-'
+  const esAdmin    = isAdmin()
 
   return (
     <div className="dp-page">
@@ -232,8 +378,8 @@ function DetalleProyecto() {
               <h1 className="dp-title">{proyecto.nombre}</h1>
               <p className="dp-desc">{proyecto.descripcion || 'Sin descripción'}</p>
               <div className="dp-badges">
-                <span className={`badge ${estadoProy.cls}`}>{estadoProy.text}</span>
-                <span className="badge badge-tipo">{tipoLabel}</span>
+                <span className={`dp-badge ${estadoProy.cls}`}>{estadoProy.text}</span>
+                <span className="dp-badge dp-badge-tipo">{tipoLabel}</span>
               </div>
             </div>
             <button className="btn-nuevo" onClick={() => setShowModal(true)}>
@@ -245,9 +391,11 @@ function DetalleProyecto() {
 
       {/* ── Versiones ── */}
       <div className="dp-body">
-        <h2 className="dp-versions-title">
+        <UmbralesPanel proyectoId={id} esAdmin={esAdmin} />
+
+        <h2 className="dp-section-title">
           Versiones
-          <span className="dp-version-count">{versiones.length}</span>
+          <span className="dp-count-badge">{versiones.length}</span>
         </h2>
 
         {versiones.length === 0 ? (

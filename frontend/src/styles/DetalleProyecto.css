@@ -135,7 +135,7 @@
   align-items: center;
   gap: 0.5rem;
   background: linear-gradient(135deg, var(--blue-400), var(--blue-500));
-  color: var(--white);
+  color: var(--text-dark);
   border: none;
   padding: 0.7rem 1.4rem;
   border-radius: 50px;
@@ -251,9 +251,133 @@
   border-radius: 50px;
 }
 
+.dp-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.22rem 0.65rem;
+  border-radius: 50px;
+  white-space: nowrap;
+}
 .badge-activo    { background: #e6f9f0; color: #1a7a4e; }
 .badge-inactivo  { background: var(--gray-100); color: var(--text-mid); }
 .badge-archivado { background: #fdf3e3; color: #b35c00; }
+.dp-badge-tipo   { background: var(--gray-100); color: var(--text-mid); }
+
+/* ── Umbrales de calidad por proyecto (RF07/RF08/CU-03) ── */
+.dp-umbrales-card {
+  background: var(--white);
+  border: 1.5px solid var(--gray-100);
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.dp-umbrales-readonly {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--gray-100);
+  color: var(--text-mid);
+  padding: 0.2rem 0.65rem;
+  border-radius: 50px;
+  margin-left: 0.5rem;
+}
+
+.dp-umbrales-hint {
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  margin: 0.35rem 0 1.25rem;
+}
+
+.dp-umbrales-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dp-umbral-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-radius: 12px;
+}
+
+.dp-umbral-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.dp-umbral-nombre {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.dp-umbral-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.18rem 0.55rem;
+  border-radius: 50px;
+}
+
+.tag-global         { background: var(--gray-100); color: var(--text-mid); }
+.tag-personalizado  { background: #e8f0fb; color: var(--blue-500); }
+
+.dp-umbral-valor {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.dp-umbral-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dp-umbral-op {
+  font-weight: 700;
+  color: var(--text-mid);
+}
+
+.dp-umbral-edit input {
+  width: 90px;
+  padding: 0.45rem 0.65rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: 'Inter', sans-serif;
+  background: var(--white);
+  outline: none;
+}
+
+.dp-umbral-edit input:focus {
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 3px rgba(126,154,178,0.15);
+}
+
+.dp-umbral-unidad { font-size: 0.82rem; color: var(--text-mid); }
+
+.dp-umbral-btn {
+  padding: 0.4rem 0.9rem !important;
+  font-size: 0.78rem !important;
+}
 
 /* ── Versions Grid ── */
 .dp-versions-grid {
@@ -545,7 +669,7 @@
   align-items: center;
   gap: 0.5rem;
   background: linear-gradient(135deg, var(--blue-400), var(--blue-500));
-  color: var(--white);
+  color: var(--text-dark);
   border: none;
   padding: 0.65rem 1.5rem;
   border-radius: 50px;

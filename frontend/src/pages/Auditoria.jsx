@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
+import ResizableTh from '../components/ResizableTh'
+import { useResizableColumns } from '../hooks/useResizableColumns'
 import '../styles/Auditoria.css'
+
+const AUDIT_COLUMNS = [
+  { key: 'fecha',   defaultWidth: 130, minWidth: 100 },
+  { key: 'usuario', defaultWidth: 190, minWidth: 100 },
+  { key: 'accion',  defaultWidth: 150, minWidth: 90  },
+  { key: 'entidad', defaultWidth: 170, minWidth: 90  },
+  { key: 'idReg',   defaultWidth: 190, minWidth: 80  },
+  { key: 'detalle', defaultWidth: 230, minWidth: 100 },
+]
 
 function Auditoria() {
   const [registros, setRegistros] = useState([])
@@ -16,14 +27,15 @@ function Auditoria() {
   })
   const [pagina, setPagina] = useState(1)
   const [totalRegistros, setTotalRegistros] = useState(0)
+  const { widths, startResize } = useResizableColumns('auditoria-log', AUDIT_COLUMNS)
 
   const TIPO_ACCION = {
-    'CREAR': { label: 'Crear', clase: 'audit-badge-create' },
-    'ACTUALIZAR': { label: 'Actualizar', clase: 'audit-badge-update' },
-    'ELIMINAR': { label: 'Eliminar', clase: 'audit-badge-delete' },
-    'LOGIN': { label: 'Login', clase: 'audit-badge-login' },
-    'LOGOUT': { label: 'Logout', clase: 'audit-badge-logout' },
-    'CAMBIAR_CONTRASENA': { label: 'Cambiar Contraseña', clase: 'audit-badge-password' },
+    'Create': { label: 'Crear', clase: 'audit-badge-create' },
+    'Update': { label: 'Actualizar', clase: 'audit-badge-update' },
+    'Delete': { label: 'Eliminar', clase: 'audit-badge-delete' },
+    'Login': { label: 'Login', clase: 'audit-badge-login' },
+    'Password Change': { label: 'Cambiar Contraseña', clase: 'audit-badge-password' },
+    'Error': { label: 'Error', clase: 'audit-badge-delete' },
   }
 
   const fetchRegistros = async () => {
@@ -84,7 +96,7 @@ function Auditoria() {
 
   const formatearFecha = (fecha) => {
     if (!fecha) return '-'
-    return new Intl.DateTimeFormat('es-AR', {
+    return new Intl.DateTimeFormat('es-PY', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -95,6 +107,12 @@ function Auditoria() {
   }
 
   const totalPaginas = Math.ceil(totalRegistros / 50)
+
+  const VENTANA_PAGINAS = 5
+  let inicioVentana = Math.max(1, pagina - Math.floor(VENTANA_PAGINAS / 2))
+  const finVentana = Math.min(totalPaginas, inicioVentana + VENTANA_PAGINAS - 1)
+  inicioVentana = Math.max(1, finVentana - VENTANA_PAGINAS + 1)
+  const paginasVisibles = Array.from({ length: finVentana - inicioVentana + 1 }, (_, i) => inicioVentana + i)
 
   return (
     <div className="audit-page">
@@ -131,12 +149,11 @@ function Auditoria() {
                 className="audit-select"
               >
                 <option value="">Todas</option>
-                <option value="LOGIN">Login</option>
-                <option value="LOGOUT">Logout</option>
-                <option value="CREAR">Crear</option>
-                <option value="ACTUALIZAR">Actualizar</option>
-                <option value="ELIMINAR">Eliminar</option>
-                <option value="CAMBIAR_CONTRASENA">Cambiar Contraseña</option>
+                <option value="Login">Login</option>
+                <option value="Create">Crear</option>
+                <option value="Update">Actualizar</option>
+                <option value="Delete">Eliminar</option>
+                <option value="Password Change">Cambiar Contraseña</option>
               </select>
             </div>
 
@@ -152,6 +169,8 @@ function Auditoria() {
                 <option value="Usuario">Usuario</option>
                 <option value="Version">Versión</option>
                 <option value="ResultadoPrueba">Resultado de Prueba</option>
+                <option value="ReglaEvaluacion">Regla de evaluación (umbral)</option>
+                <option value="DecisionDespliegue">Decisión de despliegue</option>
               </select>
             </div>
 
@@ -196,24 +215,24 @@ function Auditoria() {
             <p>No hay registros de auditoría</p>
           </div>
         ) : (
-          <div className="audit-table-wrap">
-            <table className="audit-table">
+          <div className="audit-table-wrap dss-table-wrap">
+            <table className="audit-table dss-resizable">
               <colgroup>
-                <col style={{ width: '12%' }} />
-                <col style={{ width: '18%' }} />
-                <col style={{ width: '14%' }} />
-                <col style={{ width: '16%' }} />
-                <col style={{ width: '18%' }} />
-                <col style={{ width: '22%' }} />
+                <col style={{ width: widths.fecha }} />
+                <col style={{ width: widths.usuario }} />
+                <col style={{ width: widths.accion }} />
+                <col style={{ width: widths.entidad }} />
+                <col style={{ width: widths.idReg }} />
+                <col style={{ width: widths.detalle }} />
               </colgroup>
               <thead>
                 <tr>
-                  <th>Fecha - Hora</th>
-                  <th>Usuario</th>
-                  <th>Acción</th>
-                  <th>Entidad</th>
-                  <th>ID Registro</th>
-                  <th>Detalles</th>
+                  <ResizableTh onResizeStart={startResize('fecha', 100)}>Fecha - Hora</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('usuario', 100)}>Usuario</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('accion', 90)}>Acción</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('entidad', 90)}>Entidad</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('idReg', 80)}>ID Registro</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('detalle', 100)}>Detalles</ResizableTh>
                 </tr>
               </thead>
               <tbody>
@@ -249,11 +268,11 @@ function Auditoria() {
               <button
                 className="audit-page-btn"
                 disabled={pagina === 1}
-                onClick={() => setPagina(1)}
+                onClick={() => setPagina(p => Math.max(1, p - 1))}
               >
                 Anterior
               </button>
-              {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => i + 1).map(p => (
+              {paginasVisibles.map(p => (
                 <button
                   key={p}
                   className={`audit-page-btn ${pagina === p ? 'active' : ''}`}
@@ -265,7 +284,7 @@ function Auditoria() {
               <button
                 className="audit-page-btn"
                 disabled={pagina === totalPaginas}
-                onClick={() => setPagina(totalPaginas)}
+                onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
               >
                 Siguiente
               </button>

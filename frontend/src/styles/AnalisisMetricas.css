@@ -95,6 +95,89 @@
   overflow: hidden;
 }
 
+.am-chart-wrap {
+  padding: 1.25rem 1.25rem 0.5rem;
+}
+
+/* ── RF11: filtros por fecha y usuario responsable ── */
+.am-filters-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1.5px solid var(--gray-100);
+}
+
+.am-filter-select {
+  padding: 0.45rem 0.85rem;
+  border: 1.5px solid var(--gray-100);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 0.84rem;
+  color: var(--text-dark);
+  cursor: pointer;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.am-filter-select:focus { border-color: var(--blue-300); }
+
+.am-filter-date {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-mid);
+}
+
+.am-filter-clear {
+  padding: 0.4rem 0.85rem;
+  border: 1.5px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.am-filter-clear:hover { background: #fee2e2; }
+
+/* ── Exportar ── */
+.am-export-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.am-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--text-dark);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.am-export-btn:hover:not(:disabled) { background: var(--gray-50); border-color: var(--blue-300); }
+.am-export-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.am-spinner-sm {
+  width: 12px; height: 12px;
+  border-width: 2px;
+}
+
 .am-table-head {
   display: flex;
   align-items: center;
