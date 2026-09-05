@@ -65,7 +65,7 @@ WHERE r.nombre_rol = 'Gerente QA'
 ON CONFLICT (id_rol, id_permiso) DO NOTHING;
 
 -- ── 4. Insertar usuarios correctos según la tesis ────────────────────────
---    Contraseñas (SHA-256):
+--    Contraseñas (BCrypt factor 12, RNF04):
 --      lider@roshka.com    →  Lider2026!
 --      analista@roshka.com →  Analista2026!
 --      gerente@roshka.com  →  Gerente2026!
@@ -73,13 +73,13 @@ ON CONFLICT (id_rol, id_permiso) DO NOTHING;
 INSERT INTO usuarios (nombre, apellido, email, password_hash, estado, fecha_creacion)
 VALUES
     ('Carlos',  'Martínez', 'lider@roshka.com',
-     'b38d86c738c217f1f4defd35387e1f79f272ec74e69ef2ed780cee6050f68f64',
+     '$2a$12$OPsoaffAAoQumCLg.y/AKuesrRKfh.lJhlo/SMheZPWF4lxxqKdXe',
      'activo', NOW()),
     ('Ana',     'López',    'analista@roshka.com',
-     '025f2eb2238c0859a9abd20c0e12a5dbfc7a7fb7d26d4274a29dba85ea4bd4e3',
+     '$2a$12$h9NtjoA93RI.7S77TgCRZOODMf9BjiAuMsilt3P/v2VeRovR6T9N2',
      'activo', NOW()),
     ('María',   'González', 'gerente@roshka.com',
-     'bfc703cf6551ccc8f506a64522af86ce8c691c0cec46814663ca9f7f41f14443',
+     '$2a$12$4MqsVKKNu2KA0gAxlOiZwOCKL.lSMGgdmhVGaQamRl96GvzIyiunK',
      'activo', NOW());
 
 -- ── 5. Asignar roles a los nuevos usuarios ───────────────────────────────

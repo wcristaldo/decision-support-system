@@ -111,7 +111,7 @@
 
 .audit-btn-primary {
   background: linear-gradient(135deg, var(--blue-500), var(--blue-400));
-  color: var(--white);
+  color: var(--text-dark);
   box-shadow: 0 2px 8px rgba(126, 154, 178, 0.25);
 }
 

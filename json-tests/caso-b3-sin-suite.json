@@ -1,0 +1,25 @@
+{
+  "generator": "Robot 7.4 (Python 3.12.0 on win32)",
+  "generated": "2026-08-31T10:00:00.000000",
+  "rpa": false,
+  "statistics": {
+    "total": {
+      "label": "All Tests",
+      "pass": 10,
+      "fail": 0,
+      "skip": 0
+    },
+    "suites": [
+      {
+        "label": "B3 - falta suite",
+        "name": "B3 - falta suite",
+        "id": "s1",
+        "pass": 10,
+        "fail": 0,
+        "skip": 0
+      }
+    ],
+    "tags": []
+  },
+  "errors": []
+}

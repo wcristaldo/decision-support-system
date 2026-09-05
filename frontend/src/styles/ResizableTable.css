@@ -1,0 +1,62 @@
+/* Columnas redimensionables (estilo Excel) para las tablas del sistema */
+
+.dss-table-wrap {
+  overflow-x: auto;
+}
+
+.dss-td-fecha {
+  font-size: 0.78rem;
+  color: var(--text-mid);
+  font-family: monospace;
+  white-space: nowrap;
+}
+
+table.dss-resizable {
+  table-layout: fixed !important;
+  width: max-content !important;
+  min-width: 100%;
+}
+
+.dss-resizable-th {
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dss-col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+  z-index: 3;
+}
+
+.dss-col-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 15%;
+  bottom: 15%;
+  left: 3px;
+  width: 2px;
+  border-radius: 1px;
+  background: transparent;
+}
+
+.dss-resizable-th:hover .dss-col-resize-handle::after,
+.dss-col-resize-handle:hover::after {
+  background: var(--blue-400, #8ea7bb);
+}
+
+body.dss-col-resizing {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+body.dss-col-resizing .dss-col-resize-handle::after {
+  background: var(--blue-500, #7e9ab2);
+}

@@ -37,6 +37,10 @@ public class CreateResultadoPruebaDto
     [Required, Range(0, int.MaxValue)]
     public int PruebasFallidas { get; set; }
 
+    /// <summary>Pruebas omitidas/saltadas (RF06). Opcional por compatibilidad con integraciones existentes.</summary>
+    [Range(0, int.MaxValue)]
+    public int PruebasOmitidas { get; set; } = 0;
+
     /// <summary>Porcentaje de cobertura de código (0-100).</summary>
     [Required, Range(0, 100)]
     public decimal Cobertura { get; set; }
