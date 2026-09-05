@@ -26,9 +26,7 @@ CREATE TABLE IF NOT EXISTS planes_suscripcion (
     -- Notificaciones e integraciones
     notificaciones_email    BOOLEAN         NOT NULL DEFAULT FALSE,
     notificaciones_slack    BOOLEAN         NOT NULL DEFAULT FALSE,
-    api_publica             BOOLEAN         NOT NULL DEFAULT FALSE,
     integracion_cicd        BOOLEAN         NOT NULL DEFAULT FALSE,
-    webhooks                BOOLEAN         NOT NULL DEFAULT FALSE,
     -- Soporte
     soporte_prioritario     BOOLEAN         NOT NULL DEFAULT FALSE,
     -- Meta
