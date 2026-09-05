@@ -137,6 +137,8 @@ public class ApplicationDbContext : DbContext
             e.Property(r => r.Estado).HasColumnName("estado");
             e.Property(r => r.FechaCreacion).HasColumnName("fecha_creacion");
             e.Property(r => r.UsuarioCreacionId).HasColumnName("id_usuario_creacion");
+            e.Property(r => r.ProyectoId).HasColumnName("id_proyecto");
+            e.HasOne(r => r.Proyecto).WithMany().HasForeignKey(r => r.ProyectoId);
         });
 
         // ── RESULTADOS_PRUEBA ────────────────────────────────────
@@ -214,6 +216,7 @@ public class ApplicationDbContext : DbContext
             e.Property(d => d.UsuarioDecisorId).HasColumnName("id_usuario_decisor");
             e.Property(d => d.DecisionFinal).HasColumnName("decision_final");
             e.Property(d => d.Comentario).HasColumnName("comentario");
+            e.Property(d => d.EsOverride).HasColumnName("es_override");
             e.Property(d => d.FechaDecision).HasColumnName("fecha_decision");
         });
 
@@ -251,9 +254,7 @@ public class ApplicationDbContext : DbContext
             e.Property(p => p.AuditoriaDetallada).HasColumnName("auditoria_detallada");
             e.Property(p => p.NotificacionesEmail).HasColumnName("notificaciones_email");
             e.Property(p => p.NotificacionesSlack).HasColumnName("notificaciones_slack");
-            e.Property(p => p.ApiPublica).HasColumnName("api_publica");
             e.Property(p => p.IntegracionCicd).HasColumnName("integracion_cicd");
-            e.Property(p => p.Webhooks).HasColumnName("webhooks");
             e.Property(p => p.SoportePrioritario).HasColumnName("soporte_prioritario");
             e.Property(p => p.Estado).HasColumnName("estado");
             e.Property(p => p.FechaCreacion).HasColumnName("fecha_creacion");
