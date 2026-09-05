@@ -12,6 +12,7 @@ appsettings.Production.json
 *.suo
 *.rsuser
 [Ll]ogs/
+TestResults/
 
 # Node / Vite
 node_modules/
@@ -35,3 +36,4 @@ desktop.ini
 *.tmp
 corrupto.json
 results-*.json
+database/backups/
