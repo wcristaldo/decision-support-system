@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using DecisionSupportAPI.Data;
 using DecisionSupportAPI.DTOs;
@@ -9,17 +10,16 @@ namespace DecisionSupportAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "ver_proyectos")]
 public class ProyectosController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IAuditService _auditService;
     private readonly IAuditoriaService _auditoriaService;
     private readonly ISuscripcionService _suscripcionService;
 
-    public ProyectosController(ApplicationDbContext context, IAuditService auditService, IAuditoriaService auditoriaService, ISuscripcionService suscripcionService)
+    public ProyectosController(ApplicationDbContext context, IAuditoriaService auditoriaService, ISuscripcionService suscripcionService)
     {
         _context = context;
-        _auditService = auditService;
         _auditoriaService = auditoriaService;
         _suscripcionService = suscripcionService;
     }
@@ -80,6 +80,7 @@ public class ProyectosController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "gestionar_proyectos")]
     public async Task<ActionResult<ProyectoDto>> Create([FromBody] CreateProyectoDto request)
     {
         if (!ModelState.IsValid)
@@ -111,7 +112,6 @@ public class ProyectosController : ControllerBase
         _context.Versiones.Add(versionInicial);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "Proyecto", "CREAR", $"ID: {proyecto.Id}, Nombre: {proyecto.Nombre}");
         await _auditoriaService.RegistrarAsync("Create", "Proyecto", proyecto.Id, $"Proyecto creado: {proyecto.Nombre}");
 
         return CreatedAtAction(nameof(GetById), new { id = proyecto.Id }, new ProyectoDto
@@ -126,6 +126,7 @@ public class ProyectosController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Policy = "gestionar_proyectos")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateProyectoDto request)
     {
         var proyecto = await _context.Proyectos.FirstOrDefaultAsync(p => p.Id == id);
@@ -142,14 +143,14 @@ public class ProyectosController : ControllerBase
         _context.Proyectos.Update(proyecto);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "Proyecto", "ACTUALIZAR",
+        await _auditoriaService.RegistrarAsync("Update", "Proyecto", id,
             $"Antes: [{anterior}] → Después: Nombre: {proyecto.Nombre}, Estado: {proyecto.Estado}");
-        await _auditoriaService.RegistrarAsync("Update", "Proyecto", id, $"Proyecto actualizado: {proyecto.Nombre}");
 
         return NoContent();
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Policy = "gestionar_proyectos")]
     public async Task<IActionResult> Delete(int id)
     {
         var proyecto = await _context.Proyectos.FirstOrDefaultAsync(p => p.Id == id);
@@ -159,7 +160,6 @@ public class ProyectosController : ControllerBase
         _context.Proyectos.Remove(proyecto);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogActionAsync(null, "Proyecto", "ELIMINAR", $"ID: {proyecto.Id}, Nombre: {proyecto.Nombre}");
         await _auditoriaService.RegistrarAsync("Delete", "Proyecto", id, $"Proyecto eliminado: {proyecto.Nombre}");
 
         return NoContent();
