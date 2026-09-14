@@ -21,6 +21,14 @@ public interface IPayPalService
     /// Debe llamarse luego del redirect de retorno.
     /// </summary>
     Task<(bool Success, string? TransactionId, string? Error)> CaptureOrderAsync(string orderId);
+
+    /// <summary>
+    /// Consulta el estado REAL de una orden directamente contra la API de PayPal
+    /// (GET, sin efectos secundarios). Usado por el webhook para nunca confiar en
+    /// el contenido del body recibido — solo se activa un pago si PayPal mismo
+    /// confirma que esa orden específica está en estado COMPLETED.
+    /// </summary>
+    Task<(bool Success, string? Status, string? Error)> GetOrderStatusAsync(string orderId);
 }
 
 // ── Implementación ────────────────────────────────────────────────────────────
@@ -274,5 +282,31 @@ public class PayPalService : IPayPalService
         _logger.LogInformation("PayPal capturado OK: orderId={OrderId} txId={TxId}",
             orderId, transactionId);
         return (true, transactionId, null);
+    }
+
+    // ── GetOrderStatusAsync ───────────────────────────────────────────────────
+
+    public async Task<(bool Success, string? Status, string? Error)> GetOrderStatusAsync(string orderId)
+    {
+        var token = await ObtenerTokenAsync();
+        if (token == null)
+            return (false, null, "No se pudo obtener token de PayPal.");
+
+        var client = _httpFactory.CreateClient("PayPal");
+        var req    = new HttpRequestMessage(HttpMethod.Get, $"{BaseUrl}/v2/checkout/orders/{orderId}");
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var res  = await client.SendAsync(req);
+        var body = await res.Content.ReadAsStringAsync();
+
+        if (!res.IsSuccessStatusCode)
+        {
+            _logger.LogError("PayPal get-order error: {Status} {Body}", res.StatusCode, body);
+            return (false, null, $"PayPal no pudo confirmar la orden (HTTP {(int)res.StatusCode}).");
+        }
+
+        var doc    = JsonDocument.Parse(body);
+        var status = doc.RootElement.GetProperty("status").GetString();
+        return (true, status, null);
     }
 }

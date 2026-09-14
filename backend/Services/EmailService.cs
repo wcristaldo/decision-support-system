@@ -30,7 +30,7 @@ public interface IEmailService
 
     /// <summary>
     /// Envía una alerta automática a los administradores cuando un resultado
-    /// genera recomendación "No Apto para despliegue".
+    /// genera recomendación "No desplegar".
     /// Requiere que el plan activo tenga NotificacionesEmail = true.
     /// </summary>
     Task EnviarAlertaNoAptoAsync(
@@ -171,6 +171,14 @@ public class EmailService : IEmailService
     {
         if (destinatarios.Count == 0) return;
 
+        // Datos controlados por el usuario (nombre de proyecto/versión/archivo):
+        // deben escaparse antes de interpolarlos en HTML — sin esto, un nombre de
+        // archivo con una etiqueta &lt;a&gt;/&lt;script&gt; se enviaría sin escapar en el
+        // correo de alerta a todos los Administradores (HTML injection real).
+        proyectoNombre = System.Net.WebUtility.HtmlEncode(proyectoNombre);
+        versionNumero  = System.Net.WebUtility.HtmlEncode(versionNumero);
+        archivoNombre  = System.Net.WebUtility.HtmlEncode(archivoNombre);
+
         var host     = _config["Email:SmtpHost"]    ?? "";
         var port     = int.Parse(_config["Email:SmtpPort"] ?? "587");
         var user     = _config["Email:Username"]    ?? "";
@@ -204,7 +212,7 @@ public class EmailService : IEmailService
               <div class="header">
                 <h1>Roshka DSS · Alerta de Calidad</h1>
                 <p>Notificación automática del sistema</p>
-                <span class="badge">&#9888; No Apto para Despliegue</span>
+                <span class="badge">&#9888; No Desplegar</span>
               </div>
               <div class="body">
                 <div class="alerta">
@@ -215,7 +223,7 @@ public class EmailService : IEmailService
                   <tr><td>Versión</td><td>{{versionNumero}}</td></tr>
                   <tr><td>Archivo evaluado</td><td>{{archivoNombre}}</td></tr>
                   <tr><td>Fecha de evaluación</td><td>{{fecha}}</td></tr>
-                  <tr><td>Recomendación</td><td><strong style="color:#c0392b">No Apto para Despliegue</strong></td></tr>
+                  <tr><td>Recomendación</td><td><strong style="color:#c0392b">No Desplegar</strong></td></tr>
                 </table>
                 <p style="color:#7e9ab2;font-size:0.82rem;">
                   Ingresá al sistema para revisar las métricas en detalle y registrar la decisión de despliegue correspondiente.
@@ -232,7 +240,7 @@ public class EmailService : IEmailService
         message.From.Add(new MailboxAddress(fromName, from));
         foreach (var dest in destinatarios)
             message.To.Add(MailboxAddress.Parse(dest));
-        message.Subject = $"[Roshka DSS] ⚠ No Apto para Despliegue — {proyectoNombre} v{versionNumero}";
+        message.Subject = $"[Roshka DSS] ⚠ No Desplegar — {proyectoNombre} v{versionNumero}";
         message.Body = new BodyBuilder { HtmlBody = html }.ToMessageBody();
 
         using var client = new SmtpClient();

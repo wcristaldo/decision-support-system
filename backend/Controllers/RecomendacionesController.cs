@@ -14,16 +14,20 @@ public class RecomendacionesController : ControllerBase
 {
     private readonly IRecommendationEngine _recommendationEngine;
     private readonly ApplicationDbContext _context;
+    private readonly IProyectoAccesoService _acceso;
 
-    public RecomendacionesController(IRecommendationEngine recommendationEngine, ApplicationDbContext context)
+    public RecomendacionesController(IRecommendationEngine recommendationEngine, ApplicationDbContext context, IProyectoAccesoService acceso)
     {
         _recommendationEngine = recommendationEngine;
         _context = context;
+        _acceso = acceso;
     }
 
     [HttpGet("version/{versionId}")]
     public async Task<ActionResult<List<RecomendacionDto>>> GetByVersion(int versionId)
     {
+        if (!await _acceso.TieneAccesoAVersionAsync(User, versionId)) return Forbid();
+
         var recomendaciones = await _recommendationEngine.GetRecommendationsByVersionAsync(versionId);
         return Ok(recomendaciones.Select(r => new RecomendacionDto
         {
@@ -43,6 +47,8 @@ public class RecomendacionesController : ControllerBase
     [HttpGet("resultado/{resultadoId}")]
     public async Task<ActionResult<List<RecomendacionDto>>> GetByResultado(int resultadoId)
     {
+        if (!await _acceso.TieneAccesoAResultadoAsync(User, resultadoId)) return Forbid();
+
         var evaluacionIds = await _context.Evaluaciones
             .Where(e => e.ResultadoId == resultadoId)
             .Select(e => e.Id)
@@ -73,6 +79,8 @@ public class RecomendacionesController : ControllerBase
     [HttpGet("resultado/{resultadoId}/reglas")]
     public async Task<ActionResult<List<EvaluacionReglaDto>>> GetReglasByResultado(int resultadoId)
     {
+        if (!await _acceso.TieneAccesoAResultadoAsync(User, resultadoId)) return Forbid();
+
         var evaluacionIds = await _context.Evaluaciones
             .Where(e => e.ResultadoId == resultadoId)
             .Select(e => e.Id)
@@ -95,6 +103,8 @@ public class RecomendacionesController : ControllerBase
     [Authorize(Policy = "ejecutar_evaluacion")]
     public async Task<IActionResult> Generate(int versionId)
     {
+        if (!await _acceso.TieneAccesoAVersionAsync(User, versionId)) return Forbid();
+
         await _recommendationEngine.GenerateRecommendationsAsync(versionId);
         return Ok(new { message = "Recomendaciones generadas exitosamente" });
     }

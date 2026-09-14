@@ -124,6 +124,10 @@ public class AdamsPayService : IAdamsPayService
         var hashBytes = MD5.HashData(Encoding.UTF8.GetBytes(input));
         var computed  = Convert.ToHexString(hashBytes).ToLowerInvariant();
 
-        return computed == receivedHmac.ToLowerInvariant();
+        // Comparación en tiempo constante: una comparación == normal corta en el
+        // primer byte distinto, filtrando por timing cuánto del HMAC es correcto.
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(computed),
+            Encoding.UTF8.GetBytes(receivedHmac.ToLowerInvariant()));
     }
 }

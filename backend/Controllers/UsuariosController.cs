@@ -25,14 +25,25 @@ public class UsuariosController : ControllerBase
         _suscripcionService = suscripcionService;
     }
 
-    // Según RF10: gestión de usuarios es exclusiva del rol Administrador
-    private bool IsAdmin() => User.IsInRole("Administrador");
+    // RBAC (RF14): se evalúa el permiso real del claim "permission", no el
+    // nombre del rol — así, un rol distinto de "Administrador" al que se le
+    // otorgue gestionar_usuarios/ver_usuarios obtiene acceso de inmediato,
+    // sin depender de que ese rol se llame literalmente "Administrador".
+    private bool TienePermiso(string permiso) => User.HasClaim("permission", permiso);
+    private bool PuedeGestionar() => TienePermiso("gestionar_usuarios");
+    private bool PuedeVer() => TienePermiso("ver_usuarios") || PuedeGestionar();
+
+    private static bool EsEmailValido(string email)
+    {
+        try { return new System.Net.Mail.MailAddress(email.Trim()).Address == email.Trim(); }
+        catch (FormatException) { return false; }
+    }
 
     // ── GET /api/usuarios ─────────────────────────────────────────────────────
     [HttpGet]
     public IActionResult GetUsuarios()
     {
-        if (!IsAdmin()) return Forbid();
+        if (!PuedeVer()) return Forbid();
 
         var usuarios = _context.Usuarios
             .Include(u => u.UsuarioRoles)
@@ -62,7 +73,7 @@ public class UsuariosController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateUsuarioRequest request)
     {
-        if (!IsAdmin()) return Forbid();
+        if (!PuedeGestionar()) return Forbid();
 
         // ── Verificar límite de plan ──────────────────────────────────────
         var limite = await _suscripcionService.VerificarLimiteUsuariosAsync();
@@ -75,7 +86,16 @@ public class UsuariosController : ControllerBase
             string.IsNullOrWhiteSpace(request.Rol))
             return BadRequest(new { message = "Todos los campos son obligatorios." });
 
-        if (_context.Usuarios.Any(u => u.Email == request.Email.Trim()))
+        if (!EsEmailValido(request.Email))
+            return BadRequest(new { message = "El correo electrónico no tiene un formato válido." });
+
+        if (request.Password.Length < 8)
+            return BadRequest(new { message = "La contraseña debe tener al menos 8 caracteres." });
+
+        // Comparar en minúsculas: el email se guarda normalizado a minúsculas
+        // más abajo, así que comparar el valor crudo del request (sin normalizar)
+        // dejaba pasar duplicados que solo difieren en mayúsculas/minúsculas.
+        if (_context.Usuarios.Any(u => u.Email == request.Email.Trim().ToLower()))
             return BadRequest(new { message = "Ya existe un usuario con ese correo electrónico." });
 
         var rol = _context.Roles.FirstOrDefault(r => r.NombreRol == request.Rol);
@@ -112,12 +132,15 @@ public class UsuariosController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateUsuarioRequest request)
     {
-        if (!IsAdmin()) return Forbid();
+        if (!PuedeGestionar()) return Forbid();
 
         if (string.IsNullOrWhiteSpace(request.Nombre) ||
             string.IsNullOrWhiteSpace(request.Email) ||
             string.IsNullOrWhiteSpace(request.Rol))
             return BadRequest(new { message = "Nombre, correo y rol son obligatorios." });
+
+        if (!EsEmailValido(request.Email))
+            return BadRequest(new { message = "El correo electrónico no tiene un formato válido." });
 
         var usuario = _context.Usuarios.FirstOrDefault(u => u.IdUsuario == id);
         if (usuario == null) return NotFound(new { message = "Usuario no encontrado." });
@@ -134,21 +157,28 @@ public class UsuariosController : ControllerBase
         usuario.Email  = request.Email.Trim().ToLower();
         _context.Usuarios.Update(usuario);
 
-        // Desactivar roles actuales y asignar el nuevo
+        // Desactivar roles actuales y asignar el nuevo (solo si realmente cambió:
+        // insertar una fila nueva para el mismo id_rol que ya tiene activo viola
+        // la restricción de unicidad usuario_rol_id_usuario_id_rol_key, porque la
+        // fila anterior con ese mismo par (id_usuario, id_rol) sigue existiendo,
+        // solo que inactiva).
         var rolesActivos = _context.UsuarioRoles
             .Where(ur => ur.IdUsuario == id && ur.Estado == "activo")
             .ToList();
 
-        foreach (var ur in rolesActivos)
-            ur.Estado = "inactivo";
-
-        _context.UsuarioRoles.Add(new UsuarioRol
+        if (!rolesActivos.Any(ur => ur.IdRol == rol.IdRol))
         {
-            IdUsuario       = id,
-            IdRol           = rol.IdRol,
-            Estado          = "activo",
-            FechaAsignacion = DateTime.UtcNow,
-        });
+            foreach (var ur in rolesActivos)
+                ur.Estado = "inactivo";
+
+            _context.UsuarioRoles.Add(new UsuarioRol
+            {
+                IdUsuario       = id,
+                IdRol           = rol.IdRol,
+                Estado          = "activo",
+                FechaAsignacion = DateTime.UtcNow,
+            });
+        }
 
         await _context.SaveChangesAsync();
         await _auditoriaService.RegistrarAsync("Update", "Usuario", id, $"Usuario actualizado: {usuario.Nombre} - Nuevo rol: {request.Rol}");
@@ -160,7 +190,7 @@ public class UsuariosController : ControllerBase
     [HttpPatch("{id}/estado")]
     public async Task<IActionResult> ToggleEstado(int id, [FromBody] EstadoRequest request)
     {
-        if (!IsAdmin()) return Forbid();
+        if (!PuedeGestionar()) return Forbid();
 
         var usuario = _context.Usuarios.FirstOrDefault(u => u.IdUsuario == id);
         if (usuario == null) return NotFound(new { message = "Usuario no encontrado." });
@@ -172,6 +202,67 @@ public class UsuariosController : ControllerBase
         await _auditoriaService.RegistrarAsync("Update", "Usuario", id, $"Usuario {(request.Activo ? "activado" : "inactivado")}: {usuario.Nombre}");
 
         return Ok(new { message = $"Usuario {(request.Activo ? "activado" : "inactivado")} correctamente." });
+    }
+
+    // ── GET /api/usuarios/{id}/proyectos ──────────────────────────────────────
+    // RF13: proyectos asignados a este usuario. Administrador no tiene fila en
+    // usuario_proyecto (ve todo sin restricción), así que devuelve una lista
+    // vacía con isAdmin=true para que el frontend lo muestre correctamente.
+    [HttpGet("{id}/proyectos")]
+    public async Task<IActionResult> GetProyectosDeUsuario(int id)
+    {
+        if (!PuedeVer()) return Forbid();
+
+        var usuario = await _context.Usuarios
+            .Include(u => u.UsuarioRoles).ThenInclude(ur => ur.Rol)
+            .FirstOrDefaultAsync(u => u.IdUsuario == id);
+        if (usuario == null) return NotFound(new { message = "Usuario no encontrado." });
+
+        var esAdmin = usuario.UsuarioRoles.Any(ur => ur.Estado == "activo" && ur.Rol?.NombreRol == "Administrador");
+
+        var proyectoIds = await _context.UsuarioProyectos
+            .Where(up => up.IdUsuario == id)
+            .Select(up => up.IdProyecto)
+            .ToListAsync();
+
+        return Ok(new { isAdmin = esAdmin, proyectoIds });
+    }
+
+    public record ActualizarProyectosRequest(List<int> ProyectoIds);
+
+    // ── PUT /api/usuarios/{id}/proyectos ──────────────────────────────────────
+    // Reemplaza el set completo de proyectos asignados al usuario.
+    [HttpPut("{id}/proyectos")]
+    public async Task<IActionResult> ActualizarProyectosDeUsuario(int id, [FromBody] ActualizarProyectosRequest request)
+    {
+        if (!PuedeGestionar()) return Forbid();
+
+        var usuario = await _context.Usuarios
+            .Include(u => u.UsuarioRoles).ThenInclude(ur => ur.Rol)
+            .FirstOrDefaultAsync(u => u.IdUsuario == id);
+        if (usuario == null) return NotFound(new { message = "Usuario no encontrado." });
+
+        var esAdmin = usuario.UsuarioRoles.Any(ur => ur.Estado == "activo" && ur.Rol?.NombreRol == "Administrador");
+        if (esAdmin)
+            return BadRequest(new { message = "Administrador ve todos los proyectos sin necesidad de asignación explícita." });
+
+        var actuales = await _context.UsuarioProyectos.Where(up => up.IdUsuario == id).ToListAsync();
+        _context.UsuarioProyectos.RemoveRange(actuales);
+
+        var proyectosValidos = await _context.Proyectos
+            .Where(p => request.ProyectoIds.Contains(p.Id))
+            .Select(p => p.Id)
+            .ToListAsync();
+
+        foreach (var proyectoId in proyectosValidos)
+            _context.UsuarioProyectos.Add(new UsuarioProyecto { IdUsuario = id, IdProyecto = proyectoId });
+
+        await _context.SaveChangesAsync();
+
+        await _auditoriaService.RegistrarAsync("Update", "UsuarioProyecto", id,
+            $"Proyectos asignados actualizados para {usuario.Nombre}: {proyectosValidos.Count} proyecto(s)");
+
+        return Ok(new { message = "Proyectos asignados actualizados correctamente." });
     }
 }
 

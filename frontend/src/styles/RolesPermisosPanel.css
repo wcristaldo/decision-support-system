@@ -92,9 +92,21 @@
 }
 
 .rp-nombre-cell {
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.rp-nombre-label {
   font-weight: 600;
   color: var(--text-dark);
-  white-space: nowrap;
+}
+
+.rp-nombre-codigo {
+  font-size: 0.72rem;
+  font-family: 'Courier New', monospace;
+  color: var(--text-light);
 }
 
 .rp-desc-cell {

@@ -2,12 +2,13 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
+import { isAdmin, isGerenteQA, isLiderTecnico, hasPermiso } from '../utils/auth'
 import '../styles/AnalisisVersion.css'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Normaliza valores de la DB a las constantes del frontend */
-function normalizeRec(t) {
+export function normalizeRec(t) {
   if (!t) return ''
   const u = t.toUpperCase()
   if (u === 'DESPLEGAR_CON_OBSERVACIONES') return 'REVISAR'
@@ -16,23 +17,23 @@ function normalizeRec(t) {
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const TIPO_RECOMENDACION = {
+export const TIPO_RECOMENDACION = {
   DESPLEGAR: {
-    label:    'Apto para despliegue',
+    label:    'Desplegar',
     sublabel: 'Las métricas cumplen los umbrales de calidad establecidos.',
     cls:      'sem-desplegar',
     iconCls:  'sem-icon-ok',
     icon:     '✓',
   },
   REVISAR: {
-    label:    'Requiere revisión',
+    label:    'Revisar',
     sublabel: 'Algunas métricas están por debajo de los umbrales esperados.',
     cls:      'sem-revisar',
     iconCls:  'sem-icon-warn',
     icon:     '⚠',
   },
   NO_DESPLEGAR: {
-    label:    'No apto para despliegue',
+    label:    'No desplegar',
     sublabel: 'Las métricas no alcanzan los umbrales mínimos de calidad.',
     cls:      'sem-no-desplegar',
     iconCls:  'sem-icon-no',
@@ -63,7 +64,7 @@ function getRawValue(m) {
   return parseFloat(v)
 }
 
-function formatMetricValue(m) {
+export function formatMetricValue(m) {
   const v = getRawValue(m)
   const unit = (m.unidad || '').toLowerCase()
   if (isNaN(v)) return String(m.valorMetrica ?? m.valor ?? '-')
@@ -107,9 +108,26 @@ const METRIC_LABELS = {
   duracion_total:   'Duración total',
 }
 
-function metricLabel(nombre) {
+export function metricLabel(nombre) {
   const k = (nombre || '').toLowerCase().replace(/ /g, '_')
   return METRIC_LABELS[k] || nombre
+}
+
+function findMetricValue(metricas, clave) {
+  const m = metricas.find(x => (x.nombreMetrica || x.nombre || '').toLowerCase().trim() === clave)
+  return m ? getRawValue(m) : null
+}
+
+const DECISION_VERBO = {
+  aprobado:   'aprobó',
+  rechazado:  'rechazó',
+  postergado: 'postergó la decisión sobre',
+}
+
+const RIESGO_NEGOCIO = {
+  DESPLEGAR:    { texto: 'Riesgo bajo',     detalle: 'el sistema no detectó objeciones de calidad para esta versión.', cls: 'riesgo-bajo' },
+  REVISAR:      { texto: 'Riesgo moderado', detalle: 'hay indicadores dentro del margen de tolerancia que conviene monitorear antes de avanzar.', cls: 'riesgo-medio' },
+  NO_DESPLEGAR: { texto: 'Riesgo alto',     detalle: 'uno o más indicadores están por debajo del mínimo aceptable de calidad.', cls: 'riesgo-alto' },
 }
 
 // ── Validación decisión ───────────────────────────────────────────────────────
@@ -283,12 +301,17 @@ function AnalisisVersion() {
   const [searchParams] = useSearchParams()
   const resultadoId = searchParams.get('resultado')
 
+  const esGerente      = isGerenteQA() || isAdmin()
+  const esLiderTecnico = isLiderTecnico() || isAdmin()
+
   const [version,          setVersion]          = useState(null)
   const [metricas,         setMetricas]         = useState([])
   const [reglasPorCriterio, setReglasPorCriterio] = useState({})
+  const [reglasDetalle,    setReglasDetalle]    = useState([])
   const [recomendaciones,  setRecomendaciones]  = useState([])
   const [decisiones,       setDecisiones]       = useState([])
   const [archivoInfo,      setArchivoInfo]      = useState(null)
+  const [adherencia,       setAdherencia]       = useState(null)
   const [loading,          setLoading]          = useState(true)
   const [error,            setError]            = useState(null)
   const [showModal,        setShowModal]        = useState(false)
@@ -335,7 +358,17 @@ function AnalisisVersion() {
             if (r.criterio) lookup[r.criterio.toLowerCase().trim()] = r.resultadoRegla
           }
           setReglasPorCriterio(lookup)
+          setReglasDetalle(reglasRes.data)
         } catch { /* sin veredicto real, las tarjetas quedan neutrales */ }
+      }
+
+      // Resumen ejecutivo (Gerente QA/Admin): adherencia histórica del equipo
+      // a las recomendaciones del sistema, dato de contexto de negocio.
+      if (esGerente) {
+        try {
+          const adhRes = await api.get('/decisionesDespliegue/adherencia')
+          setAdherencia(adhRes.data)
+        } catch { /* dato opcional, no bloquea la pantalla */ }
       }
     } catch {
       setError('No se pudo cargar la información de esta versión.')
@@ -347,14 +380,20 @@ function AnalisisVersion() {
   useEffect(() => { loadData() }, [id, resultadoId])
 
   // Prioridad: NO_DESPLEGAR > REVISAR > DESPLEGAR
-  const semaforo = (() => {
+  const semaforoKey = (() => {
     if (!recomendaciones.length) return null
     const tipos = recomendaciones.map(r => normalizeRec(r.tipoRecomendacion || r.tipo || ''))
-    if (tipos.includes('NO_DESPLEGAR')) return TIPO_RECOMENDACION.NO_DESPLEGAR
-    if (tipos.includes('REVISAR'))      return TIPO_RECOMENDACION.REVISAR
-    if (tipos.includes('DESPLEGAR'))    return TIPO_RECOMENDACION.DESPLEGAR
+    if (tipos.includes('NO_DESPLEGAR')) return 'NO_DESPLEGAR'
+    if (tipos.includes('REVISAR'))      return 'REVISAR'
+    if (tipos.includes('DESPLEGAR'))    return 'DESPLEGAR'
     return null
   })()
+  const semaforo = semaforoKey ? TIPO_RECOMENDACION[semaforoKey] : null
+
+  const ultimaDecision = [...decisiones].sort((a, b) =>
+    new Date(b.fechaDecision || b.fecha) - new Date(a.fechaDecision || a.fecha))[0] || null
+  const tasaExitoVal  = findMetricValue(metricas, 'tasa_exito')
+  const coberturaVal  = findMetricValue(metricas, 'cobertura')
 
   const handleDecisionSaved = () => {
     setShowModal(false)
@@ -425,23 +464,63 @@ function AnalisisVersion() {
         <section className="av-section">
           <h2 className="av-section-title">Recomendación del sistema</h2>
           {semaforo ? (
-            <div className={`semaforo-card ${semaforo.cls}`}>
-              <div className={`sem-icon ${semaforo.iconCls}`}>{semaforo.icon}</div>
-              <div className="sem-text">
-                <p className="sem-label">{semaforo.label}</p>
-                <p className="sem-sublabel">{semaforo.sublabel}</p>
+            <div className={`av-semaforo ${semaforo.cls}`}>
+              <div className={`av-sem-icon ${semaforo.iconCls}`}>{semaforo.icon}</div>
+              <div className="av-sem-text">
+                <p className="av-sem-label">{semaforo.label}</p>
+                <p className="av-sem-sublabel">{semaforo.sublabel}</p>
               </div>
             </div>
           ) : (
-            <div className="semaforo-card sem-sin-datos">
-              <div className="sem-icon sem-icon-neutral">-</div>
-              <div className="sem-text">
-                <p className="sem-label">Sin recomendación</p>
-                <p className="sem-sublabel">No hay métricas evaluadas para esta versión aún.</p>
+            <div className="av-semaforo sem-sin-datos">
+              <div className="av-sem-icon sem-icon-neutral">-</div>
+              <div className="av-sem-text">
+                <p className="av-sem-label">Sin recomendación</p>
+                <p className="av-sem-sublabel">No hay métricas evaluadas para esta versión aún.</p>
               </div>
+              <button
+                className="btn-nuevo av-sem-cargar-btn"
+                onClick={() => navigate(`/cargar-resultados?proyectoId=${version.proyectoId}&versionId=${id}`)}
+              >
+                + Cargar resultado
+              </button>
             </div>
           )}
         </section>
+
+        {/* ── Resumen ejecutivo (Gerente QA / Admin) ── */}
+        {esGerente && semaforoKey && (
+          <section className="av-section av-section-negocio">
+            <h2 className="av-section-title">Resumen ejecutivo</h2>
+            <div className={`av-negocio-card ${RIESGO_NEGOCIO[semaforoKey].cls}`}>
+              <p className="av-negocio-riesgo">{RIESGO_NEGOCIO[semaforoKey].texto}</p>
+              <p className="av-negocio-texto">
+                {RIESGO_NEGOCIO[semaforoKey].detalle}
+                {tasaExitoVal != null && coberturaVal != null && (
+                  <> De las pruebas ejecutadas, el <strong>{tasaExitoVal.toFixed(0)}%</strong> resultó
+                  exitoso, cubriendo el <strong>{coberturaVal.toFixed(0)}%</strong> del plan de pruebas.</>
+                )}
+              </p>
+
+              {ultimaDecision && (
+                <p className="av-negocio-texto">
+                  El Líder Técnico ya {DECISION_VERBO[ultimaDecision.decisionFinal?.toLowerCase()] || 'registró una decisión sobre'} este despliegue
+                  {ultimaDecision.esOverride
+                    ? <> — una decisión tomada <strong>en contra</strong> de la recomendación del sistema, bajo responsabilidad explícita del equipo técnico.</>
+                    : <>, en línea con lo que sugirió el sistema.</>}
+                </p>
+              )}
+
+              {adherencia?.total > 0 && (
+                <p className="av-negocio-adherencia">
+                  Como referencia: el equipo sigue la recomendación del sistema en el{' '}
+                  <strong>{adherencia.porcentajeAdherencia}%</strong> de las decisiones históricas
+                  ({adherencia.alineadas} de {adherencia.total}).
+                </p>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* ── Métricas ── */}
         {metricas.length > 0 && (
@@ -455,6 +534,30 @@ function AnalisisVersion() {
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* ── Detalle técnico (Líder Técnico / Admin) ── */}
+        {esLiderTecnico && reglasDetalle.length > 0 && (
+          <section className="av-section">
+            <h2 className="av-section-title">Detalle técnico</h2>
+            <p className="av-section-hint">
+              Comparación exacta de cada criterio contra el umbral configurado, calculada por el motor de recomendación.
+            </p>
+            <div className="av-tecnico-list">
+              {reglasDetalle.map((r, i) => (
+                <div key={i} className={`av-tecnico-item av-tecnico-item--${r.resultadoRegla || 'no_aplica'}`}>
+                  <span className="av-tecnico-veredicto">{r.resultadoRegla || 'no_aplica'}</span>
+                  <code className="av-tecnico-obs">{r.observacion}</code>
+                </div>
+              ))}
+            </div>
+            {archivoInfo && (
+              <div className="av-tecnico-meta">
+                <span><strong>Formato:</strong> {archivoInfo.formatoArchivo || '—'}</span>
+                <span><strong>Estado de validación:</strong> {archivoInfo.estadoValidacion || '—'}</span>
+              </div>
+            )}
           </section>
         )}
 
@@ -489,7 +592,7 @@ function AnalisisVersion() {
         <section className="av-section av-section-dec">
           <div className="av-dec-header">
             <h2 className="av-section-title">Decisiones de despliegue</h2>
-            {recomendaciones.length > 0 && (
+            {recomendaciones.length > 0 && hasPermiso('registrar_decision') && (
               <button className="btn-nuevo" onClick={() => setShowModal(true)}>
                 + Registrar decisión
               </button>

@@ -31,11 +31,13 @@ public class DbClaimsTransformation : IClaimsTransformation
         if (idClaim == null || !int.TryParse(idClaim.Value, out var usuarioId))
             return principal;
 
-        // Limpiar los claims de rol/permiso que trajo el JWT — se reconstruyen
-        // desde el estado actual de la base a continuación.
+        // Limpiar los claims de rol/permiso/proyecto que trajo el JWT — se
+        // reconstruyen desde el estado actual de la base a continuación.
         foreach (var c in principal.FindAll(ClaimTypes.Role).ToList())
             identity.RemoveClaim(c);
         foreach (var c in principal.FindAll("permission").ToList())
+            identity.RemoveClaim(c);
+        foreach (var c in principal.FindAll("proyecto").ToList())
             identity.RemoveClaim(c);
 
         var usuario = await _context.Usuarios.AsNoTracking()
@@ -65,6 +67,22 @@ public class DbClaimsTransformation : IClaimsTransformation
 
         foreach (var permiso in permisos)
             identity.AddClaim(new Claim("permission", permiso));
+
+        // RF13: Administrador no recibe claims "proyecto" — sin ninguno, los
+        // controllers lo tratan como acceso sin restricción (ver
+        // ProyectoAccesoService.EsIrrestricto). El resto de los roles solo
+        // obtiene los proyectos a los que fue asignado explícitamente.
+        var esAdmin = rolesActivos.Any(r => r.NombreRol == "Administrador");
+        if (!esAdmin)
+        {
+            var proyectoIds = await _context.UsuarioProyectos
+                .Where(up => up.IdUsuario == usuarioId)
+                .Select(up => up.IdProyecto)
+                .ToListAsync();
+
+            foreach (var proyectoId in proyectoIds)
+                identity.AddClaim(new Claim("proyecto", proyectoId.ToString()));
+        }
 
         return principal;
     }

@@ -29,10 +29,20 @@ public class RolesController : ControllerBase
 
     private bool IsAdmin() => User.IsInRole("Administrador");
 
-    // GET /api/roles — devuelve todos los roles activos
+    // RBAC (RF14): leer roles/permisos requiere gestionar_usuarios, no el rol
+    // "Administrador" en sí — necesario para que el desplegable de rol en
+    // Gestión de Usuarios y la pestaña "Roles y permisos" funcionen para
+    // cualquier rol al que se le otorgue ese permiso. Reescribir el set de
+    // permisos de un rol (más abajo) sigue siendo exclusivo de Administrador:
+    // es la acción con mayor riesgo de escalamiento de privilegios del sistema.
+    private bool PuedeGestionarUsuarios() => User.HasClaim("permission", "gestionar_usuarios");
+
+    // GET /api/roles — devuelve todos los roles activos.
     [HttpGet]
     public IActionResult GetRoles()
     {
+        if (!PuedeGestionarUsuarios()) return Forbid();
+
         var roles = _context.Roles
             .Where(r => r.Estado == "activo")
             .OrderBy(r => r.NombreRol)
@@ -43,11 +53,10 @@ public class RolesController : ControllerBase
     }
 
     // GET /api/roles/{id}/permisos — matriz: todos los permisos + cuáles tiene este rol.
-    // Solo Administrador: es información de configuración de seguridad, no de uso general.
     [HttpGet("{id}/permisos")]
     public async Task<IActionResult> GetPermisosDeRol(int id)
     {
-        if (!IsAdmin()) return Forbid();
+        if (!PuedeGestionarUsuarios()) return Forbid();
 
         var rol = await _context.Roles.FindAsync(id);
         if (rol == null) return NotFound(new { message = "Rol no encontrado." });

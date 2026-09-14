@@ -37,3 +37,4 @@ desktop.ini
 corrupto.json
 results-*.json
 database/backups/
+backend/backups/

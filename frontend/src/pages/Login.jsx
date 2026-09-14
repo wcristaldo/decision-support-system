@@ -29,21 +29,21 @@ function AboutContent() {
           <div className="lm-state lm-state--green">
             <span className="lm-state-dot" />
             <div>
-              <strong>Apto para despliegue</strong>
+              <strong>Desplegar</strong>
               <span>Todos los indicadores superan los umbrales configurados.</span>
             </div>
           </div>
           <div className="lm-state lm-state--yellow">
             <span className="lm-state-dot" />
             <div>
-              <strong>Despliegue condicional</strong>
+              <strong>Revisar</strong>
               <span>Uno o más indicadores están dentro del rango de tolerancia.</span>
             </div>
           </div>
           <div className="lm-state lm-state--red">
             <span className="lm-state-dot" />
             <div>
-              <strong>No apto para despliegue</strong>
+              <strong>No desplegar</strong>
               <span>Indicadores críticos por debajo del umbral mínimo.</span>
             </div>
           </div>

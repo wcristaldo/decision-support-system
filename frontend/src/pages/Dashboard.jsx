@@ -6,7 +6,7 @@ import {
 import api from '../services/api'
 import { decodeJwtPayload } from '../utils/jwt'
 import { fmtFechaCorta } from '../utils/fecha'
-import { getRoles } from '../utils/auth'
+import { getRoles, isGerenteQA } from '../utils/auth'
 import '../styles/Dashboard.css'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -58,6 +58,10 @@ function Dashboard({ onLogout }) {
   const [adherencia, setAdherencia] = useState(null)
   const [loadingDatos, setLoadingDatos] = useState(true)
   const isAdmin = getRoles().includes('Administrador')
+  // "Adherencia a las recomendaciones" es una métrica de negocio (Gerente QA)
+  // — quedó visible a todos los roles por descuido, inconsistente con el mismo
+  // gateo ya aplicado al "Resumen ejecutivo" de AnalisisVersion.jsx.
+  const esGerente = isAdmin || isGerenteQA()
 
   useEffect(() => {
     const token = sessionStorage.getItem('token')
@@ -74,7 +78,7 @@ function Dashboard({ onLogout }) {
     Promise.all([
       api.get('/proyectos').catch(() => ({ data: [] })),
       api.get('/analisis/historial').catch(() => ({ data: [] })),
-      api.get('/decisionesDespliegue/adherencia').catch(() => ({ data: null })),
+      esGerente ? api.get('/decisionesDespliegue/adherencia').catch(() => ({ data: null })) : Promise.resolve({ data: null }),
     ]).then(([pRes, hRes, aRes]) => {
       setProyectos(pRes.data)
       setHistorial(hRes.data)
@@ -97,17 +101,27 @@ function Dashboard({ onLogout }) {
     }
   }, [proyectos, historial])
 
-  // Tendencia: últimas 10 evaluaciones cargadas, en orden cronológico
+  // Tendencia: últimas 10 evaluaciones cargadas, en orden cronológico. Si un
+  // mismo día tiene más de una carga, la etiqueta del eje incluye la hora
+  // (fmtFechaHora) — de lo contrario varios puntos quedaban con la misma
+  // etiqueta ("31/8") y no se podía distinguir cuál era cuál de un vistazo.
   const tendencia = useMemo(() => {
-    return [...historial]
+    const ultimas = [...historial]
       .filter(h => h.fechaCarga)
       .sort((a, b) => new Date(a.fechaCarga) - new Date(b.fechaCarga))
       .slice(-10)
-      .map(h => ({
-        fecha:     fmtFechaCorta(h.fechaCarga),
-        tasaExito: h.tasaExito != null ? Number(h.tasaExito) : null,
-        cobertura: h.cobertura != null ? Number(h.cobertura) : null,
-      }))
+
+    const cargasPorDia = ultimas.reduce((acc, h) => {
+      const dia = fmtFechaCorta(h.fechaCarga)
+      acc[dia] = (acc[dia] || 0) + 1
+      return acc
+    }, {})
+
+    return ultimas.map(h => ({
+      fecha:     cargasPorDia[fmtFechaCorta(h.fechaCarga)] > 1 ? fmtFechaHora(h.fechaCarga) : fmtFechaCorta(h.fechaCarga),
+      tasaExito: h.tasaExito != null ? Number(h.tasaExito) : null,
+      cobertura: h.cobertura != null ? Number(h.cobertura) : null,
+    }))
   }, [historial])
 
   // Actividad reciente: últimas 5 evaluaciones
@@ -224,8 +238,8 @@ function Dashboard({ onLogout }) {
           </div>
         </div>
 
-        {/* ── Adherencia a recomendaciones ── */}
-        {!loadingDatos && adherencia && adherencia.total > 0 && (
+        {/* ── Adherencia a recomendaciones (Gerente QA / Admin) ── */}
+        {esGerente && !loadingDatos && adherencia && adherencia.total > 0 && (
           <div className="dash-panel dash-adherencia-panel">
             <div className="dash-adherencia-main">
               <div className="dash-adherencia-value">{adherencia.porcentajeAdherencia}%</div>

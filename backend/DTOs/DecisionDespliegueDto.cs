@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace DecisionSupportAPI.DTOs;
 
 public class DecisionDespliegueDto
@@ -15,5 +17,7 @@ public class CreateDecisionDespliegueDto
 {
     public int RecomendacionId { get; set; }
     public required string DecisionFinal { get; set; }
+
+    [StringLength(1000, ErrorMessage = "La justificación no puede superar los 1000 caracteres.")]
     public required string Comentario { get; set; }
 }
