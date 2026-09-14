@@ -88,8 +88,9 @@ public class AuthenticationService : IAuthenticationService
 
     public string GenerateJwtToken(Usuario usuario, List<string> roles, List<string> permisos)
     {
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "default-key-min-32-characters-here"));
+        var jwtKey = _configuration["Jwt:Key"]
+            ?? throw new InvalidOperationException("Jwt:Key no está configurado.");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<System.Security.Claims.Claim>

@@ -15,12 +15,14 @@ public class AnalisisController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly ISuscripcionService _suscripcionService;
     private readonly IReporteExportService _export;
+    private readonly IProyectoAccesoService _acceso;
 
-    public AnalisisController(ApplicationDbContext context, ISuscripcionService suscripcionService, IReporteExportService export)
+    public AnalisisController(ApplicationDbContext context, ISuscripcionService suscripcionService, IReporteExportService export, IProyectoAccesoService acceso)
     {
         _context = context;
         _suscripcionService = suscripcionService;
         _export = export;
+        _acceso = acceso;
     }
 
     /// <summary>
@@ -102,6 +104,17 @@ public class AnalisisController : ControllerBase
         var recomendaciones = await query
             .OrderByDescending(r => r.FechaGeneracion)
             .ToListAsync();
+
+        // RF13: un usuario sin acceso irrestricto solo ve el historial de SUS
+        // proyectos asignados.
+        if (!_acceso.EsIrrestricto(User))
+        {
+            var permitidos = _acceso.ProyectosPermitidos(User);
+            recomendaciones = recomendaciones
+                .Where(r => r.Evaluacion?.Resultado?.Version != null
+                    && permitidos.Contains(r.Evaluacion.Resultado.Version.ProyectoId))
+                .ToList();
+        }
 
         // Obtener proyectos en una sola consulta para evitar N+1
         var proyectoIds = recomendaciones

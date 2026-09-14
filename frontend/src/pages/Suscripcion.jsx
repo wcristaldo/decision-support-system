@@ -90,7 +90,7 @@ export default function Suscripcion() {
 
   // ── Historial: filtros + paginación ──────────────────────────────────────
   const [paginaActual, setPaginaActual] = useState(1)
-  const [porPagina, setPorPagina]       = useState(10)
+  const [porPagina, setPorPagina]       = useState(5)
   const { widths: pagosWidths, startResize: startPagosResize } = useResizableColumns('suscripcion-pagos', PAGOS_COLUMNS)
   const [filtroEstado, setFiltroEstado] = useState('')
   const [filtroPlan, setFiltroPlan]     = useState('')
@@ -120,11 +120,13 @@ export default function Suscripcion() {
       errores.push(`/actual: ${e.response?.status ?? 'network'} ${e.response?.data?.message ?? e.message}`)
     }
 
-    try {
-      const r = await api.get('/suscripcion/pagos')
-      setPagos(r.data)
-    } catch (e) {
-      errores.push(`/pagos: ${e.response?.status ?? 'network'} ${e.response?.data?.message ?? e.message}`)
+    if (isAdmin()) {
+      try {
+        const r = await api.get('/suscripcion/pagos')
+        setPagos(r.data)
+      } catch (e) {
+        errores.push(`/pagos: ${e.response?.status ?? 'network'} ${e.response?.data?.message ?? e.message}`)
+      }
     }
 
     if (errores.length > 0) setError('Errores al cargar: ' + errores.join(' | '))
@@ -311,7 +313,7 @@ export default function Suscripcion() {
         {[
           { id: 'estado', label: 'Estado actual' },
           { id: 'planes', label: 'Planes' },
-          { id: 'pagos',  label: 'Historial de pagos' },
+          ...(esAdmin ? [{ id: 'pagos', label: 'Historial de pagos' }] : []),
         ].map(t => (
           <button
             key={t.id}
@@ -454,7 +456,7 @@ export default function Suscripcion() {
       )}
 
       {/* ══ TAB: HISTORIAL DE PAGOS ══════════════════════════════════════════ */}
-      {tab === 'pagos' && (
+      {tab === 'pagos' && esAdmin && (
         <div className="sus-content">
           <div className="sus-recibo-nota">
             <IcMail />
@@ -597,7 +599,7 @@ export default function Suscripcion() {
                       onChange={e => { setPorPagina(Number(e.target.value)); setPaginaActual(1) }}
                       className="sus-hist-select sus-pag-size"
                     >
-                      {[5, 10, 15, 20].map(n => (
+                      {[5, 10, 20].map(n => (
                         <option key={n} value={n}>{n} por página</option>
                       ))}
                     </select>

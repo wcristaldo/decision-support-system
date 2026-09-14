@@ -31,6 +31,13 @@ public class AuditoriaController : ControllerBase
         [FromQuery] int pagina = 1,
         [FromQuery] int limite = 50)
     {
+        // Clamp defensivo: pagina/limite fuera de rango (negativos, cero, o un
+        // límite absurdamente grande) llegaban sin validar hasta Skip()/Take(),
+        // y un offset negativo hace que Postgres devuelva un error crudo (500)
+        // en vez de una respuesta controlada.
+        pagina = Math.Max(1, pagina);
+        limite = Math.Clamp(limite, 1, 200);
+
         // ── Verificar feature auditoria_detallada ────────────────────────────
         var limiteAuditoria = await _suscripcionService.VerificarFeatureAsync(
             p => p.AuditoriaDetallada,
@@ -88,6 +95,11 @@ public class AuditoriaController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<AuditoriaDto>> GetById(int id)
     {
+        var limiteAuditoria = await _suscripcionService.VerificarFeatureAsync(
+            p => p.AuditoriaDetallada, "Auditoría detallada");
+        if (!limiteAuditoria.Permitido)
+            return StatusCode(402, new { message = limiteAuditoria.Mensaje, codigo = "FEATURE_AUDITORIA_DETALLADA" });
+
         var auditoria = await _context.Auditoria
             .Include(a => a.Usuario)
             .FirstOrDefaultAsync(a => a.Id == id);
@@ -112,6 +124,11 @@ public class AuditoriaController : ControllerBase
     [HttpGet("estadisticas")]
     public async Task<ActionResult<dynamic>> GetEstadisticas([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
     {
+        var limiteAuditoria = await _suscripcionService.VerificarFeatureAsync(
+            p => p.AuditoriaDetallada, "Auditoría detallada");
+        if (!limiteAuditoria.Permitido)
+            return StatusCode(402, new { message = limiteAuditoria.Mensaje, codigo = "FEATURE_AUDITORIA_DETALLADA" });
+
         var query = _context.Auditoria.AsQueryable();
 
         if (desde.HasValue)

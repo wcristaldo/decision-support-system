@@ -6,6 +6,7 @@ import {
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
 import ResizableTh from '../components/ResizableTh'
+import Pagination from '../components/Pagination'
 import { useResizableColumns } from '../hooks/useResizableColumns'
 import { fmtFechaCorta, fmtFechaCompleta } from '../utils/fecha'
 import '../styles/AnalisisMetricas.css'
@@ -164,6 +165,14 @@ function AnalisisMetricas() {
   const limpiarFiltros = () => {
     setFiltro('Todos'); setUsuarioFiltro(''); setFechaDesde(''); setFechaHasta('')
   }
+
+  // ── Paginación ────────────────────────────────────────────────────────────
+  const [pagina, setPagina] = useState(1)
+  const [porPagina, setPorPagina] = useState(5)
+  useEffect(() => { setPagina(1) }, [filtro, usuarioFiltro, fechaDesde, fechaHasta])
+  const totalPaginas = Math.max(1, Math.ceil(filas.length / porPagina))
+  const paginaSegura = Math.min(pagina, totalPaginas)
+  const filasPagina = filas.slice((paginaSegura - 1) * porPagina, paginaSegura * porPagina)
 
   return (
     <div className="am-page">
@@ -348,7 +357,7 @@ function AnalisisMetricas() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filas.map((h, idx) => (
+                  {filasPagina.map((h, idx) => (
                     <tr key={`${h.versionId}-${h.recomendacionId}-${idx}`}>
                       <td>
                         <div className="am-td-proyecto">{h.proyectoNombre}</div>
@@ -396,6 +405,17 @@ function AnalisisMetricas() {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {filas.length > 0 && (
+            <Pagination
+              page={paginaSegura}
+              totalPages={totalPaginas}
+              onPageChange={setPagina}
+              pageSize={porPagina}
+              onPageSizeChange={(n) => { setPorPagina(n); setPagina(1) }}
+              totalItems={filas.length}
+            />
           )}
         </div>
 

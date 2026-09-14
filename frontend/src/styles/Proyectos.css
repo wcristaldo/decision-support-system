@@ -186,9 +186,9 @@
 }
 
 .proy-table th {
-  padding: 0.85rem 1.25rem;
+  padding: 0.55rem 0.9rem;
   text-align: left;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -197,13 +197,19 @@
 }
 
 .proy-table td {
-  padding: 0.85rem 1.25rem;
+  padding: 0.5rem 0.9rem;
   border-bottom: 1px solid var(--gray-100);
-  font-size: 0.875rem;
+  font-size: 0.84rem;
   color: var(--text-dark);
   vertical-align: middle;
   overflow: hidden;
   text-align: left;
+}
+
+.proy-td-sin-resultados {
+  text-align: center !important;
+  color: var(--text-light);
+  padding: 1.75rem !important;
 }
 
 .proy-table tbody tr:last-child td { border-bottom: none; }
@@ -277,6 +283,16 @@
   white-space: nowrap;
   font-family: 'Inter', sans-serif;
 }
+
+.proy-btn-ver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-mid);
+  border-color: var(--gray-200);
+}
+.proy-btn-ver svg { width: 14px; height: 14px; flex-shrink: 0; }
+.proy-btn-ver:hover { background: var(--gray-50); border-color: var(--blue-400); color: var(--blue-500); }
 
 .proy-btn-edit { color: var(--blue-500); border-color: var(--blue-300); }
 .proy-btn-edit:hover { background: var(--gray-50); border-color: var(--blue-500); color: var(--text-dark); }

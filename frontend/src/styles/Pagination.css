@@ -1,0 +1,82 @@
+/* Paginación reutilizable (components/Pagination.jsx) — mismo estilo visual
+   que el historial de pagos de Suscripcion.jsx (sus-paginacion / sus-pag-*). */
+
+.dss-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding-top: 0.85rem;
+}
+
+.dss-pag-info {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dss-pag-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.dss-pag-btn {
+  padding: 0.42rem 0.8rem;
+  border: 1.5px solid var(--gray-100);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--text-dark);
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+  height: 34px;
+}
+.dss-pag-btn:hover:not(:disabled) {
+  border-color: var(--blue-300);
+  color: var(--blue-400);
+}
+.dss-pag-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+.dss-pag-btn.active {
+  background: var(--blue-400);
+  border-color: var(--blue-400);
+  color: var(--white);
+  font-weight: 700;
+}
+
+.dss-pag-nums {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.dss-pag-num { min-width: 34px; justify-content: center; display: inline-flex; }
+
+.dss-pag-ellipsis {
+  padding: 0 0.3rem;
+  color: var(--text-light);
+  font-size: 0.84rem;
+  line-height: 34px;
+}
+
+.dss-pag-size {
+  padding: 0.42rem 0.7rem;
+  border: 1.5px solid var(--gray-100);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 0.82rem;
+  color: var(--text-dark);
+  cursor: pointer;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  height: 34px;
+  margin-left: 0.3rem;
+}
+.dss-pag-size:focus { border-color: var(--blue-300); }

@@ -584,7 +584,7 @@ public class SuscripcionController : ControllerBase
                 return Ok();
             }
 
-            // Intentar extraer orderId desde resource.supplementary_data.related_ids.order_id
+            // Extraer orderId desde resource.supplementary_data.related_ids.order_id
             string? orderId = null;
             if (root.TryGetProperty("resource", out var resource) &&
                 resource.TryGetProperty("supplementary_data", out var suppData) &&
@@ -594,35 +594,42 @@ public class SuscripcionController : ControllerBase
                 orderId = oid.GetString();
             }
 
-            // Buscar pago por orderId; si no se encuentra (ej. Webhook Simulator con ID mock),
-            // usar el pago pendiente de PayPal más reciente
-            PagoSuscripcion? pago = null;
-
-            if (!string.IsNullOrEmpty(orderId))
+            // El body del webhook NUNCA es de confianza (cualquiera puede hacer un
+            // POST anónimo simulándolo): sin orderId exacto, no se activa nada.
+            if (string.IsNullOrEmpty(orderId))
             {
-                pago = await _db.PagosSuscripcion
-                    .Include(p => p.Suscripcion)
-                    .Include(p => p.Plan)
-                    .FirstOrDefaultAsync(p => p.PagoparIdPedidoComercio == $"PP-{orderId}");
+                _logger.LogWarning("Webhook PayPal: body sin orderId, ignorado.");
+                return Ok();
             }
+
+            var pago = await _db.PagosSuscripcion
+                .Include(p => p.Suscripcion)
+                .Include(p => p.Plan)
+                .FirstOrDefaultAsync(p => p.PagoparIdPedidoComercio == $"PP-{orderId}");
 
             if (pago == null)
             {
-                pago = await _db.PagosSuscripcion
-                    .Include(p => p.Suscripcion)
-                    .Include(p => p.Plan)
-                    .Where(p => p.Estado == "pendiente" && p.PagoparIdPedidoComercio!.StartsWith("PP-"))
-                    .OrderByDescending(p => p.FechaCreacion)
-                    .FirstOrDefaultAsync();
+                _logger.LogWarning("Webhook PayPal: no existe ningún pago para orderId={OrderId}", orderId);
+                return Ok();
+            }
 
-                if (pago == null)
-                {
-                    _logger.LogWarning("Webhook PayPal: no hay pagos pendientes de PayPal en la BD");
-                    return Ok();
-                }
+            if (pago.Estado != "pendiente")
+            {
+                _logger.LogInformation("Webhook PayPal: pago {DocId} ya no está pendiente (estado={Estado}), ignorado.",
+                    pago.PagoparIdPedidoComercio, pago.Estado);
+                return Ok();
+            }
 
-                _logger.LogInformation("Webhook PayPal: fallback al pago pendiente más reciente {DocId}",
-                    pago.PagoparIdPedidoComercio);
+            // Reverificación server-to-server contra la API real de PayPal — el
+            // webhook solo dispara la consulta, nunca activa la suscripción por sí
+            // mismo. Así, un POST forjado sin firma no puede activar nada porque
+            // PayPal jamás confirmaría COMPLETED para una orden que no se pagó.
+            var (verifSuccess, estadoReal, verifError) = await _paypal.GetOrderStatusAsync(orderId);
+            if (!verifSuccess || estadoReal != "COMPLETED")
+            {
+                _logger.LogWarning("Webhook PayPal: orderId={OrderId} no está COMPLETED según PayPal (estado={Estado}, error={Error}) — no se activa.",
+                    orderId, estadoReal, verifError);
+                return Ok();
             }
 
             pago.Estado           = "aprobado";

@@ -17,17 +17,19 @@ public class DecisionesDespliegueController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IAuditoriaService _auditoriaService;
     private readonly IActaPdfService _actaPdfService;
+    private readonly IProyectoAccesoService _acceso;
 
     // Longitud mínima exigida a la justificación cuando la decisión contradice
     // la recomendación del sistema (RF12/RF13: "el sistema asiste, no decide" —
     // apartarse de la recomendación requiere una justificación real, no un trámite).
     private const int MinLargoJustificacionOverride = 20;
 
-    public DecisionesDespliegueController(ApplicationDbContext context, IAuditoriaService auditoriaService, IActaPdfService actaPdfService)
+    public DecisionesDespliegueController(ApplicationDbContext context, IAuditoriaService auditoriaService, IActaPdfService actaPdfService, IProyectoAccesoService acceso)
     {
         _context = context;
         _auditoriaService = auditoriaService;
         _actaPdfService = actaPdfService;
+        _acceso = acceso;
     }
 
     private static DecisionDespliegueDto ToDto(DecisionDespliegue d) => new()
@@ -59,6 +61,8 @@ public class DecisionesDespliegueController : ControllerBase
     [HttpGet("recomendacion/{recomendacionId}")]
     public async Task<ActionResult<List<DecisionDespliegueDto>>> GetByRecomendacion(int recomendacionId)
     {
+        if (!await _acceso.TieneAccesoARecomendacionAsync(User, recomendacionId)) return Forbid();
+
         var decisiones = await _context.DecisionesDespliegue
             .Where(d => d.RecomendacionId == recomendacionId)
             .ToListAsync();
@@ -76,6 +80,8 @@ public class DecisionesDespliegueController : ControllerBase
     [HttpGet("version/{versionId}")]
     public async Task<ActionResult<List<DecisionDespliegueDto>>> GetByVersion(int versionId)
     {
+        if (!await _acceso.TieneAccesoAVersionAsync(User, versionId)) return Forbid();
+
         var resultadoIds = await _context.ResultadosPrueba
             .Where(r => r.VersionId == versionId)
             .Select(r => r.Id)
@@ -106,6 +112,8 @@ public class DecisionesDespliegueController : ControllerBase
     [HttpGet("resultado/{resultadoId}")]
     public async Task<ActionResult<List<DecisionDespliegueDto>>> GetByResultado(int resultadoId)
     {
+        if (!await _acceso.TieneAccesoAResultadoAsync(User, resultadoId)) return Forbid();
+
         var evaluacionIds = await _context.Evaluaciones
             .Where(e => e.ResultadoId == resultadoId)
             .Select(e => e.Id)
@@ -134,9 +142,24 @@ public class DecisionesDespliegueController : ControllerBase
     [HttpGet("adherencia")]
     public async Task<IActionResult> GetAdherencia()
     {
-        var decisiones = await _context.DecisionesDespliegue
-            .Where(d => d.DecisionFinal == "aprobado" || d.DecisionFinal == "rechazado")
-            .ToListAsync();
+        var query = _context.DecisionesDespliegue
+            .Where(d => d.DecisionFinal == "aprobado" || d.DecisionFinal == "rechazado");
+
+        // RF13: un Gerente QA/Líder Técnico sin acceso irrestricto solo ve la
+        // adherencia calculada sobre SUS proyectos, no la del sistema entero.
+        if (!_acceso.EsIrrestricto(User))
+        {
+            var permitidos = _acceso.ProyectosPermitidos(User);
+            query = query.Where(d =>
+                _context.Recomendaciones
+                    .Where(r => r.Id == d.RecomendacionId)
+                    .Join(_context.Evaluaciones, r => r.EvaluacionId, e => e.Id, (r, e) => e.ResultadoId)
+                    .Join(_context.ResultadosPrueba, resId => resId, res => res.Id, (resId, res) => res.VersionId)
+                    .Join(_context.Versiones, vId => vId, v => v.Id, (vId, v) => v.ProyectoId)
+                    .Any(proyectoId => permitidos.Contains(proyectoId)));
+        }
+
+        var decisiones = await query.ToListAsync();
 
         var total = decisiones.Count;
         var overrides = decisiones.Count(d => d.EsOverride);
@@ -169,6 +192,8 @@ public class DecisionesDespliegueController : ControllerBase
         var recomendacion = await _context.Recomendaciones.FirstOrDefaultAsync(r => r.Id == request.RecomendacionId);
         if (recomendacion == null)
             return NotFound(new { message = "Recomendación no encontrada." });
+
+        if (!await _acceso.TieneAccesoARecomendacionAsync(User, request.RecomendacionId)) return Forbid();
 
         var esOverride = CalcularEsOverride(decisionNormalizada, recomendacion.TipoRecomendacion);
         if (esOverride && request.Comentario.Trim().Length < MinLargoJustificacionOverride)
@@ -223,6 +248,8 @@ public class DecisionesDespliegueController : ControllerBase
         var resultado = decision.Recomendacion.Evaluacion.Resultado;
         var version = resultado.Version!;
         var proyecto = version.Proyecto;
+
+        if (!_acceso.TieneAccesoAProyecto(User, version.ProyectoId)) return Forbid();
 
         var metricas = await _context.Metricas
             .Where(m => m.ResultadoId == resultado.Id)

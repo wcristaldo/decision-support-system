@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
 import ResizableTh from '../components/ResizableTh'
+import FilterableTh from '../components/FilterableTh'
+import Pagination from '../components/Pagination'
 import { useResizableColumns } from '../hooks/useResizableColumns'
 import { fmtFechaCompleta } from '../utils/fecha'
+import { hasPermiso } from '../utils/auth'
 import '../styles/Proyectos.css'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -321,6 +324,16 @@ function Proyectos() {
   const [togglingId,     setTogglingId]     = useState(null)
   const { widths, startResize } = useResizableColumns('proyectos-lista', PROY_COLUMNS)
 
+  // ── Filtro por columna + paginación ──────────────────────────────────────
+  const [filtros, setFiltros] = useState({ nombre: '', descripcion: '', tipo: '', estado: '' })
+  const [pagina, setPagina] = useState(1)
+  const [porPagina, setPorPagina] = useState(5)
+
+  const setFiltro = (columna) => (valor) => {
+    setFiltros((prev) => ({ ...prev, [columna]: valor }))
+    setPagina(1)
+  }
+
   const showNotification = (type, title, message) => {
     setNotification({ type, title, message })
   }
@@ -371,6 +384,32 @@ function Proyectos() {
     }
   }
 
+  // Substring, sin distinguir mayúsculas/minúsculas (ej. "Log" encuentra "Login").
+  const contiene = (texto, filtro) =>
+    !filtro || (texto || '').toLowerCase().includes(filtro.trim().toLowerCase())
+
+  const proyectosFiltrados = proyectos
+    .filter((p) => {
+      const tipoTexto = TIPO_LABEL[p.tipoSolucion] || ''
+      const estadoTexto = (ESTADO_BADGE[p.estado] || { text: p.estado }).text
+      return (
+        contiene(p.nombre, filtros.nombre) &&
+        contiene(p.descripcion, filtros.descripcion) &&
+        contiene(tipoTexto, filtros.tipo) &&
+        contiene(estadoTexto, filtros.estado)
+      )
+    })
+    // Más nuevos primero: con paginación, un proyecto recien creado tiene que
+    // aparecer en la primera pagina, no quedar enterrado al final de la lista.
+    .sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion))
+
+  const totalPaginas = Math.max(1, Math.ceil(proyectosFiltrados.length / porPagina))
+  const paginaSegura = Math.min(pagina, totalPaginas)
+  const proyectosPagina = proyectosFiltrados.slice(
+    (paginaSegura - 1) * porPagina,
+    paginaSegura * porPagina
+  )
+
   return (
     <div className="proy-page">
 
@@ -383,9 +422,11 @@ function Proyectos() {
               {loading ? '' : `${proyectos.length} proyecto${proyectos.length !== 1 ? 's' : ''} registrado${proyectos.length !== 1 ? 's' : ''}`}
             </p>
           </div>
-          <button className="btn-nuevo" onClick={() => setModal('create')}>
-            + Nuevo proyecto
-          </button>
+          {hasPermiso('gestionar_proyectos') && (
+            <button className="btn-nuevo" onClick={() => setModal('create')}>
+              + Nuevo proyecto
+            </button>
+          )}
         </div>
       </div>
 
@@ -403,10 +444,20 @@ function Proyectos() {
           </div>
         ) : proyectos.length === 0 && !error ? (
           <div className="proy-empty">
-            <p>No hay proyectos registrados.</p>
-            <button className="btn-nuevo" onClick={() => setModal('create')}>Crear el primero</button>
+            {hasPermiso('gestionar_proyectos') ? (
+              <>
+                <p>No hay proyectos registrados.</p>
+                <button className="btn-nuevo" onClick={() => setModal('create')}>Crear el primero</button>
+              </>
+            ) : (
+              // RF13: para un rol sin gestionar_proyectos, una lista vacía casi
+              // siempre significa que no tiene NINGÚN proyecto asignado
+              // (ver_proyectos por sí solo ya no alcanza para ver todos).
+              <p>No tenés proyectos asignados. Pedile a un Administrador que te asigne uno.</p>
+            )}
           </div>
         ) : (
+          <>
           <div className="proy-table-wrap dss-table-wrap">
             <table className="proy-table dss-resizable">
               <colgroup>
@@ -420,17 +471,27 @@ function Proyectos() {
               </colgroup>
               <thead>
                 <tr>
-                  <ResizableTh onResizeStart={startResize('nombre', 100)}>Nombre</ResizableTh>
-                  <ResizableTh onResizeStart={startResize('descripcion', 100)}>Descripción</ResizableTh>
-                  <ResizableTh onResizeStart={startResize('tipo', 80)}>Tipo</ResizableTh>
+                  <FilterableTh onResizeStart={startResize('nombre', 100)}
+                    filterValue={filtros.nombre} onFilterChange={setFiltro('nombre')}>Nombre</FilterableTh>
+                  <FilterableTh onResizeStart={startResize('descripcion', 100)}
+                    filterValue={filtros.descripcion} onFilterChange={setFiltro('descripcion')}>Descripción</FilterableTh>
+                  <FilterableTh onResizeStart={startResize('tipo', 80)}
+                    filterValue={filtros.tipo} onFilterChange={setFiltro('tipo')}>Tipo</FilterableTh>
                   <ResizableTh onResizeStart={startResize('version', 70)}>Versión</ResizableTh>
-                  <ResizableTh onResizeStart={startResize('estado', 70)}>Estado</ResizableTh>
+                  <FilterableTh onResizeStart={startResize('estado', 70)}
+                    filterValue={filtros.estado} onFilterChange={setFiltro('estado')}>Estado</FilterableTh>
                   <ResizableTh onResizeStart={startResize('creado', 100)}>Creado el</ResizableTh>
                   <ResizableTh onResizeStart={startResize('acciones', 100)}>Acciones</ResizableTh>
                 </tr>
               </thead>
               <tbody>
-                {proyectos.map((p) => {
+                {proyectosFiltrados.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="proy-td-sin-resultados">
+                      Ningún proyecto coincide con los filtros aplicados.
+                    </td>
+                  </tr>
+                ) : proyectosPagina.map((p) => {
                   const est = ESTADO_BADGE[p.estado] || { text: p.estado, cls: 'badge-activo' }
                   const esActivo = p.estado === 'activo'
                   return (
@@ -455,22 +516,35 @@ function Proyectos() {
                       </td>
                       <td>
                         <div className="proy-actions">
-                          <button className="proy-btn-action proy-btn-edit"
-                            onClick={() => { setTarget(p); setModal('edit') }}>
-                            Editar
+                          <button className="proy-btn-action proy-btn-ver"
+                            onClick={() => navigate(`/proyectos/${p.id}`)}
+                            title="Ver detalles">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                              <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            Ver
                           </button>
-                          <button
-                            className={`proy-btn-action ${esActivo ? 'proy-btn-inactivar' : 'proy-btn-activar'}`}
-                            onClick={() => toggleEstado(p)}
-                            disabled={togglingId === p.id}
-                          >
-                            {togglingId === p.id ? '…' : esActivo ? 'Inactivar' : 'Activar'}
-                          </button>
-                          <button className="proy-btn-action proy-btn-delete"
-                            onClick={() => { setTarget(p); setModal('delete') }}
-                            title="Eliminar proyecto">
-                            ✕
-                          </button>
+                          {hasPermiso('gestionar_proyectos') && (
+                            <>
+                              <button className="proy-btn-action proy-btn-edit"
+                                onClick={() => { setTarget(p); setModal('edit') }}>
+                                Editar
+                              </button>
+                              <button
+                                className={`proy-btn-action ${esActivo ? 'proy-btn-inactivar' : 'proy-btn-activar'}`}
+                                onClick={() => toggleEstado(p)}
+                                disabled={togglingId === p.id}
+                              >
+                                {togglingId === p.id ? '…' : esActivo ? 'Inactivar' : 'Activar'}
+                              </button>
+                              <button className="proy-btn-action proy-btn-delete"
+                                onClick={() => { setTarget(p); setModal('delete') }}
+                                title="Eliminar proyecto">
+                                ✕
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -479,6 +553,16 @@ function Proyectos() {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            page={paginaSegura}
+            totalPages={totalPaginas}
+            onPageChange={setPagina}
+            pageSize={porPagina}
+            onPageSizeChange={(n) => { setPorPagina(n); setPagina(1) }}
+            totalItems={proyectosFiltrados.length}
+          />
+          </>
         )}
       </div>
 

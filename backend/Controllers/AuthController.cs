@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using DecisionSupportAPI.DTOs;
 using DecisionSupportAPI.Services;
 using DecisionSupportAPI.Data;
@@ -27,6 +28,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
         if (!ModelState.IsValid)
@@ -39,7 +41,13 @@ public class AuthController : ControllerBase
         var usuario = _context.Usuarios.FirstOrDefault(u => u.Email == request.Email);
         if (usuario != null)
         {
-            _ = _auditoriaService.RegistrarAsync("Login", "Usuario", usuario.IdUsuario, $"Login exitoso: {request.Email}");
+            // Debe esperarse: al ser "fire-and-forget" (sin await), ASP.NET Core
+            // podía disponer el DbContext (scoped) al terminar la request mientras
+            // esta tarea todavía lo usaba en segundo plano — ObjectDisposedException
+            // en el mejor caso, y en la práctica dejaba la conexión pooled de Npgsql
+            // en un estado de protocolo corrupto que rompía la SIGUIENTE request no
+            // relacionada que reutilizara esa misma conexión del pool.
+            await _auditoriaService.RegistrarAsync("Login", "Usuario", usuario.IdUsuario, $"Login exitoso: {request.Email}", usuarioIdExplicito: usuario.IdUsuario);
         }
 
         return Ok(result);
@@ -96,8 +104,10 @@ public class AuthController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (!User.IsInRole("Administrador"))
-            return StatusCode(403, new { message = "No eres administrador" });
+        // RBAC (RF14): resetear la contraseña de otro usuario es parte de la
+        // gestión de usuarios — se evalúa el permiso real, no el nombre del rol.
+        if (!User.HasClaim("permission", "gestionar_usuarios"))
+            return StatusCode(403, new { message = "No tenés permiso para gestionar usuarios." });
 
         if (string.IsNullOrWhiteSpace(request.NewPassword))
             return BadRequest(new { message = "Contraseña vacía" });

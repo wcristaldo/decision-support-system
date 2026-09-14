@@ -158,6 +158,12 @@
   border-color: var(--gray-200);
 }
 
+.av-sem-cargar-btn {
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .av-sem-icon {
   width: 64px; height: 64px;
   border-radius: 50%;
@@ -232,7 +238,7 @@
 /* ── Metrics Grid ── */
 .av-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
   gap: 1rem;
 }
 
@@ -812,6 +818,103 @@
   border-top-color: white;
   border-radius: 50%;
   animation: av-spin 0.7s linear infinite;
+}
+
+/* ══════════════════════════════════════════
+   RESUMEN EJECUTIVO (Gerente QA / Admin)
+   ══════════════════════════════════════════ */
+.av-section-hint {
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  margin: -0.75rem 0 1rem;
+}
+
+.av-negocio-card {
+  border-radius: 12px;
+  border: 1.5px solid var(--gray-200);
+  padding: 1.1rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.av-negocio-card.riesgo-bajo  { background: #f0fdf5; border-color: #86efac; }
+.av-negocio-card.riesgo-medio { background: #fefce8; border-color: #fde047; }
+.av-negocio-card.riesgo-alto  { background: #fef2f2; border-color: #fca5a5; }
+
+.av-negocio-riesgo {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+  margin: 0;
+}
+.riesgo-bajo  .av-negocio-riesgo { color: #15803d; }
+.riesgo-medio .av-negocio-riesgo { color: #854d0e; }
+.riesgo-alto  .av-negocio-riesgo { color: #b91c1c; }
+
+.av-negocio-texto {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.av-negocio-adherencia {
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  margin: 0.3rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px dashed rgba(0,0,0,0.1);
+}
+
+/* ══════════════════════════════════════════
+   DETALLE TÉCNICO (Líder Técnico / Admin)
+   ══════════════════════════════════════════ */
+.av-tecnico-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.av-tecnico-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--gray-150);
+  background: var(--gray-50);
+}
+
+.av-tecnico-item--cumple     { border-color: #86efac; background: #f0fdf5; }
+.av-tecnico-item--revisar    { border-color: #fde047; background: #fefce8; }
+.av-tecnico-item--no_cumple  { border-color: #fca5a5; background: #fef2f2; }
+
+.av-tecnico-veredicto {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-mid);
+  flex-shrink: 0;
+  min-width: 90px;
+}
+
+.av-tecnico-obs {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 0.82rem;
+  color: var(--text-dark);
+}
+
+.av-tecnico-meta {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--gray-100);
+  font-size: 0.82rem;
+  color: var(--text-mid);
 }
 
 /* ── Responsive ── */

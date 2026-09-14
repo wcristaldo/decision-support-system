@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { decodeJwtPayload } from '../utils/jwt'
-import { isAdmin } from '../utils/auth'
+import { hasPermiso } from '../utils/auth'
 import '../styles/Sidebar.css'
 
 /* ── SVG Icons ── */
@@ -97,10 +97,10 @@ const NAV_ITEMS = [
     id: 'admin',
     label: 'Admin',
     icon: <IcAdmin />,
-    adminOnly: true,
     items: [
-      { label: 'Gestión de Usuarios', path: '/usuarios' },
-      { label: 'Auditoría',           path: '/auditoria' },
+      { label: 'Gestión de Usuarios', path: '/usuarios',  permisos: ['gestionar_usuarios', 'ver_usuarios'] },
+      { label: 'Auditoría',           path: '/auditoria', permisos: ['ver_auditoria'] },
+      { label: 'Respaldo de base de datos', path: '/respaldo', permisos: ['gestionar_usuarios'] },
     ],
   },
 ]
@@ -109,8 +109,6 @@ function Sidebar({ onLogout }) {
   const location  = useLocation()
   const navigate  = useNavigate()
   const [panelId, setPanelId] = useState(null)
-
-  const esAdmin = isAdmin()
 
   let nombreUsuario = 'Usuario'
   const payload = decodeJwtPayload(sessionStorage.getItem('token'))
@@ -132,7 +130,17 @@ function Sidebar({ onLogout }) {
     return false
   }
 
-  const visibleItems = NAV_ITEMS.filter(i => !i.adminOnly || esAdmin)
+  // RBAC (RF14): cada sub-item se filtra por el permiso real del usuario, no
+  // por su rol — así, otorgarle "ver_auditoria" a un rol que no sea
+  // "Administrador" hace aparecer el link de inmediato. El grupo "Admin" solo
+  // se muestra si queda al menos un sub-item visible.
+  const visibleItems = NAV_ITEMS
+    .map(item => {
+      if (!item.items) return item
+      const items = item.items.filter(sub => sub.permisos.some(p => hasPermiso(p)))
+      return items.length > 0 ? { ...item, items } : null
+    })
+    .filter(Boolean)
 
   const handleRailClick = (item) => {
     if (item.path) {

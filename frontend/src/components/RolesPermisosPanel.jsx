@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import api from '../services/api'
 import NotificationModal from './NotificationModal'
+import { permisoLabel } from '../utils/permisos'
 import '../styles/RolesPermisosPanel.css'
 
 /**
@@ -124,7 +125,10 @@ function RolesPermisosPanel({ roles }) {
                             onChange={() => toggle(p.idPermiso)}
                           />
                         </td>
-                        <td className="rp-nombre-cell">{p.nombrePermiso}</td>
+                        <td className="rp-nombre-cell">
+                          <span className="rp-nombre-label">{permisoLabel(p.nombrePermiso)}</span>
+                          <span className="rp-nombre-codigo">{p.nombrePermiso}</span>
+                        </td>
                         <td className="rp-desc-cell">{p.descripcion || '—'}</td>
                       </tr>
                     ))}

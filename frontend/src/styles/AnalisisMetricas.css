@@ -239,9 +239,9 @@
 }
 
 .am-table th {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.8rem;
   text-align: left;
-  font-size: 0.73rem;
+  font-size: 0.71rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -251,9 +251,9 @@
 }
 
 .am-table td {
-  padding: 0.9rem 1rem;
+  padding: 0.5rem 0.8rem;
   border-bottom: 1px solid var(--gray-100);
-  font-size: 0.875rem;
+  font-size: 0.84rem;
   color: var(--text-dark);
   vertical-align: middle;
   overflow: hidden;
