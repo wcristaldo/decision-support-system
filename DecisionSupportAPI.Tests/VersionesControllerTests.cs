@@ -116,4 +116,89 @@ public class VersionesControllerTests
         Assert.IsType<ForbidResult>(result);
         Assert.Single(ctx.Versiones);
     }
+
+    [Fact(DisplayName = "GetById devuelve la version con acceso al proyecto")]
+    public async Task GetById_ConAcceso_DevuelveVersion()
+    {
+        var ctx = TestHelpers.NewContext();
+        var proyecto = await SeedProyectoAsync(ctx);
+        var version = new Models.Version { ProyectoId = proyecto.Id, NumeroVersion = "1.0.0" };
+        ctx.Versiones.Add(version);
+        await ctx.SaveChangesAsync();
+
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_proyectos" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetById(version.Id);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal(version.Id, Assert.IsType<VersionDto>(ok.Value).Id);
+    }
+
+    [Fact(DisplayName = "GetById inexistente devuelve 404")]
+    public async Task GetById_Inexistente_NotFound()
+    {
+        var ctx = TestHelpers.NewContext();
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_proyectos" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetById(999);
+
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    [Fact(DisplayName = "RF13: GetById sin acceso al proyecto devuelve 403")]
+    public async Task GetById_SinAcceso_Forbid()
+    {
+        var ctx = TestHelpers.NewContext();
+        var proyecto = await SeedProyectoAsync(ctx);
+        var version = new Models.Version { ProyectoId = proyecto.Id, NumeroVersion = "1.0.0" };
+        ctx.Versiones.Add(version);
+        await ctx.SaveChangesAsync();
+
+        var analista = TestHelpers.BuildUser(2, new[] { "Analista QA" }, new[] { "ver_proyectos" }, Array.Empty<int>());
+        var controller = NewController(ctx, analista);
+
+        var result = await controller.GetById(version.Id);
+
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    [Fact(DisplayName = "Update con numero valido actualiza la version y audita el cambio")]
+    public async Task Update_NumeroValido_Actualiza()
+    {
+        var ctx = TestHelpers.NewContext();
+        var proyecto = await SeedProyectoAsync(ctx);
+        var version = new Models.Version { ProyectoId = proyecto.Id, NumeroVersion = "1.0.0" };
+        ctx.Versiones.Add(version);
+        await ctx.SaveChangesAsync();
+
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "gestionar_proyectos" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.Update(version.Id, new UpdateVersionDto { NumeroVersion = "1.0.1", Estado = "en_evaluacion" });
+
+        Assert.IsType<NoContentResult>(result);
+        var actualizada = ctx.Versiones.First(v => v.Id == version.Id);
+        Assert.Equal("1.0.1", actualizada.NumeroVersion);
+        Assert.Equal("en_evaluacion", actualizada.Estado);
+    }
+
+    [Fact(DisplayName = "Update con numero duplicado en el mismo proyecto devuelve 400")]
+    public async Task Update_NumeroDuplicado_BadRequest()
+    {
+        var ctx = TestHelpers.NewContext();
+        var proyecto = await SeedProyectoAsync(ctx);
+        var v1 = new Models.Version { ProyectoId = proyecto.Id, NumeroVersion = "1.0.0" };
+        var v2 = new Models.Version { ProyectoId = proyecto.Id, NumeroVersion = "2.0.0" };
+        ctx.Versiones.AddRange(v1, v2);
+        await ctx.SaveChangesAsync();
+
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "gestionar_proyectos" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.Update(v2.Id, new UpdateVersionDto { NumeroVersion = "1.0.0" });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
 }

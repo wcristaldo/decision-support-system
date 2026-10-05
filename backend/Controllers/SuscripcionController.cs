@@ -41,6 +41,21 @@ public class SuscripcionController : ControllerBase
         _env                = env;
     }
 
+    // Invariante del sistema: solo puede haber una suscripción "activa" a la
+    // vez (GetSuscripcionActivaAsync/VerificarLimite*Async asumen esto). Al
+    // confirmarse un pago para una suscripción nueva o para una que estaba
+    // "pendiente", cualquier otra fila que haya quedado en "activa" (de un
+    // cambio de plan anterior cuyo webhook la dejó sin cerrar) pasa a
+    // "vencida" — mismo estado que ya se usa para un pago revertido.
+    private async Task DesactivarOtrasSuscripcionesActivasAsync(int idSuscripcionQueQueda)
+    {
+        var otras = await _db.Suscripciones
+            .Where(s => s.Estado == "activa" && s.Id != idSuscripcionQueQueda)
+            .ToListAsync();
+        foreach (var otra in otras)
+            otra.Estado = "vencida";
+    }
+
     // ── GET /api/suscripcion/planes ──────────────────────────────────────
     // Pública (sin autenticación): la pantalla de Login la necesita para
     // mostrar los planes antes de que el usuario inicie sesión. Es la misma
@@ -73,7 +88,6 @@ public class SuscripcionController : ControllerBase
                     p.DashboardAvanzado,
                     p.AuditoriaDetallada,
                     p.NotificacionesEmail,
-                    p.NotificacionesSlack,
                     p.IntegracionCicd,
                     p.SoportePrioritario,
                 }
@@ -120,7 +134,12 @@ public class SuscripcionController : ControllerBase
                 maxUsuarios        = sub.Plan.MaxUsuarios,
                 evaluacionesMes    = evalMes,
                 maxEvaluacionesMes = sub.Plan.MaxEvaluacionesMes,
-            }
+            },
+            // Solo lo que el frontend necesita gatear en tiempo real (Dashboard
+            // avanzado); el resto de funcionalidades se consulta bajo demanda
+            // vía los endpoints que ya devuelven 402 FEATURE_* (AnalisisController,
+            // AuditoriaController) cuando el plan activo no las incluye.
+            funcionalidades = new { dashboardAvanzado = sub.Plan.DashboardAvanzado },
         });
     }
 
@@ -243,6 +262,7 @@ public class SuscripcionController : ControllerBase
                     pago.Suscripcion.Estado           = "activa";
                     pago.Suscripcion.FechaInicio      = DateTime.UtcNow;
                     pago.Suscripcion.FechaVencimiento = DateTime.UtcNow.AddMonths(1);
+                    await DesactivarOtrasSuscripcionesActivasAsync(pago.Suscripcion.Id);
                 }
 
                 await _db.SaveChangesAsync();
@@ -510,6 +530,7 @@ public class SuscripcionController : ControllerBase
             pago.Suscripcion.Estado           = "activa";
             pago.Suscripcion.FechaInicio      = DateTime.UtcNow;
             pago.Suscripcion.FechaVencimiento = DateTime.UtcNow.AddMonths(1);
+            await DesactivarOtrasSuscripcionesActivasAsync(pago.Suscripcion.Id);
         }
 
         await _db.SaveChangesAsync();
@@ -642,6 +663,7 @@ public class SuscripcionController : ControllerBase
                 pago.Suscripcion.Estado           = "activa";
                 pago.Suscripcion.FechaInicio      = DateTime.UtcNow;
                 pago.Suscripcion.FechaVencimiento = DateTime.UtcNow.AddMonths(1);
+                await DesactivarOtrasSuscripcionesActivasAsync(pago.Suscripcion.Id);
             }
 
             await _db.SaveChangesAsync();

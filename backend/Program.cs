@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
@@ -150,7 +151,26 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
+// Detrás del Nginx del contenedor frontend (despliegue con Docker), la IP real del cliente llega en el
+// encabezado X-Forwarded-For. Solo se confía en él si la configuración lo habilita de forma explícita
+// (Proxy:ConfiarEncabezadosReenviados), porque sin un proxy delante un cliente podría falsearlo. Así el
+// límite de intentos de inicio de sesión y la IP registrada en la auditoría corresponden al usuario real.
+var confiarEncabezadosReenviados = builder.Configuration.GetValue<bool>("Proxy:ConfiarEncabezadosReenviados");
+if (confiarEncabezadosReenviados)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(o =>
+    {
+        o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        o.ForwardLimit = 1;
+        o.KnownIPNetworks.Clear();
+        o.KnownProxies.Clear();
+    });
+}
+
 var app = builder.Build();
+
+if (confiarEncabezadosReenviados)
+    app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

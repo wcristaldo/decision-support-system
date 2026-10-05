@@ -91,4 +91,32 @@ public class AnalisisControllerTests
         var file = Assert.IsType<FileContentResult>(result);
         Assert.Equal("application/pdf", file.ContentType);
     }
+
+    [Fact(DisplayName = "ExportarPlanilla en formato xlsx devuelve un archivo Excel")]
+    public async Task ExportarPlanilla_Xlsx_DevuelveArchivoExcel()
+    {
+        var ctx = TestHelpers.NewContext();
+        await SeedHistorialAsync(ctx);
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_evaluacion" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.ExportarPlanilla("xlsx");
+
+        var file = Assert.IsType<FileContentResult>(result);
+        Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", file.ContentType);
+    }
+
+    [Fact(DisplayName = "ExportarPlanilla en formato csv devuelve un archivo CSV")]
+    public async Task ExportarPlanilla_Csv_DevuelveArchivoCsv()
+    {
+        var ctx = TestHelpers.NewContext();
+        await SeedHistorialAsync(ctx);
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_evaluacion" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.ExportarPlanilla("csv");
+
+        var file = Assert.IsType<FileContentResult>(result);
+        Assert.Equal("text/csv", file.ContentType);
+    }
 }

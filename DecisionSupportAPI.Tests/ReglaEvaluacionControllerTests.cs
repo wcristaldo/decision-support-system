@@ -102,4 +102,91 @@ public class ReglaEvaluacionControllerTests
 
         Assert.IsType<NotFoundObjectResult>(result);
     }
+
+    [Fact(DisplayName = "GetAll devuelve solo las reglas globales activas")]
+    public async Task GetAll_DevuelveReglasGlobales()
+    {
+        var ctx = TestHelpers.NewContext();
+        await SeedConReglaGlobalAsync(ctx);
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_evaluacion" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetAll();
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var lista = (System.Collections.IEnumerable)ok.Value!;
+        Assert.Single(lista.Cast<object>());
+    }
+
+    [Fact(DisplayName = "GetById devuelve la regla global por id")]
+    public async Task GetById_Global_DevuelveRegla()
+    {
+        var ctx = TestHelpers.NewContext();
+        await SeedConReglaGlobalAsync(ctx);
+        var reglaId = ctx.ReglasEvaluacion.First().Id;
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_evaluacion" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetById(reglaId);
+
+        Assert.IsType<OkObjectResult>(result);
+    }
+
+    [Fact(DisplayName = "GetById inexistente devuelve 404")]
+    public async Task GetById_Inexistente_NotFound()
+    {
+        var ctx = TestHelpers.NewContext();
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_evaluacion" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetById(999);
+
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact(DisplayName = "RF13: GetById de una regla de proyecto sin acceso devuelve 403")]
+    public async Task GetById_ReglaDeProyectoSinAcceso_Forbid()
+    {
+        var ctx = TestHelpers.NewContext();
+        var proyecto = await SeedConReglaGlobalAsync(ctx);
+        var reglaProyecto = new ReglaEvaluacion { Nombre = "Cobertura P", Criterio = "cobertura", Umbral = 90m, Estado = "activo", ProyectoId = proyecto.Id };
+        ctx.ReglasEvaluacion.Add(reglaProyecto);
+        await ctx.SaveChangesAsync();
+        var analista = TestHelpers.BuildUser(2, new[] { "Analista QA" }, new[] { "ver_evaluacion" }, Array.Empty<int>());
+        var controller = NewController(ctx, analista);
+
+        var result = await controller.GetById(reglaProyecto.Id);
+
+        Assert.IsType<ForbidResult>(result);
+    }
+
+    [Fact(DisplayName = "RF07/RF08: UpdateUmbral actualiza el valor y audita el cambio")]
+    public async Task UpdateUmbral_ActualizaValor()
+    {
+        var ctx = TestHelpers.NewContext();
+        await SeedConReglaGlobalAsync(ctx);
+        var reglaId = ctx.ReglasEvaluacion.First().Id;
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "gestionar_reglas" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.UpdateUmbral(reglaId, new UpdateUmbralRequest(85m, null));
+
+        Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(85m, ctx.ReglasEvaluacion.First(r => r.Id == reglaId).Umbral);
+        Assert.True(ctx.Auditoria.Any(a => a.EntidadAfectada == "ReglaEvaluacion"));
+    }
+
+    [Fact(DisplayName = "UpdateUmbral fuera de rango devuelve 400")]
+    public async Task UpdateUmbral_FueraDeRango_BadRequest()
+    {
+        var ctx = TestHelpers.NewContext();
+        await SeedConReglaGlobalAsync(ctx);
+        var reglaId = ctx.ReglasEvaluacion.First().Id;
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "gestionar_reglas" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.UpdateUmbral(reglaId, new UpdateUmbralRequest(-1m, null));
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
 }

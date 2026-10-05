@@ -24,6 +24,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<DecisionDespliegue> DecisionesDespliegue { get; set; }
     public DbSet<Auditoria>        Auditoria          { get; set; }
     public DbSet<ConfiguracionBackup> ConfiguracionesBackup { get; set; }
+    public DbSet<CodigoResetPassword> CodigosResetPassword { get; set; }
 
     // ── Módulo de suscripciones ──────────────────────────────────────────
     public DbSet<PlanSuscripcion>  PlanesSuscripcion  { get; set; }
@@ -111,6 +112,20 @@ public class ApplicationDbContext : DbContext
             e.Property(up => up.FechaAsignacion).HasColumnName("fecha_asignacion");
             e.HasOne(up => up.Usuario).WithMany().HasForeignKey(up => up.IdUsuario);
             e.HasOne(up => up.Proyecto).WithMany().HasForeignKey(up => up.IdProyecto);
+        });
+
+        // ── CODIGO_RESET_PASSWORD ──────────────────────────────────
+        modelBuilder.Entity<CodigoResetPassword>(e =>
+        {
+            e.ToTable("codigo_reset_password");
+            e.HasKey(c => c.IdCodigo);
+            e.Property(c => c.IdCodigo).HasColumnName("id_codigo");
+            e.Property(c => c.IdUsuario).HasColumnName("id_usuario");
+            e.Property(c => c.Codigo).HasColumnName("codigo");
+            e.Property(c => c.FechaCreacion).HasColumnName("fecha_creacion");
+            e.Property(c => c.FechaExpiracion).HasColumnName("fecha_expiracion");
+            e.Property(c => c.Usado).HasColumnName("usado");
+            e.HasOne(c => c.Usuario).WithMany().HasForeignKey(c => c.IdUsuario);
         });
 
         // ── PROYECTOS ────────────────────────────────────────────
@@ -280,7 +295,6 @@ public class ApplicationDbContext : DbContext
             e.Property(p => p.DashboardAvanzado).HasColumnName("dashboard_avanzado");
             e.Property(p => p.AuditoriaDetallada).HasColumnName("auditoria_detallada");
             e.Property(p => p.NotificacionesEmail).HasColumnName("notificaciones_email");
-            e.Property(p => p.NotificacionesSlack).HasColumnName("notificaciones_slack");
             e.Property(p => p.IntegracionCicd).HasColumnName("integracion_cicd");
             e.Property(p => p.SoportePrioritario).HasColumnName("soporte_prioritario");
             e.Property(p => p.Estado).HasColumnName("estado");

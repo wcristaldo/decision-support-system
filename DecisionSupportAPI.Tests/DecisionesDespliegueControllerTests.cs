@@ -134,4 +134,115 @@ public class DecisionesDespliegueControllerTests
         var total = (int)ok.Value!.GetType().GetProperty("total")!.GetValue(ok.Value)!;
         Assert.Equal(1, total); // postergado no cuenta
     }
+
+    [Fact(DisplayName = "GetByVersion recorre version->resultado->evaluacion->recomendacion y devuelve la decision")]
+    public async Task GetByVersion_DevuelveDecisiones()
+    {
+        var ctx = TestHelpers.NewContext();
+        var (version, recId) = await SeedRecomendacionAsync(ctx, "desplegar");
+        ctx.DecisionesDespliegue.Add(new DecisionDespliegue { RecomendacionId = recId, DecisionFinal = "aprobado", Comentario = "ok" });
+        await ctx.SaveChangesAsync();
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_decisiones" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetByVersion(version.Id);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var lista = Assert.IsType<List<DecisionDespliegueDto>>(ok.Value);
+        Assert.Single(lista);
+    }
+
+    [Fact(DisplayName = "RF13: GetByVersion sin acceso al proyecto devuelve 403")]
+    public async Task GetByVersion_SinAcceso_Forbid()
+    {
+        var ctx = TestHelpers.NewContext();
+        var (version, _) = await SeedRecomendacionAsync(ctx, "desplegar");
+        var lider = TestHelpers.BuildUser(2, new[] { "Líder Técnico" }, new[] { "ver_decisiones" }, Array.Empty<int>());
+        var controller = NewController(ctx, lider);
+
+        var result = await controller.GetByVersion(version.Id);
+
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    [Fact(DisplayName = "GetByResultado recorre resultado->evaluacion->recomendacion y devuelve la decision")]
+    public async Task GetByResultado_DevuelveDecisiones()
+    {
+        var ctx = TestHelpers.NewContext();
+        var (_, recId) = await SeedRecomendacionAsync(ctx, "desplegar");
+        ctx.DecisionesDespliegue.Add(new DecisionDespliegue { RecomendacionId = recId, DecisionFinal = "aprobado", Comentario = "ok" });
+        await ctx.SaveChangesAsync();
+        var resultadoId = ctx.ResultadosPrueba.First().Id;
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_decisiones" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetByResultado(resultadoId);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var lista = Assert.IsType<List<DecisionDespliegueDto>>(ok.Value);
+        Assert.Single(lista);
+    }
+
+    [Fact(DisplayName = "GetByRecomendacion devuelve las decisiones de esa recomendacion")]
+    public async Task GetByRecomendacion_DevuelveDecisiones()
+    {
+        var ctx = TestHelpers.NewContext();
+        var (_, recId) = await SeedRecomendacionAsync(ctx, "desplegar");
+        ctx.DecisionesDespliegue.Add(new DecisionDespliegue { RecomendacionId = recId, DecisionFinal = "aprobado", Comentario = "ok" });
+        await ctx.SaveChangesAsync();
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_decisiones" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetByRecomendacion(recId);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var lista = Assert.IsType<List<DecisionDespliegueDto>>(ok.Value);
+        Assert.Single(lista);
+    }
+
+    [Fact(DisplayName = "GetActaPdf con decision inexistente devuelve 404")]
+    public async Task GetActaPdf_Inexistente_NotFound()
+    {
+        var ctx = TestHelpers.NewContext();
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_decisiones" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetActaPdf(999);
+
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact(DisplayName = "RF12/RF13: GetActaPdf genera el PDF de la decision con acceso al proyecto")]
+    public async Task GetActaPdf_ConAcceso_GeneraPdf()
+    {
+        var ctx = TestHelpers.NewContext();
+        var (_, recId) = await SeedRecomendacionAsync(ctx, "desplegar");
+        var decision = new DecisionDespliegue { RecomendacionId = recId, DecisionFinal = "aprobado", Comentario = "Aprobado segun lo esperado." };
+        ctx.DecisionesDespliegue.Add(decision);
+        await ctx.SaveChangesAsync();
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_decisiones" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetActaPdf(decision.Id);
+
+        var file = Assert.IsType<FileContentResult>(result);
+        Assert.Equal("application/pdf", file.ContentType);
+        Assert.True(file.FileContents.Length > 0);
+    }
+
+    [Fact(DisplayName = "RF13: GetActaPdf sin acceso al proyecto devuelve 403")]
+    public async Task GetActaPdf_SinAcceso_Forbid()
+    {
+        var ctx = TestHelpers.NewContext();
+        var (_, recId) = await SeedRecomendacionAsync(ctx, "desplegar");
+        var decision = new DecisionDespliegue { RecomendacionId = recId, DecisionFinal = "aprobado", Comentario = "Aprobado segun lo esperado." };
+        ctx.DecisionesDespliegue.Add(decision);
+        await ctx.SaveChangesAsync();
+        var lider = TestHelpers.BuildUser(2, new[] { "Líder Técnico" }, new[] { "ver_decisiones" }, Array.Empty<int>());
+        var controller = NewController(ctx, lider);
+
+        var result = await controller.GetActaPdf(decision.Id);
+
+        Assert.IsType<ForbidResult>(result);
+    }
 }

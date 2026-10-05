@@ -15,7 +15,7 @@ namespace DecisionSupportAPI.Tests;
 /// ResultadosPrueba, Analisis, etc.) tengan que sembrar una suscripción activa
 /// completa solo para pasar el chequeo de límites de plan.
 /// </summary>
-public class FakeSuscripcionService : ISuscripcionService
+public class FakeSuscripcionService(bool funcionalidadesHabilitadas = true) : ISuscripcionService
 {
     public Task<Suscripcion?> GetSuscripcionActivaAsync() => Task.FromResult<Suscripcion?>(null);
     public Task<PlanSuscripcion?> GetPlanActivoAsync() => Task.FromResult<PlanSuscripcion?>(null);
@@ -24,13 +24,16 @@ public class FakeSuscripcionService : ISuscripcionService
     public Task<LimiteVerificacion> VerificarLimiteEvaluacionesMesAsync() => Task.FromResult(new LimiteVerificacion(true));
     public Task<LimiteVerificacion> VerificarTamanoArchivoAsync(long tamanoBytes) => Task.FromResult(new LimiteVerificacion(true));
     public Task<LimiteVerificacion> VerificarFeatureAsync(Func<PlanSuscripcion, bool> selector, string nombreFeature)
-        => Task.FromResult(new LimiteVerificacion(true));
+        => Task.FromResult(funcionalidadesHabilitadas
+            ? new LimiteVerificacion(true)
+            : new LimiteVerificacion(false, $"La funcionalidad '{nombreFeature}' no está disponible en tu plan."));
 }
 
 public class FakeEmailService : IEmailService
 {
     public Task EnviarReciboAsync(ReciboData recibo, List<string> destinatarios, byte[] pdfBytes) => Task.CompletedTask;
     public Task EnviarAlertaNoAptoAsync(string proyectoNombre, string versionNumero, string archivoNombre, List<string> destinatarios) => Task.CompletedTask;
+    public Task EnviarCodigoRecuperacionAsync(string destinatario, string nombreUsuario, string codigo, int minutosVigencia) => Task.CompletedTask;
 }
 
 /// <summary>

@@ -245,13 +245,20 @@ public class RecommendationEngine : IRecommendationEngine
 
     public async Task<List<Recomendacion>> GetRecommendationsByVersionAsync(int versionId)
     {
-        var resultadoIds = await _context.ResultadosPrueba
+        // Mismo criterio que GetMetricsByVersionAsync (resultado más reciente): si se
+        // mezclaran recomendaciones de ejecuciones anteriores, el semáforo de la versión
+        // podía mostrar "No desplegar" junto a las métricas de una ejecución aprobada.
+        var ultimoResultadoId = await _context.ResultadosPrueba
             .Where(r => r.VersionId == versionId)
+            .OrderByDescending(r => r.FechaCarga)
             .Select(r => r.Id)
-            .ToListAsync();
+            .FirstOrDefaultAsync();
+
+        if (ultimoResultadoId == 0)
+            return new List<Recomendacion>();
 
         var evaluacionIds = await _context.Evaluaciones
-            .Where(e => resultadoIds.Contains(e.ResultadoId))
+            .Where(e => e.ResultadoId == ultimoResultadoId)
             .Select(e => e.Id)
             .ToListAsync();
 

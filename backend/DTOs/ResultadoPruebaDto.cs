@@ -49,7 +49,7 @@ public class CreateResultadoPruebaDto
     [Range(0, int.MaxValue)]
     public int PruebasOmitidas { get; set; } = 0;
 
-    /// <summary>Porcentaje de cobertura de código (0-100).</summary>
+    /// <summary>Cobertura de ejecución de pruebas: pruebas ejecutadas (exitosas + fallidas) sobre el total, en porcentaje (0-100).</summary>
     [Required, Range(0, 100)]
     public decimal Cobertura { get; set; }
 

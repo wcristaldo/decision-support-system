@@ -171,6 +171,47 @@ public class UsuariosControllerTests
         Assert.IsType<BadRequestObjectResult>(result);
     }
 
+    [Fact(DisplayName = "Update con datos validos actualiza nombre, email y rol")]
+    public async Task Update_DatosValidos_Actualiza()
+    {
+        var ctx = TestHelpers.NewContext();
+        var rolAnalista = await SeedRolAsync(ctx, "Analista QA");
+        var rolLider = await SeedRolAsync(ctx, "Líder Técnico");
+        var usuario = new Usuario { Nombre = "Ana", Email = "ana@test.com", PasswordHash = "x", Estado = "activo" };
+        ctx.Usuarios.Add(usuario);
+        await ctx.SaveChangesAsync();
+        ctx.UsuarioRoles.Add(new UsuarioRol { IdUsuario = usuario.IdUsuario, IdRol = rolAnalista.IdRol, Estado = "activo" });
+        await ctx.SaveChangesAsync();
+
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "gestionar_usuarios" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.Update(usuario.IdUsuario, new UpdateUsuarioRequest("Ana Gomez", "ana.gomez@test.com", "Líder Técnico"));
+
+        Assert.IsType<OkObjectResult>(result);
+        var actualizado = await ctx.Usuarios.FindAsync(usuario.IdUsuario);
+        Assert.Equal("Ana Gomez", actualizado!.Nombre);
+        Assert.Equal("ana.gomez@test.com", actualizado.Email);
+        Assert.Contains(ctx.UsuarioRoles, ur => ur.IdUsuario == usuario.IdUsuario && ur.IdRol == rolLider.IdRol && ur.Estado == "activo");
+    }
+
+    [Fact(DisplayName = "Update sin permiso gestionar_usuarios devuelve 403")]
+    public async Task Update_SinPermiso_Forbid()
+    {
+        var ctx = TestHelpers.NewContext();
+        var rol = await SeedRolAsync(ctx);
+        var usuario = new Usuario { Nombre = "Ana", Email = "ana@test.com", PasswordHash = "x", Estado = "activo" };
+        ctx.Usuarios.Add(usuario);
+        await ctx.SaveChangesAsync();
+
+        var soloVer = TestHelpers.BuildUser(2, new[] { "Analista QA" }, new[] { "ver_usuarios" });
+        var controller = NewController(ctx, soloVer);
+
+        var result = await controller.Update(usuario.IdUsuario, new UpdateUsuarioRequest("Ana", "ana@test.com", "Analista QA"));
+
+        Assert.IsType<ForbidResult>(result);
+    }
+
     [Fact(DisplayName = "ToggleEstado inactiva correctamente al usuario")]
     public async Task ToggleEstado_Inactiva()
     {

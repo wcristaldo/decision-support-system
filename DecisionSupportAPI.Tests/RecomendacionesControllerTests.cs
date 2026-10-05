@@ -90,4 +90,62 @@ public class RecomendacionesControllerTests
         var lista = Assert.IsAssignableFrom<List<EvaluacionReglaDto>>(ok.Value);
         Assert.NotEmpty(lista);
     }
+
+    [Fact(DisplayName = "GetByVersion devuelve las recomendaciones generadas para la version")]
+    public async Task GetByVersion_DevuelveRecomendaciones()
+    {
+        var ctx = TestHelpers.NewContext();
+        var (version, _) = await SeedConReglaAsync(ctx);
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ejecutar_evaluacion" });
+        var controller = NewController(ctx, admin);
+        await controller.Generate(version.Id);
+
+        var result = await controller.GetByVersion(version.Id);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var lista = Assert.IsAssignableFrom<List<RecomendacionDto>>(ok.Value);
+        Assert.NotEmpty(lista);
+    }
+
+    [Fact(DisplayName = "RF10: GetByVersion devuelve solo la recomendación del resultado más reciente")]
+    public async Task GetByVersion_VariosResultados_DevuelveSoloElMasReciente()
+    {
+        var ctx = TestHelpers.NewContext();
+        var (version, resultadoAnterior) = await SeedConReglaAsync(ctx);
+        // La ejecución anterior no alcanza el umbral; la más reciente sí.
+        var metricaAnterior = ctx.Metricas.Single(m => m.ResultadoId == resultadoAnterior);
+        metricaAnterior.ValorMetrica = 70m;
+        var anterior = ctx.ResultadosPrueba.Single(r => r.Id == resultadoAnterior);
+        anterior.FechaCarga = DateTime.UtcNow.AddDays(-1);
+        var reciente = new ResultadoPrueba { VersionId = version.Id, NombreArchivo = "b.json", FechaCarga = DateTime.UtcNow };
+        ctx.ResultadosPrueba.Add(reciente);
+        await ctx.SaveChangesAsync();
+        ctx.Metricas.Add(new Metrica { ResultadoId = reciente.Id, NombreMetrica = "tasa_exito", ValorMetrica = 95m });
+        await ctx.SaveChangesAsync();
+
+        var engine = new RecommendationEngine(ctx);
+        await engine.GenerateRecommendationForResultadoAsync(resultadoAnterior);
+        await engine.GenerateRecommendationForResultadoAsync(reciente.Id);
+
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_evaluacion" });
+        var result = await NewController(ctx, admin).GetByVersion(version.Id);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var lista = Assert.IsAssignableFrom<List<RecomendacionDto>>(ok.Value);
+        var unica = Assert.Single(lista);
+        Assert.Equal("desplegar", unica.TipoRecomendacion);
+    }
+
+    [Fact(DisplayName = "RF13: GetByVersion sin acceso al proyecto devuelve 403")]
+    public async Task GetByVersion_SinAcceso_Forbid()
+    {
+        var ctx = TestHelpers.NewContext();
+        var (version, _) = await SeedConReglaAsync(ctx);
+        var analista = TestHelpers.BuildUser(2, new[] { "Analista QA" }, new[] { "ver_evaluacion" }, Array.Empty<int>());
+        var controller = NewController(ctx, analista);
+
+        var result = await controller.GetByVersion(version.Id);
+
+        Assert.IsType<ForbidResult>(result.Result);
+    }
 }

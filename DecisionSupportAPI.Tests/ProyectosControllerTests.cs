@@ -149,4 +149,104 @@ public class ProyectosControllerTests
         Assert.IsType<ForbidResult>(result);
         Assert.Single(ctx.Proyectos);
     }
+
+    [Fact(DisplayName = "GetById con acceso devuelve el proyecto")]
+    public async Task GetById_ConAcceso_DevuelveProyecto()
+    {
+        var ctx = TestHelpers.NewContext();
+        var p1 = new Proyecto { Nombre = "P1", Estado = "activo" };
+        ctx.Proyectos.Add(p1);
+        await ctx.SaveChangesAsync();
+
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_proyectos" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetById(p1.Id);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal(p1.Id, Assert.IsType<ProyectoDto>(ok.Value).Id);
+    }
+
+    [Fact(DisplayName = "GetVersiones devuelve las versiones del proyecto con acceso")]
+    public async Task GetVersiones_ConAcceso_DevuelveVersiones()
+    {
+        var ctx = TestHelpers.NewContext();
+        var p1 = new Proyecto { Nombre = "P1", Estado = "activo" };
+        ctx.Proyectos.Add(p1);
+        await ctx.SaveChangesAsync();
+        ctx.Versiones.Add(new Models.Version { ProyectoId = p1.Id, NumeroVersion = "1.0.0" });
+        await ctx.SaveChangesAsync();
+
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_proyectos" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetVersiones(p1.Id);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Single(Assert.IsAssignableFrom<List<VersionDto>>(ok.Value));
+    }
+
+    [Fact(DisplayName = "GetVersiones con proyecto inexistente devuelve 404")]
+    public async Task GetVersiones_Inexistente_NotFound()
+    {
+        var ctx = TestHelpers.NewContext();
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_proyectos" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetVersiones(999);
+
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact(DisplayName = "RF13: GetVersiones sin acceso al proyecto devuelve 403")]
+    public async Task GetVersiones_SinAcceso_Forbid()
+    {
+        var ctx = TestHelpers.NewContext();
+        var p1 = new Proyecto { Nombre = "P1", Estado = "activo" };
+        ctx.Proyectos.Add(p1);
+        await ctx.SaveChangesAsync();
+
+        var analista = TestHelpers.BuildUser(2, new[] { "Analista QA" }, new[] { "ver_proyectos" }, Array.Empty<int>());
+        var controller = NewController(ctx, analista);
+
+        var result = await controller.GetVersiones(p1.Id);
+
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    [Fact(DisplayName = "Update con datos validos actualiza el proyecto y audita el cambio")]
+    public async Task Update_DatosValidos_Actualiza()
+    {
+        var ctx = TestHelpers.NewContext();
+        var p1 = new Proyecto { Nombre = "P1", Estado = "activo" };
+        ctx.Proyectos.Add(p1);
+        await ctx.SaveChangesAsync();
+
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "gestionar_proyectos" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.Update(p1.Id, new UpdateProyectoDto { Nombre = "P1 renombrado", Estado = "inactivo" });
+
+        Assert.IsType<NoContentResult>(result);
+        var actualizado = ctx.Proyectos.First(p => p.Id == p1.Id);
+        Assert.Equal("P1 renombrado", actualizado.Nombre);
+        Assert.Equal("inactivo", actualizado.Estado);
+    }
+
+    [Fact(DisplayName = "Update con nombre duplicado devuelve 400")]
+    public async Task Update_NombreDuplicado_BadRequest()
+    {
+        var ctx = TestHelpers.NewContext();
+        var p1 = new Proyecto { Nombre = "P1", Estado = "activo" };
+        var p2 = new Proyecto { Nombre = "P2", Estado = "activo" };
+        ctx.Proyectos.AddRange(p1, p2);
+        await ctx.SaveChangesAsync();
+
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "gestionar_proyectos" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.Update(p2.Id, new UpdateProyectoDto { Nombre = "P1" });
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
 }

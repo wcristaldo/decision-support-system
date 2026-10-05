@@ -117,4 +117,51 @@ public class ResultadosPruebaControllerTests
 
         Assert.IsType<BadRequestObjectResult>(result);
     }
+
+    [Fact(DisplayName = "GetById devuelve el resultado con acceso al proyecto")]
+    public async Task GetById_ConAcceso_DevuelveResultado()
+    {
+        var ctx = TestHelpers.NewContext();
+        var version = await SeedVersionAsync(ctx);
+        var resultado = new ResultadoPrueba { VersionId = version.Id, NombreArchivo = "a.json" };
+        ctx.ResultadosPrueba.Add(resultado);
+        await ctx.SaveChangesAsync();
+
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_resultados" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetById(resultado.Id);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal(resultado.Id, Assert.IsType<ResultadoPruebaDto>(ok.Value).Id);
+    }
+
+    [Fact(DisplayName = "GetById inexistente devuelve 404")]
+    public async Task GetById_Inexistente_NotFound()
+    {
+        var ctx = TestHelpers.NewContext();
+        var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_resultados" });
+        var controller = NewController(ctx, admin);
+
+        var result = await controller.GetById(999);
+
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    [Fact(DisplayName = "RF13: GetById sin acceso al proyecto devuelve 403")]
+    public async Task GetById_SinAcceso_Forbid()
+    {
+        var ctx = TestHelpers.NewContext();
+        var version = await SeedVersionAsync(ctx);
+        var resultado = new ResultadoPrueba { VersionId = version.Id, NombreArchivo = "a.json" };
+        ctx.ResultadosPrueba.Add(resultado);
+        await ctx.SaveChangesAsync();
+
+        var analista = TestHelpers.BuildUser(2, new[] { "Analista QA" }, new[] { "ver_resultados" }, Array.Empty<int>());
+        var controller = NewController(ctx, analista);
+
+        var result = await controller.GetById(resultado.Id);
+
+        Assert.IsType<ForbidResult>(result.Result);
+    }
 }
