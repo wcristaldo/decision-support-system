@@ -442,8 +442,8 @@ function CargarResultados() {
                       <span className="cr-rf-meta-val">{metricas.herramienta}</span>
                     </span>
                     <span className="cr-rf-meta-sep" />
-                    <span className="cr-rf-meta-item">
-                      <span className="cr-rf-meta-lbl">Estado</span>
+                    <span className="cr-rf-meta-item" title="Estado que reporta Robot Framework para la suite completa: FAIL si al menos un caso falló, aunque la tasa de éxito general supere el umbral configurado. La recomendación del sistema se calcula sobre esa tasa de éxito, no sobre este estado binario.">
+                      <span className="cr-rf-meta-lbl">Estado de la suite</span>
                       <span className={`cr-rf-badge cr-rf-badge--${metricas.estadoSuite === 'PASS' ? 'pass' : 'fail'}`}>
                         {metricas.estadoSuite}
                       </span>

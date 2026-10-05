@@ -391,46 +391,84 @@
   margin-top: 0.4rem;
 }
 
-.av-dec-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.av-dec-item {
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
-  border-radius: 14px;
-  padding: 1.25rem 1.5rem;
-}
-
-.av-dec-item--override {
-  background: #fffbeb;
-  border-color: #fde68a;
-}
-
+/* ── Decisiones (tabla) ── */
 .av-dec-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
   flex-wrap: wrap;
+  margin-bottom: 1.25rem;
 }
 
-.av-dec-badges {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+.av-dec-table-wrap {
+  background: var(--white);
+  border: 1.5px solid var(--gray-100);
+  border-radius: 16px;
+  overflow: hidden;
 }
+
+.av-dec-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.av-dec-table thead {
+  background: var(--gray-50);
+  border-bottom: 1.5px solid var(--gray-100);
+}
+
+.av-dec-table th {
+  padding: 0.55rem 0.9rem;
+  text-align: left;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-mid);
+  white-space: nowrap;
+}
+
+.av-dec-table td {
+  padding: 0.5rem 0.9rem;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 0.84rem;
+  color: var(--text-dark);
+  vertical-align: middle;
+  text-align: left;
+}
+
+.av-dec-table tbody tr:last-child td { border-bottom: none; }
+.av-dec-table tbody tr:hover { background: var(--gray-50); }
+
+.av-dec-td-sin-resultados {
+  text-align: center !important;
+  color: var(--text-light);
+  padding: 1.75rem !important;
+}
+
+.av-dec-td-comentario {
+  max-width: 0;
+  color: var(--text-mid);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.av-dec-td-empty { color: var(--gray-400); font-size: 0.82rem; }
 
 .av-dec-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 0.25rem 0.75rem;
   border-radius: 50px;
+  white-space: nowrap;
 }
 
 .dec-aprobado  { background: #e6f9f0; color: #1a7a4e; }
@@ -445,31 +483,6 @@
 
 .av-header-decision.dec-aprobado  { background: rgba(230,249,240,0.2); color: #86efac; border: 1px solid rgba(134,239,172,0.3); }
 .av-header-decision.dec-rechazado { background: rgba(254,240,240,0.2); color: #fca5a5; border: 1px solid rgba(252,165,165,0.3); }
-
-.av-dec-date {
-  font-size: 0.78rem;
-  color: var(--text-light);
-  margin-left: auto;
-}
-
-.av-dec-comentario {
-  font-size: 0.875rem;
-  color: var(--text-mid);
-  line-height: 1.6;
-  margin: 0 0 0.5rem;
-}
-
-.av-dec-user {
-  font-size: 0.78rem;
-  color: var(--text-light);
-  margin: 0;
-}
-
-.av-dec-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 0.5rem;
-}
 
 .av-dec-acta-btn {
   display: inline-flex;
@@ -514,9 +527,10 @@
 }
 
 .dec-override-warning-icon {
-  font-size: 1rem;
+  color: #b45309;
   flex-shrink: 0;
-  line-height: 1.4;
+  display: flex;
+  margin-top: 0.1rem;
 }
 
 .av-btn-nueva-dec {

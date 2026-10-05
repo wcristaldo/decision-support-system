@@ -300,6 +300,11 @@ html, body {
 }
 
 .forgot-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
   color: var(--blue-500);
   text-decoration: none;
   font-weight: 500;
@@ -308,6 +313,15 @@ html, body {
 
 .forgot-link:hover {
   color: var(--text-dark);
+}
+
+/* Aviso de privacidad bajo el formulario de inicio de sesión */
+.login-aviso {
+  margin-top: 18px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-muted, #64748b);
+  text-align: center;
 }
 
 /* Error */
@@ -568,6 +582,35 @@ html, body {
   color: var(--text-mid);
 }
 
+/* ── Olvidé mi contraseña ── */
+.lm-forgot-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.lm-forgot-info {
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin: 0;
+}
+
+.lm-codigo-input {
+  letter-spacing: 0.5em;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.lm-forgot-back {
+  align-self: center;
+  font-size: 0.85rem;
+}
+
 /* ── Estados de decisión ── */
 .lm-states {
   display: flex;
@@ -634,9 +677,10 @@ html, body {
 }
 
 .lm-cap-icon {
-  font-size: 1.2rem;
+  color: var(--blue-500);
   flex-shrink: 0;
-  line-height: 1.4;
+  display: flex;
+  margin-top: 0.15rem;
 }
 
 .lm-cap div {

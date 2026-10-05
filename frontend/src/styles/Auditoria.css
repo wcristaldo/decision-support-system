@@ -237,6 +237,7 @@
 }
 
 .audit-td-id {
+  max-width: 0;
   font-family: 'Courier New', monospace;
   font-size: 0.78rem;
   color: var(--text-light);
@@ -246,6 +247,7 @@
 }
 
 .audit-td-detalle {
+  max-width: 0;
   color: var(--text-mid);
   font-size: 0.83rem;
   white-space: nowrap;

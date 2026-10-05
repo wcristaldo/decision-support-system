@@ -202,9 +202,9 @@
 .um-table tbody tr:last-child td { border-bottom: none; }
 .um-table tbody tr:hover { background: var(--gray-50); }
 
-.um-td-name  { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.um-td-email { color: var(--text-mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.um-td-rol   { color: var(--text-mid); font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.um-td-name  { max-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.um-td-email { max-width: 0; color: var(--text-mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.um-td-rol   { max-width: 0; color: var(--text-mid); font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ── Badge estado ── */
 .um-badge {

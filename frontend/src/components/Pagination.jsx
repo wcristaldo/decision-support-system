@@ -46,7 +46,7 @@ export default function Pagination({
           onClick={() => onPageChange(Math.max(1, page - 1))}
           disabled={page === 1}
         >
-          ← Anterior
+          Anterior
         </button>
 
         <div className="dss-pag-nums">
@@ -72,7 +72,7 @@ export default function Pagination({
           onClick={() => onPageChange(Math.min(totalPages, page + 1))}
           disabled={page === totalPages}
         >
-          Siguiente →
+          Siguiente
         </button>
 
         {onPageSizeChange && (

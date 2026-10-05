@@ -19,6 +19,14 @@ table.dss-resizable {
 
 .dss-resizable-th {
   position: relative;
+  /* Sin overflow:hidden acá: el handle de resize (abajo) se dibuja parcialmente
+     fuera del borde del <th> (right: -4px) -- si el <th> lo recorta, solo queda
+     una franja de ~4px realmente clicable y el arrastre se siente roto. El
+     truncado con ellipsis se aplica en .dss-th-label, no en el <th> mismo. */
+}
+
+.dss-th-label {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

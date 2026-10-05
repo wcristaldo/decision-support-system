@@ -61,7 +61,7 @@ function App() {
             <Route path="/" element={<ProtectedRoute><Dashboard onLogout={handleLogout} /></ProtectedRoute>} />
             <Route path="/proyectos" element={<ProtectedRoute><Proyectos /></ProtectedRoute>} />
             <Route path="/proyectos/:id" element={<ProtectedRoute><DetalleProyecto /></ProtectedRoute>} />
-            <Route path="/cargar-resultados" element={<ProtectedRoute><CargarResultados /></ProtectedRoute>} />
+            <Route path="/cargar-resultados" element={<PermissionRoute check={() => hasPermiso('cargar_resultados')}><CargarResultados /></PermissionRoute>} />
             <Route path="/analisis" element={<ProtectedRoute><AnalisisMetricas /></ProtectedRoute>} />
             <Route path="/versiones/:id/analisis" element={<ProtectedRoute><AnalisisVersion /></ProtectedRoute>} />
             <Route path="/usuarios" element={<PermissionRoute check={() => hasPermiso('gestionar_usuarios') || hasPermiso('ver_usuarios')}><UserManagement /></PermissionRoute>} />

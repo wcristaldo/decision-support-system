@@ -15,13 +15,18 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Rutas de autenticación: un 401 acá es "credenciales inválidas" o similar,
+// no una sesión vencida. El propio componente (Login, etc.) debe mostrar el
+// mensaje de error; no hay sesión que limpiar ni redirección que hacer.
+const AUTH_PATHS = ['/auth/login', '/auth/forgot-password', '/auth/reset-password-with-code']
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isAuthRequest = AUTH_PATHS.some((path) => error.config?.url?.includes(path))
+    if (error.response?.status === 401 && !isAuthRequest) {
       // Token expirado o inválido → limpiar sesión y redirigir al login
       sessionStorage.removeItem('token')
-      sessionStorage.removeItem('userRoles')
       window.location.href = '/login'
     }
     return Promise.reject(error)

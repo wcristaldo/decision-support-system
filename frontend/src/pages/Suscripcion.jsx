@@ -425,8 +425,7 @@ export default function Suscripcion() {
                     <FeatRow label="Exportar PDF"               ok={p.funcionalidades?.exportarPdf} />
                     <FeatRow label="Exportar Excel/CSV"         ok={p.funcionalidades?.exportarExcel} />
                     <FeatRow label="Alertas por email"          ok={p.funcionalidades?.notificacionesEmail} />
-                    <FeatRow label="Alertas Slack/Teams"        ok={p.funcionalidades?.notificacionesSlack} />
-                    <FeatRow label="Integración CI/CD nativa"   ok={p.funcionalidades?.integracionCicd} />
+                    <FeatRow label="Carga automática desde CI/CD"   ok={p.funcionalidades?.integracionCicd} />
                     <FeatRow label="Auditoría detallada"        ok={p.funcionalidades?.auditoriaDetallada} />
                     <FeatRow label="Soporte prioritario (24 h)" ok={p.funcionalidades?.soportePrioritario} />
                   </div>
@@ -505,7 +504,7 @@ export default function Suscripcion() {
                       className="sus-hist-clear"
                       onClick={() => { setFiltroEstado(''); setFiltroPlan(''); setFiltroDesde(''); setFiltroHasta(''); setPaginaActual(1) }}
                     >
-                      ✕ Limpiar filtros
+                      Limpiar filtros
                     </button>
                   )}
                 </div>
@@ -567,7 +566,7 @@ export default function Suscripcion() {
                       onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
                       disabled={paginaActual === 1}
                     >
-                      ← Anterior
+                      Anterior
                     </button>
 
                     <div className="sus-pag-nums">
@@ -591,7 +590,7 @@ export default function Suscripcion() {
                       onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
                       disabled={paginaActual === totalPaginas}
                     >
-                      Siguiente →
+                      Siguiente
                     </button>
 
                     <select

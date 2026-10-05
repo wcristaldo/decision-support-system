@@ -155,8 +155,9 @@ function ProyectosAsignadosField({ nombreRol, selected, onChange }) {
           {proyectos.map(p => (
             <li key={p.id}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                <input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggle(p.id)} />
-                {p.nombre}
+                <input type="checkbox" style={{ width: 'auto', flex: '0 0 auto', margin: 0 }}
+                  checked={selected.includes(p.id)} onChange={() => toggle(p.id)} />
+                <span>{p.nombre}</span>
               </label>
             </li>
           ))}
@@ -699,9 +700,9 @@ export default function UserManagement() {
                   const rolLabel = u.rol || u.roles?.[0] || '-'
                   return (
                     <tr key={uid}>
-                      <td className="um-td-name">{u.nombre}</td>
-                      <td className="um-td-email">{u.email}</td>
-                      <td className="um-td-rol">{rolLabel}</td>
+                      <td className="um-td-name" title={u.nombre}>{u.nombre}</td>
+                      <td className="um-td-email" title={u.email}>{u.email}</td>
+                      <td className="um-td-rol" title={rolLabel}>{rolLabel}</td>
                       <td>
                         <span className={`um-estado-badge um-estado-badge--${u.estado}`}>{u.estado}</span>
                       </td>

@@ -440,6 +440,7 @@
 }
 
 .dp-ver-td-desc {
+  max-width: 0;
   color: var(--text-mid);
   white-space: nowrap;
   overflow: hidden;

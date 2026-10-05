@@ -245,8 +245,8 @@ function Auditoria() {
                         </span>
                       </td>
                       <td className="audit-td-entidad">{reg.entidadAfectada || '-'}</td>
-                      <td className="audit-td-id">{reg.idRegistroAfectado || '-'}</td>
-                      <td className="audit-td-detalle">{reg.detalle || '-'}</td>
+                      <td className="audit-td-id" title={reg.idRegistroAfectado || undefined}>{reg.idRegistroAfectado || '-'}</td>
+                      <td className="audit-td-detalle" title={reg.detalle || undefined}>{reg.detalle || '-'}</td>
                     </tr>
                   )
                 })}

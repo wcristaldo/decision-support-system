@@ -2,8 +2,22 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
+import ResizableTh from '../components/ResizableTh'
+import FilterableTh from '../components/FilterableTh'
+import Pagination from '../components/Pagination'
+import { useResizableColumns } from '../hooks/useResizableColumns'
+import { fmtFechaCompleta } from '../utils/fecha'
 import { isAdmin, isGerenteQA, isLiderTecnico, hasPermiso } from '../utils/auth'
+import { IconCheck, IconWarning, IconX } from '../components/icons'
 import '../styles/AnalisisVersion.css'
+
+const DECISIONES_COLUMNS = [
+  { key: 'decision',    defaultWidth: 130, minWidth: 100 },
+  { key: 'fecha',       defaultWidth: 170, minWidth: 130 },
+  { key: 'comentario',  defaultWidth: 300, minWidth: 120 },
+  { key: 'contradice',  defaultWidth: 160, minWidth: 110 },
+  { key: 'acciones',    defaultWidth: 160, minWidth: 130 },
+]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -23,21 +37,21 @@ export const TIPO_RECOMENDACION = {
     sublabel: 'Las métricas cumplen los umbrales de calidad establecidos.',
     cls:      'sem-desplegar',
     iconCls:  'sem-icon-ok',
-    icon:     '✓',
+    icon:     IconCheck,
   },
   REVISAR: {
     label:    'Revisar',
     sublabel: 'Algunas métricas están por debajo de los umbrales esperados.',
     cls:      'sem-revisar',
     iconCls:  'sem-icon-warn',
-    icon:     '⚠',
+    icon:     IconWarning,
   },
   NO_DESPLEGAR: {
     label:    'No desplegar',
     sublabel: 'Las métricas no alcanzan los umbrales mínimos de calidad.',
     cls:      'sem-no-desplegar',
     iconCls:  'sem-icon-no',
-    icon:     '✕',
+    icon:     IconX,
   },
 }
 
@@ -72,7 +86,8 @@ export function formatMetricValue(m) {
     return `${v.toFixed(2)}%`
   }
   if (Number.isInteger(v)) return m.unidad ? `${v} ${m.unidad}` : `${v}`
-  return m.unidad ? `${v.toFixed(3)} ${m.unidad}` : `${v.toFixed(3)}`
+  // Dos decimales, igual que los porcentajes y el detalle técnico: con tres ("38.500") se leía como miles.
+  return m.unidad ? `${v.toFixed(2)} ${m.unidad}` : `${v.toFixed(2)}`
 }
 
 const VEREDICTO_A_CLASE = {
@@ -233,7 +248,8 @@ function DecisionModal({ recomendaciones, onClose, onSaved }) {
                       checked={fields.decision === opt}
                       onChange={set('decision')}
                     />
-                    {opt === 'Aprobado' ? '✓ Aprobado' : '✕ Rechazado'}
+                    {opt === 'Aprobado' ? <IconCheck size={16} /> : <IconX size={16} />}
+                    {opt === 'Aprobado' ? 'Aprobado' : 'Rechazado'}
                   </label>
                 ))}
               </div>
@@ -242,7 +258,7 @@ function DecisionModal({ recomendaciones, onClose, onSaved }) {
 
             {esOverride && (
               <div className="dec-override-warning">
-                <span className="dec-override-warning-icon">⚠</span>
+                <span className="dec-override-warning-icon"><IconWarning size={18} /></span>
                 <span>
                   Esta decisión va <strong>en contra</strong> de la recomendación del sistema.
                   Detallá con claridad el motivo (mínimo {MIN_LARGO_JUSTIFICACION_OVERRIDE} caracteres) —
@@ -317,6 +333,11 @@ function AnalisisVersion() {
   const [showModal,        setShowModal]        = useState(false)
   const [descargandoActaId, setDescargandoActaId] = useState(null)
   const [notification,     setNotification]     = useState(null)
+
+  const { widths: decWidths, startResize: decStartResize } = useResizableColumns('analisis-version-decisiones', DECISIONES_COLUMNS)
+  const [decFiltros, setDecFiltros] = useState({ decision: '', comentario: '' })
+  const [decPagina, setDecPagina] = useState(1)
+  const [decPorPagina, setDecPorPagina] = useState(5)
 
   const loadData = async () => {
     setLoading(true)
@@ -421,6 +442,29 @@ function AnalisisVersion() {
 
   const backPath = version?.proyectoId ? `/proyectos/${version.proyectoId}` : '/proyectos'
 
+  const setDecFiltro = (columna) => (valor) => {
+    setDecFiltros(prev => ({ ...prev, [columna]: valor }))
+    setDecPagina(1)
+  }
+
+  const contiene = (texto, filtro) =>
+    !filtro || (texto || '').toLowerCase().includes(filtro.trim().toLowerCase())
+
+  const decisionesOrdenadas = [...decisiones]
+    .sort((a, b) => new Date(b.fechaDecision || b.fecha) - new Date(a.fechaDecision || a.fecha))
+
+  const decisionesFiltradas = decisionesOrdenadas.filter(d => {
+    const dm = DECISION_MAP[d.decisionFinal?.toLowerCase()] || { text: d.decisionFinal }
+    return contiene(dm.text, decFiltros.decision) && contiene(d.comentario, decFiltros.comentario)
+  })
+
+  const decTotalPaginas = Math.max(1, Math.ceil(decisionesFiltradas.length / decPorPagina))
+  const decPaginaSegura = Math.min(decPagina, decTotalPaginas)
+  const decisionesPagina = decisionesFiltradas.slice(
+    (decPaginaSegura - 1) * decPorPagina,
+    decPaginaSegura * decPorPagina
+  )
+
   if (loading) {
     return (
       <div className="av-loading">
@@ -435,7 +479,7 @@ function AnalisisVersion() {
         <div className="av-error-box">
           <p>{error}</p>
           <button className="btn-back-link" onClick={() => navigate('/proyectos')}>
-            ← Volver a proyectos
+            Volver a proyectos
           </button>
         </div>
       </div>
@@ -449,7 +493,7 @@ function AnalisisVersion() {
       <div className="av-header">
         <div className="av-header-inner">
           <button className="btn-back-link" onClick={() => navigate(backPath)}>
-            ← Volver al proyecto
+            Volver al proyecto
           </button>
           <div className="av-header-text">
             <h1 className="av-title">Análisis - v{version?.numeroVersion}</h1>
@@ -465,7 +509,7 @@ function AnalisisVersion() {
           <h2 className="av-section-title">Recomendación del sistema</h2>
           {semaforo ? (
             <div className={`av-semaforo ${semaforo.cls}`}>
-              <div className={`av-sem-icon ${semaforo.iconCls}`}>{semaforo.icon}</div>
+              <div className={`av-sem-icon ${semaforo.iconCls}`}><semaforo.icon size={28} /></div>
               <div className="av-sem-text">
                 <p className="av-sem-label">{semaforo.label}</p>
                 <p className="av-sem-sublabel">{semaforo.sublabel}</p>
@@ -478,12 +522,14 @@ function AnalisisVersion() {
                 <p className="av-sem-label">Sin recomendación</p>
                 <p className="av-sem-sublabel">No hay métricas evaluadas para esta versión aún.</p>
               </div>
-              <button
-                className="btn-nuevo av-sem-cargar-btn"
-                onClick={() => navigate(`/cargar-resultados?proyectoId=${version.proyectoId}&versionId=${id}`)}
-              >
-                + Cargar resultado
-              </button>
+              {hasPermiso('cargar_resultados') && (
+                <button
+                  className="btn-nuevo av-sem-cargar-btn"
+                  onClick={() => navigate(`/cargar-resultados?proyectoId=${version.proyectoId}&versionId=${id}`)}
+                >
+                  + Cargar resultado
+                </button>
+              )}
             </div>
           )}
         </section>
@@ -602,49 +648,79 @@ function AnalisisVersion() {
           {decisiones.length === 0 ? (
             <p className="av-empty">No hay decisiones registradas para esta versión.</p>
           ) : (
-            <div className="av-dec-list">
-              {[...decisiones]
-                .sort((a, b) => new Date(b.fechaDecision || b.fecha) - new Date(a.fechaDecision || a.fecha))
-                .map((d, i) => {
-                  const dm = DECISION_MAP[d.decisionFinal?.toLowerCase()] || { text: d.decisionFinal, cls: '' }
-                  const fechaDecision = new Date(d.fechaDecision || d.fecha)
-                  const fechaStr = fechaDecision.toLocaleDateString('es-PY', {
-                    day: '2-digit', month: 'long', year: 'numeric',
-                  })
-                  const horaStr = fechaDecision.toLocaleTimeString('es-PY', {
-                    hour: '2-digit', minute: '2-digit',
-                  })
-                  return (
-                    <div key={d.id ?? i} className={`av-dec-item ${d.esOverride ? 'av-dec-item--override' : ''}`}>
-                      <div className="av-dec-header">
-                        <div className="av-dec-badges">
+            <>
+            <div className="av-dec-table-wrap dss-table-wrap">
+              <table className="av-dec-table dss-resizable">
+                <colgroup>
+                  <col style={{ width: decWidths.decision }} />
+                  <col style={{ width: decWidths.fecha }} />
+                  <col style={{ width: decWidths.comentario }} />
+                  <col style={{ width: decWidths.contradice }} />
+                  <col style={{ width: decWidths.acciones }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <FilterableTh onResizeStart={decStartResize('decision', 100)}
+                      filterValue={decFiltros.decision} onFilterChange={setDecFiltro('decision')}>Decisión</FilterableTh>
+                    <ResizableTh onResizeStart={decStartResize('fecha', 130)}>Fecha</ResizableTh>
+                    <FilterableTh onResizeStart={decStartResize('comentario', 120)}
+                      filterValue={decFiltros.comentario} onFilterChange={setDecFiltro('comentario')}>Justificación</FilterableTh>
+                    <ResizableTh onResizeStart={decStartResize('contradice', 110)}>Contradice recomendación</ResizableTh>
+                    <ResizableTh onResizeStart={decStartResize('acciones', 130)}>Acciones</ResizableTh>
+                  </tr>
+                </thead>
+                <tbody>
+                  {decisionesFiltradas.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="av-dec-td-sin-resultados">
+                        Ninguna decisión coincide con los filtros aplicados.
+                      </td>
+                    </tr>
+                  ) : decisionesPagina.map((d, i) => {
+                    const dm = DECISION_MAP[d.decisionFinal?.toLowerCase()] || { text: d.decisionFinal, cls: '' }
+                    return (
+                      <tr key={d.id ?? i}>
+                        <td>
                           <span className={`av-dec-badge ${dm.cls}`}>{dm.text}</span>
-                          {d.esOverride && (
+                        </td>
+                        <td className="dss-td-fecha">{fmtFechaCompleta(d.fechaDecision || d.fecha)}</td>
+                        <td className="av-dec-td-comentario" title={d.comentario || undefined}>{d.comentario || <span className="av-dec-td-empty">-</span>}</td>
+                        <td>
+                          {d.esOverride ? (
                             <span className="av-dec-badge av-dec-badge--override" title="Esta decisión fue en contra de la recomendación del sistema">
-                              ⚠ Contradice la recomendación
+                              <IconWarning size={14} /> Sí
                             </span>
+                          ) : (
+                            <span className="av-dec-td-empty">No</span>
                           )}
-                        </div>
-                        <span className="av-dec-date">{fechaStr} · {horaStr}</span>
-                      </div>
-                      {d.comentario && (
-                        <p className="av-dec-comentario">{d.comentario}</p>
-                      )}
-                      <div className="av-dec-footer">
-                        <button
-                          className="av-dec-acta-btn"
-                          onClick={() => descargarActa(d.id)}
-                          disabled={descargandoActaId === d.id}
-                        >
-                          {descargandoActaId === d.id
-                            ? <><span className="btn-spinner" /> Generando…</>
-                            : '⬇ Descargar acta (PDF)'}
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
+                        </td>
+                        <td>
+                          <button
+                            className="av-dec-acta-btn"
+                            onClick={() => descargarActa(d.id)}
+                            disabled={descargandoActaId === d.id}
+                          >
+                            {descargandoActaId === d.id
+                              ? <><span className="btn-spinner" /> Generando…</>
+                              : 'Descargar acta (PDF)'}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
+
+            <Pagination
+              page={decPaginaSegura}
+              totalPages={decTotalPaginas}
+              onPageChange={setDecPagina}
+              pageSize={decPorPagina}
+              onPageSizeChange={(n) => { setDecPorPagina(n); setDecPagina(1) }}
+              totalItems={decisionesFiltradas.length}
+            />
+            </>
           )}
         </section>
       </div>

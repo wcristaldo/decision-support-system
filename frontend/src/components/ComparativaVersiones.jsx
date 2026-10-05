@@ -120,7 +120,7 @@ export default function ComparativaVersiones({ versiones, onClose }) {
                 {datos.map(d => (
                   <button key={d.version.id} className="btn-analizar"
                     onClick={() => navigate(`/versiones/${d.version.id}/analisis`)}>
-                    Ver detalle de v{d.version.numeroVersion} →
+                    Ver detalle de v{d.version.numeroVersion}
                   </button>
                 ))}
               </div>

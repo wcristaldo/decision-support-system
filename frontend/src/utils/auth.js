@@ -1,7 +1,18 @@
 import { decodeJwtPayload } from './jwt'
 
+/**
+ * Roles del claim "role" del JWT actual (decodificado en vivo, igual que
+ * getPermisos() más abajo) -- antes se leía de sessionStorage["userRoles"],
+ * una copia separada que solo se llenaba en el login normal vía UI y podía
+ * quedar desincronizada del token real (p.ej. una sesión restaurada de otra
+ * forma), haciendo que isAdmin()/isGerenteQA()/etc. devolvieran resultados
+ * incorrectos sin que el token en sí estuviera mal.
+ */
 export function getRoles() {
-  return JSON.parse(sessionStorage.getItem('userRoles') || '[]')
+  const payload = decodeJwtPayload(sessionStorage.getItem('token'))
+  if (!payload) return []
+  const r = payload.role
+  return r ? (Array.isArray(r) ? r : [r]) : []
 }
 
 /**

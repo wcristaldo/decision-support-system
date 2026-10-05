@@ -6,7 +6,8 @@ import {
 import api from '../services/api'
 import { decodeJwtPayload } from '../utils/jwt'
 import { fmtFechaCorta } from '../utils/fecha'
-import { getRoles, isGerenteQA } from '../utils/auth'
+import { getRoles, isGerenteQA, hasPermiso } from '../utils/auth'
+import { IconFolder, IconBarChart, IconCheck, IconWarning, IconLock } from '../components/icons'
 import '../styles/Dashboard.css'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -41,7 +42,7 @@ function fmtFechaHora(dateStr) {
 
 const BASE_MODULES = [
   { to: '/proyectos',          title: 'Proyectos',          desc: 'Gestión de proyectos y versiones.' },
-  { to: '/cargar-resultados',  title: 'Cargar resultados',  desc: 'Registrar un nuevo resultado de pruebas.' },
+  { to: '/cargar-resultados',  title: 'Cargar resultados',  desc: 'Registrar un nuevo resultado de pruebas.', permiso: 'cargar_resultados' },
   { to: '/analisis',           title: 'Análisis y métricas', desc: 'Historial completo de evaluaciones.' },
   { to: '/suscripcion',        title: 'Suscripción',        desc: 'Plan activo, uso y pagos.' },
 ]
@@ -56,6 +57,7 @@ function Dashboard({ onLogout }) {
   const [proyectos, setProyectos] = useState([])
   const [historial, setHistorial] = useState([])
   const [adherencia, setAdherencia] = useState(null)
+  const [dashboardAvanzado, setDashboardAvanzado] = useState(true)
   const [loadingDatos, setLoadingDatos] = useState(true)
   const isAdmin = getRoles().includes('Administrador')
   // "Adherencia a las recomendaciones" es una métrica de negocio (Gerente QA)
@@ -79,10 +81,12 @@ function Dashboard({ onLogout }) {
       api.get('/proyectos').catch(() => ({ data: [] })),
       api.get('/analisis/historial').catch(() => ({ data: [] })),
       esGerente ? api.get('/decisionesDespliegue/adherencia').catch(() => ({ data: null })) : Promise.resolve({ data: null }),
-    ]).then(([pRes, hRes, aRes]) => {
+      api.get('/suscripcion/actual').catch(() => ({ data: null })),
+    ]).then(([pRes, hRes, aRes, sRes]) => {
       setProyectos(pRes.data)
       setHistorial(hRes.data)
       setAdherencia(aRes.data)
+      if (sRes.data?.activa) setDashboardAvanzado(!!sRes.data.funcionalidades?.dashboardAvanzado)
     }).finally(() => setLoadingDatos(false))
   }, [])
 
@@ -138,7 +142,8 @@ function Dashboard({ onLogout }) {
     </div>
   )
 
-  const modules = isAdmin ? [...BASE_MODULES, ADMIN_MODULE] : BASE_MODULES
+  const modules = (isAdmin ? [...BASE_MODULES, ADMIN_MODULE] : BASE_MODULES)
+    .filter(m => !m.permiso || hasPermiso(m.permiso))
   const primerNombre = usuario.nombre?.split(' ')[0] || usuario.nombre
   const rolDisplay   = usuario.roles.length > 0 ? usuario.roles[0] : 'Usuario'
 
@@ -166,28 +171,28 @@ function Dashboard({ onLogout }) {
         {/* ── KPIs ── */}
         <div className="dash-stats">
           <div className="dash-stat">
-            <div className="dash-stat-icon dash-stat-icon--total">📁</div>
+            <div className="dash-stat-icon dash-stat-icon--total"><IconFolder size={20} /></div>
             <div>
               <div className="dash-stat-val">{loadingDatos ? '-' : stats.totalProyectos}</div>
               <div className="dash-stat-lbl">Proyectos activos</div>
             </div>
           </div>
           <div className="dash-stat">
-            <div className="dash-stat-icon dash-stat-icon--total">📊</div>
+            <div className="dash-stat-icon dash-stat-icon--total"><IconBarChart size={20} /></div>
             <div>
               <div className="dash-stat-val">{loadingDatos ? '-' : stats.evaluacionesRecientes}</div>
               <div className="dash-stat-lbl">Evaluaciones (30 días)</div>
             </div>
           </div>
           <div className="dash-stat">
-            <div className="dash-stat-icon dash-stat-icon--ok">✓</div>
+            <div className="dash-stat-icon dash-stat-icon--ok"><IconCheck size={20} /></div>
             <div>
               <div className="dash-stat-val">{loadingDatos ? '-' : stats.aptas}</div>
               <div className="dash-stat-lbl">Aptas para desplegar</div>
             </div>
           </div>
           <div className="dash-stat">
-            <div className="dash-stat-icon dash-stat-icon--warn">⚠</div>
+            <div className="dash-stat-icon dash-stat-icon--warn"><IconWarning size={20} /></div>
             <div>
               <div className="dash-stat-val">{loadingDatos ? '-' : stats.atencion}</div>
               <div className="dash-stat-lbl">Requieren atención</div>
@@ -199,7 +204,13 @@ function Dashboard({ onLogout }) {
         <div className="dash-panels">
           <div className="dash-panel dash-panel-chart">
             <h2 className="dash-panel-title">Tendencia de calidad</h2>
-            {tendencia.length > 1 ? (
+            {!dashboardAvanzado ? (
+              <div className="dash-feature-locked">
+                <span className="dash-feature-locked-icon"><IconLock size={22} /></span>
+                <p>El gráfico de tendencia es parte del Dashboard avanzado, no incluido en tu plan actual.</p>
+                <Link to="/suscripcion" className="dash-feature-locked-link">Ver planes</Link>
+              </div>
+            ) : tendencia.length > 1 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={tendencia} margin={{ top: 8, right: 20, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e9ecf1" />

@@ -230,12 +230,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  width: 100%;
   display: block;
   transition: color 0.15s;
 }
 .proy-td-link:hover { color: var(--blue-500); text-decoration: underline; }
 
 .proy-td-desc {
+  max-width: 0;
   color: var(--text-mid);
   white-space: nowrap;
   overflow: hidden;

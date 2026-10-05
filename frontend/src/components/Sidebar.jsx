@@ -89,7 +89,7 @@ const IcLogout = () => (
 const NAV_ITEMS = [
   { id: 'dashboard',   label: 'Inicio',       icon: <IcHome />,        path: '/' },
   { id: 'proyectos',   label: 'Proyectos',    icon: <IcProyectos />,   path: '/proyectos' },
-  { id: 'cargar',      label: 'Resultados',   icon: <IcCargar />,      path: '/cargar-resultados' },
+  { id: 'cargar',      label: 'Resultados',   icon: <IcCargar />,      path: '/cargar-resultados', permiso: 'cargar_resultados' },
   { id: 'analisis',    label: 'Análisis',     icon: <IcAnalisis />,    path: '/analisis' },
   { id: 'suscripcion', label: 'Suscripción',  icon: <IcSuscripcion />, path: '/suscripcion' },
   { id: 'mi-perfil',   label: 'Mi perfil',    icon: <IcUser />,        path: '/mi-perfil' },
@@ -116,7 +116,6 @@ function Sidebar({ onLogout }) {
 
   const handleLogout = () => {
     sessionStorage.removeItem('token')
-    sessionStorage.removeItem('userRoles')
     onLogout()
     navigate('/login')
   }
@@ -130,11 +129,13 @@ function Sidebar({ onLogout }) {
     return false
   }
 
-  // RBAC (RF14): cada sub-item se filtra por el permiso real del usuario, no
-  // por su rol — así, otorgarle "ver_auditoria" a un rol que no sea
-  // "Administrador" hace aparecer el link de inmediato. El grupo "Admin" solo
-  // se muestra si queda al menos un sub-item visible.
+  // RBAC (RF14): cada item (de primer nivel o dentro de un sub-panel) se
+  // filtra por el permiso real del usuario, no por su rol — así, otorgarle
+  // "ver_auditoria" a un rol que no sea "Administrador" hace aparecer el
+  // link de inmediato. El grupo "Admin" solo se muestra si queda al menos
+  // un sub-item visible.
   const visibleItems = NAV_ITEMS
+    .filter(item => !item.permiso || hasPermiso(item.permiso))
     .map(item => {
       if (!item.items) return item
       const items = item.items.filter(sub => sub.permisos.some(p => hasPermiso(p)))

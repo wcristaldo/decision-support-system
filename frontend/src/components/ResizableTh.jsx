@@ -2,7 +2,7 @@
 export default function ResizableTh({ children, onResizeStart, className = '', ...rest }) {
   return (
     <th className={`dss-resizable-th ${className}`} {...rest}>
-      {children}
+      <span className="dss-th-label">{children}</span>
       <span
         className="dss-col-resize-handle"
         onMouseDown={onResizeStart}

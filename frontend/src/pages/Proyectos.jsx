@@ -14,12 +14,12 @@ import '../styles/Proyectos.css'
 
 const PROY_COLUMNS = [
   { key: 'nombre',      defaultWidth: 200, minWidth: 100 },
-  { key: 'descripcion', defaultWidth: 220, minWidth: 100 },
+  { key: 'descripcion', defaultWidth: 180, minWidth: 100 },
   { key: 'tipo',        defaultWidth: 110, minWidth: 80  },
   { key: 'version',     defaultWidth: 90,  minWidth: 70  },
   { key: 'estado',      defaultWidth: 90,  minWidth: 70  },
   { key: 'creado',      defaultWidth: 150, minWidth: 100 },
-  { key: 'acciones',    defaultWidth: 150, minWidth: 100 },
+  { key: 'acciones',    defaultWidth: 250, minWidth: 100 },
 ]
 
 const TIPO_OPCIONES = [
@@ -500,12 +500,12 @@ function Proyectos() {
                         <button
                           className="proy-td-link"
                           onClick={() => navigate(`/proyectos/${p.id}`)}
-                          title="Ver versiones"
+                          title={`${p.nombre} — Ver versiones`}
                         >
                           {p.nombre}
                         </button>
                       </td>
-                      <td className="proy-td-desc">{p.descripcion || <span className="proy-td-empty">-</span>}</td>
+                      <td className="proy-td-desc" title={p.descripcion || undefined}>{p.descripcion || <span className="proy-td-empty">-</span>}</td>
                       <td className="proy-td-tipo">{TIPO_LABEL[p.tipoSolucion] || '-'}</td>
                       <td className="proy-td-version">{p.versionInicial || '1.0.0'}</td>
                       <td>

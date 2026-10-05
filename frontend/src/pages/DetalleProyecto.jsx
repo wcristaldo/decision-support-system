@@ -393,7 +393,7 @@ function DetalleProyecto() {
         <div className="dp-error-box">
           <p>{error || 'Proyecto no encontrado.'}</p>
           <button className="btn-back-link" onClick={() => navigate('/proyectos')}>
-            ← Volver a proyectos
+            Volver a proyectos
           </button>
         </div>
       </div>
@@ -440,7 +440,7 @@ function DetalleProyecto() {
       <div className="dp-header">
         <div className="dp-header-inner">
           <button className="btn-back-link" onClick={() => navigate('/proyectos')}>
-            ← Volver a proyectos
+            Volver a proyectos
           </button>
           <div className="dp-header-main">
             <div className="dp-header-text">
@@ -536,7 +536,7 @@ function DetalleProyecto() {
                         </td>
                       )}
                       <td className="dp-ver-td-numero">v{v.numeroVersion}</td>
-                      <td className="dp-ver-td-desc">{v.descripcion || <span className="dp-ver-td-empty">-</span>}</td>
+                      <td className="dp-ver-td-desc" title={v.descripcion || undefined}>{v.descripcion || <span className="dp-ver-td-empty">-</span>}</td>
                       <td>
                         <span className={`dp-ver-badge ${est.cls}`}>{est.text}</span>
                       </td>
@@ -546,7 +546,7 @@ function DetalleProyecto() {
                           className="btn-analizar"
                           onClick={() => navigate(`/versiones/${v.id}/analisis`)}
                         >
-                          Analizar →
+                          Analizar
                         </button>
                       </td>
                     </tr>
