@@ -2,16 +2,31 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
-import { isAdmin } from '../utils/auth'
+import ResizableTh from '../components/ResizableTh'
+import FilterableTh from '../components/FilterableTh'
+import Pagination from '../components/Pagination'
+import { useResizableColumns } from '../hooks/useResizableColumns'
+import { fmtFechaCompleta } from '../utils/fecha'
+import { isAdmin, hasPermiso } from '../utils/auth'
+import ComparativaVersiones from '../components/ComparativaVersiones'
 import '../styles/DetalleProyecto.css'
 
 const SEMVER_RE = /^\d+\.\d+\.\d+$/
 
+const VERSION_COLUMNS = [
+  { key: 'numero',      defaultWidth: 110, minWidth: 90  },
+  { key: 'descripcion', defaultWidth: 260, minWidth: 100 },
+  { key: 'estado',      defaultWidth: 130, minWidth: 90  },
+  { key: 'creado',      defaultWidth: 150, minWidth: 100 },
+  { key: 'acciones',    defaultWidth: 130, minWidth: 100 },
+]
+
 const ESTADO_VERSION = {
-  pendiente:   { text: 'Pendiente',   cls: 'vest-pendiente' },
-  en_revision: { text: 'En revisión', cls: 'vest-revision' },
-  aprobada:    { text: 'Aprobada',    cls: 'vest-aprobada' },
-  rechazada:   { text: 'Rechazada',   cls: 'vest-rechazada' },
+  pendiente:     { text: 'Pendiente',     cls: 'vest-pendiente' },
+  en_evaluacion: { text: 'En evaluación', cls: 'vest-revision' },
+  aprobada:      { text: 'Aprobada',      cls: 'vest-aprobada' },
+  rechazada:     { text: 'Rechazada',     cls: 'vest-rechazada' },
+  desplegada:    { text: 'Desplegada',    cls: 'vest-aprobada' },
 }
 
 const TIPO_MAP = {
@@ -40,8 +55,25 @@ function validateVersion(fields) {
   return errors
 }
 
-function VersionModal({ proyectoId, onClose, onSaved }) {
-  const [fields, setFields] = useState({ numeroVersion: '', descripcion: '' })
+/** Sugiere la próxima versión incrementando el parche de la más alta
+ *  existente (ej: 1.2.3 → 1.2.4). Si no hay ninguna versión semver válida
+ *  todavía, sugiere 1.0.0 (mismo default que "Nuevo proyecto") -- antes este
+ *  campo arrancaba vacío mientras que el de "Nuevo proyecto" sí traía un
+ *  valor precargado, una inconsistencia entre ambos formularios. */
+function sugerirProximaVersion(versiones) {
+  const semver = versiones
+    .map(v => v.numeroVersion?.match(/^(\d+)\.(\d+)\.(\d+)$/))
+    .filter(Boolean)
+    .map(m => [Number(m[1]), Number(m[2]), Number(m[3])])
+  if (semver.length === 0) return '1.0.0'
+  const [mayor, menor, parche] = semver.reduce((max, v) =>
+    (v[0] > max[0] || (v[0] === max[0] && v[1] > max[1]) || (v[0] === max[0] && v[1] === max[1] && v[2] > max[2])) ? v : max
+  )
+  return `${mayor}.${menor}.${parche + 1}`
+}
+
+function VersionModal({ proyectoId, versionesExistentes, onClose, onSaved }) {
+  const [fields, setFields] = useState({ numeroVersion: sugerirProximaVersion(versionesExistentes), descripcion: '' })
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
   const [notification, setNotification] = useState(null)
@@ -56,6 +88,7 @@ function VersionModal({ proyectoId, onClose, onSaved }) {
 
   useEffect(() => {
     inputRef.current?.focus()
+    inputRef.current?.select()
     const handleKey = (e) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
@@ -92,7 +125,7 @@ function VersionModal({ proyectoId, onClose, onSaved }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">Nueva versión</h2>
           <button className="modal-close" onClick={onClose} aria-label="Cerrar">×</button>
@@ -238,7 +271,8 @@ function UmbralesPanel({ proyectoId, esAdmin }) {
         {!esAdmin && <span className="dp-umbrales-readonly">Solo lectura</span>}
       </h2>
       <p className="dp-umbrales-hint">
-        Criterios que evalúa el motor de recomendación para las versiones de este proyecto.
+        Criterios que evalúa el motor de recomendación para las versiones de este proyecto,
+        basados en ISO/IEC 25010 (Fiabilidad, Adecuación funcional y Eficiencia de desempeño).
         {esAdmin && ' Podés personalizarlos; si no, se usa el umbral global del sistema.'}
       </p>
 
@@ -314,6 +348,12 @@ function DetalleProyecto() {
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [seleccionadas, setSeleccionadas] = useState([])
+  const [showComparar, setShowComparar] = useState(false)
+  const { widths, startResize } = useResizableColumns('detalle-proyecto-versiones', VERSION_COLUMNS)
+  const [filtros, setFiltros] = useState({ numero: '', descripcion: '', estado: '' })
+  const [pagina, setPagina] = useState(1)
+  const [porPagina, setPorPagina] = useState(5)
 
   const loadData = async () => {
     setLoading(true)
@@ -353,7 +393,7 @@ function DetalleProyecto() {
         <div className="dp-error-box">
           <p>{error || 'Proyecto no encontrado.'}</p>
           <button className="btn-back-link" onClick={() => navigate('/proyectos')}>
-            ← Volver a proyectos
+            Volver a proyectos
           </button>
         </div>
       </div>
@@ -363,6 +403,35 @@ function DetalleProyecto() {
   const estadoProy = ESTADO_PROY[proyecto.estado] || { text: proyecto.estado, cls: '' }
   const tipoLabel  = TIPO_MAP[proyecto.tipoSolucion] || proyecto.tipoSolucion || '-'
   const esAdmin    = isAdmin()
+  const mostrarCheckbox = versiones.length >= 2
+
+  const setFiltro = (columna) => (valor) => {
+    setFiltros((prev) => ({ ...prev, [columna]: valor }))
+    setPagina(1)
+  }
+
+  // Substring, sin distinguir mayúsculas/minúsculas.
+  const contiene = (texto, filtro) =>
+    !filtro || (texto || '').toLowerCase().includes(filtro.trim().toLowerCase())
+
+  const versionesFiltradas = versiones
+    .filter((v) => {
+      const estadoTexto = (ESTADO_VERSION[v.estado] || { text: v.estado }).text
+      return (
+        contiene(`v${v.numeroVersion}`, filtros.numero) &&
+        contiene(v.descripcion, filtros.descripcion) &&
+        contiene(estadoTexto, filtros.estado)
+      )
+    })
+    // Más nuevas primero, igual criterio que la lista de Proyectos.
+    .sort((a, b) => new Date(b.fechaVersion) - new Date(a.fechaVersion))
+
+  const totalPaginas = Math.max(1, Math.ceil(versionesFiltradas.length / porPagina))
+  const paginaSegura = Math.min(pagina, totalPaginas)
+  const versionesPagina = versionesFiltradas.slice(
+    (paginaSegura - 1) * porPagina,
+    paginaSegura * porPagina
+  )
 
   return (
     <div className="dp-page">
@@ -371,7 +440,7 @@ function DetalleProyecto() {
       <div className="dp-header">
         <div className="dp-header-inner">
           <button className="btn-back-link" onClick={() => navigate('/proyectos')}>
-            ← Volver a proyectos
+            Volver a proyectos
           </button>
           <div className="dp-header-main">
             <div className="dp-header-text">
@@ -382,9 +451,11 @@ function DetalleProyecto() {
                 <span className="dp-badge dp-badge-tipo">{tipoLabel}</span>
               </div>
             </div>
-            <button className="btn-nuevo" onClick={() => setShowModal(true)}>
-              + Nueva versión
-            </button>
+            {hasPermiso('gestionar_proyectos') && (
+              <button className="btn-nuevo" onClick={() => setShowModal(true)}>
+                + Nueva versión
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -396,6 +467,16 @@ function DetalleProyecto() {
         <h2 className="dp-section-title">
           Versiones
           <span className="dp-count-badge">{versiones.length}</span>
+          {versiones.length >= 2 && (
+            <button
+              className="btn-back-link dp-umbral-btn"
+              disabled={seleccionadas.length < 2}
+              onClick={() => setShowComparar(true)}
+              style={{ marginLeft: 'auto' }}
+            >
+              Comparar seleccionadas {seleccionadas.length >= 2 ? `(${seleccionadas.length})` : ''}
+            </button>
+          )}
         </h2>
 
         {versiones.length === 0 ? (
@@ -406,45 +487,100 @@ function DetalleProyecto() {
             </button>
           </div>
         ) : (
-          <div className="dp-versions-grid">
-            {versiones.map((v) => {
-              const est = ESTADO_VERSION[v.estado] || { text: v.estado, cls: '' }
-              return (
-                <div key={v.id} className="dp-version-card">
-                  <div className="dp-version-card-header">
-                    <span className="dp-version-num">v{v.numeroVersion}</span>
-                    <span className={`vest-badge ${est.cls}`}>{est.text}</span>
-                  </div>
-                  <p className="dp-version-desc">
-                    {v.descripcion || 'Sin descripción'}
-                  </p>
-                  <div className="dp-version-card-footer">
-                    <span className="dp-version-date">
-                      {v.fechaCreacion
-                        ? new Date(v.fechaCreacion).toLocaleDateString('es-PY', {
-                            day: '2-digit', month: 'short', year: 'numeric',
-                          })
-                        : '-'}
-                    </span>
-                    <button
-                      className="btn-analizar"
-                      onClick={() => navigate(`/versiones/${v.id}/analisis`)}
-                    >
-                      Analizar →
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
+          <>
+          <div className="dp-ver-table-wrap dss-table-wrap">
+            <table className="dp-ver-table dss-resizable">
+              <colgroup>
+                {mostrarCheckbox && <col style={{ width: 44 }} />}
+                <col style={{ width: widths.numero }} />
+                <col style={{ width: widths.descripcion }} />
+                <col style={{ width: widths.estado }} />
+                <col style={{ width: widths.creado }} />
+                <col style={{ width: widths.acciones }} />
+              </colgroup>
+              <thead>
+                <tr>
+                  {mostrarCheckbox && <th className="dp-ver-th-check" aria-label="Seleccionar para comparar" />}
+                  <FilterableTh onResizeStart={startResize('numero', 90)}
+                    filterValue={filtros.numero} onFilterChange={setFiltro('numero')}>Versión</FilterableTh>
+                  <FilterableTh onResizeStart={startResize('descripcion', 100)}
+                    filterValue={filtros.descripcion} onFilterChange={setFiltro('descripcion')}>Descripción</FilterableTh>
+                  <FilterableTh onResizeStart={startResize('estado', 90)}
+                    filterValue={filtros.estado} onFilterChange={setFiltro('estado')}>Estado</FilterableTh>
+                  <ResizableTh onResizeStart={startResize('creado', 100)}>Creada el</ResizableTh>
+                  <ResizableTh onResizeStart={startResize('acciones', 100)}>Acciones</ResizableTh>
+                </tr>
+              </thead>
+              <tbody>
+                {versionesFiltradas.length === 0 ? (
+                  <tr>
+                    <td colSpan={mostrarCheckbox ? 6 : 5} className="dp-ver-td-sin-resultados">
+                      Ninguna versión coincide con los filtros aplicados.
+                    </td>
+                  </tr>
+                ) : versionesPagina.map((v) => {
+                  const est = ESTADO_VERSION[v.estado] || { text: v.estado, cls: '' }
+                  return (
+                    <tr key={v.id}>
+                      {mostrarCheckbox && (
+                        <td className="dp-ver-td-check">
+                          <input
+                            type="checkbox"
+                            className="dp-ver-checkbox"
+                            checked={seleccionadas.includes(v.id)}
+                            onChange={() => setSeleccionadas(prev =>
+                              prev.includes(v.id) ? prev.filter(x => x !== v.id) : [...prev, v.id])}
+                            aria-label={`Seleccionar v${v.numeroVersion} para comparar`}
+                            title="Marcar para comparar con otra versión"
+                          />
+                        </td>
+                      )}
+                      <td className="dp-ver-td-numero">v{v.numeroVersion}</td>
+                      <td className="dp-ver-td-desc" title={v.descripcion || undefined}>{v.descripcion || <span className="dp-ver-td-empty">-</span>}</td>
+                      <td>
+                        <span className={`dp-ver-badge ${est.cls}`}>{est.text}</span>
+                      </td>
+                      <td className="dss-td-fecha">{fmtFechaCompleta(v.fechaVersion)}</td>
+                      <td>
+                        <button
+                          className="btn-analizar"
+                          onClick={() => navigate(`/versiones/${v.id}/analisis`)}
+                        >
+                          Analizar
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
+
+          <Pagination
+            page={paginaSegura}
+            totalPages={totalPaginas}
+            onPageChange={setPagina}
+            pageSize={porPagina}
+            onPageSizeChange={(n) => { setPorPagina(n); setPagina(1) }}
+            totalItems={versionesFiltradas.length}
+          />
+          </>
         )}
       </div>
 
       {showModal && (
         <VersionModal
           proyectoId={id}
+          versionesExistentes={versiones}
           onClose={() => setShowModal(false)}
           onSaved={handleVersionSaved}
+        />
+      )}
+
+      {showComparar && (
+        <ComparativaVersiones
+          versiones={versiones.filter(v => seleccionadas.includes(v.id))}
+          onClose={() => setShowComparar(false)}
         />
       )}
     </div>

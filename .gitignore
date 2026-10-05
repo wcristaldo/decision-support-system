@@ -37,3 +37,7 @@ desktop.ini
 corrupto.json
 results-*.json
 database/backups/
+backend/backups/
+
+# Certificados TLS del despliegue (nunca se versionan)
+certs/

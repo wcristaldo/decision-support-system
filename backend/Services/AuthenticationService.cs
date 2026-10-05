@@ -17,6 +17,8 @@ public interface IAuthenticationService
     string GenerateJwtToken(Usuario usuario, List<string> roles, List<string> permisos);
     string HashPassword(string password);
     bool VerifyPassword(string password, string hash);
+    Task<string?> GenerarCodigoRecuperacionAsync(int usuarioId);
+    Task<bool> ResetearPasswordConCodigoAsync(string email, string codigo, string newPassword);
 }
 
 public class AuthenticationService : IAuthenticationService
@@ -88,8 +90,9 @@ public class AuthenticationService : IAuthenticationService
 
     public string GenerateJwtToken(Usuario usuario, List<string> roles, List<string> permisos)
     {
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "default-key-min-32-characters-here"));
+        var jwtKey = _configuration["Jwt:Key"]
+            ?? throw new InvalidOperationException("Jwt:Key no está configurado.");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new List<System.Security.Claims.Claim>
@@ -146,6 +149,47 @@ public class AuthenticationService : IAuthenticationService
         if (usuario == null || !VerifyPassword(currentPassword, usuario.PasswordHash))
             return false;
 
+        usuario.PasswordHash = HashPassword(newPassword);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    // Autoservicio "¿Olvidaste tu contraseña?": genera un código numérico de
+    // 6 dígitos, vigente 15 minutos, invalidando cualquier código previo sin
+    // usar del mismo usuario (evita que queden varios códigos válidos a la vez).
+    public async Task<string?> GenerarCodigoRecuperacionAsync(int usuarioId)
+    {
+        var pendientes = await _context.CodigosResetPassword
+            .Where(c => c.IdUsuario == usuarioId && !c.Usado)
+            .ToListAsync();
+        foreach (var p in pendientes) p.Usado = true;
+
+        var codigo = Random.Shared.Next(0, 1_000_000).ToString("D6");
+        _context.CodigosResetPassword.Add(new Models.CodigoResetPassword
+        {
+            IdUsuario = usuarioId,
+            Codigo = codigo,
+            FechaExpiracion = DateTime.UtcNow.AddMinutes(15),
+        });
+        await _context.SaveChangesAsync();
+        return codigo;
+    }
+
+    public async Task<bool> ResetearPasswordConCodigoAsync(string email, string codigo, string newPassword)
+    {
+        var usuario = await GetUserByEmailAsync(email);
+        if (usuario == null || usuario.Estado != "activo")
+            return false;
+
+        var registro = await _context.CodigosResetPassword
+            .Where(c => c.IdUsuario == usuario.IdUsuario && c.Codigo == codigo && !c.Usado)
+            .OrderByDescending(c => c.FechaCreacion)
+            .FirstOrDefaultAsync();
+
+        if (registro == null || registro.FechaExpiracion < DateTime.UtcNow)
+            return false;
+
+        registro.Usado = true;
         usuario.PasswordHash = HashPassword(newPassword);
         await _context.SaveChangesAsync();
         return true;

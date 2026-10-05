@@ -20,11 +20,13 @@ public class ReglaEvaluacionController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly IAuditoriaService _auditoriaService;
+    private readonly IProyectoAccesoService _acceso;
 
-    public ReglaEvaluacionController(ApplicationDbContext context, IAuditoriaService auditoriaService)
+    public ReglaEvaluacionController(ApplicationDbContext context, IAuditoriaService auditoriaService, IProyectoAccesoService acceso)
     {
         _context = context;
         _auditoriaService = auditoriaService;
+        _acceso = acceso;
     }
 
     // GET /api/reglaEvaluacion  — devuelve las reglas GLOBALES activas (id_proyecto = NULL)
@@ -58,6 +60,8 @@ public class ReglaEvaluacionController : ControllerBase
     [HttpGet("proyecto/{proyectoId}")]
     public async Task<IActionResult> GetByProyecto(int proyectoId)
     {
+        if (!_acceso.TieneAccesoAProyecto(User, proyectoId)) return Forbid();
+
         var candidatas = await _context.ReglasEvaluacion
             .Where(r => r.Estado == "activo" && (r.ProyectoId == null || r.ProyectoId == proyectoId))
             .ToListAsync();
@@ -95,8 +99,10 @@ public class ReglaEvaluacionController : ControllerBase
     [Authorize(Policy = "gestionar_reglas")]
     public async Task<IActionResult> UpsertProyecto(int proyectoId, [FromBody] UpsertReglaProyectoRequest request)
     {
-        if (request.Umbral < 0)
-            return BadRequest(new { message = "El umbral no puede ser negativo." });
+        if (request.Umbral < 0 || request.Umbral > 999999.99m)
+            return BadRequest(new { message = "El umbral debe estar entre 0 y 999999.99." });
+
+        if (!_acceso.TieneAccesoAProyecto(User, proyectoId)) return Forbid();
 
         var proyecto = await _context.Proyectos.FirstOrDefaultAsync(p => p.Id == proyectoId);
         if (proyecto == null) return NotFound(new { message = "Proyecto no encontrado." });
@@ -150,6 +156,8 @@ public class ReglaEvaluacionController : ControllerBase
     [Authorize(Policy = "gestionar_reglas")]
     public async Task<IActionResult> DeleteOverrideProyecto(int proyectoId, string criterio)
     {
+        if (!_acceso.TieneAccesoAProyecto(User, proyectoId)) return Forbid();
+
         var overrideExistente = await _context.ReglasEvaluacion
             .FirstOrDefaultAsync(r => r.ProyectoId == proyectoId && r.Criterio == criterio);
 
@@ -175,6 +183,8 @@ public class ReglaEvaluacionController : ControllerBase
         var regla = await _context.ReglasEvaluacion.FirstOrDefaultAsync(r => r.Id == id);
         if (regla == null) return NotFound(new { message = "Regla no encontrada." });
 
+        if (regla.ProyectoId != null && !_acceso.TieneAccesoAProyecto(User, regla.ProyectoId.Value)) return Forbid();
+
         return Ok(new
         {
             regla.Id,
@@ -192,11 +202,13 @@ public class ReglaEvaluacionController : ControllerBase
     [Authorize(Policy = "gestionar_reglas")]
     public async Task<IActionResult> UpdateUmbral(int id, [FromBody] UpdateUmbralRequest request)
     {
-        if (request.Umbral < 0)
-            return BadRequest(new { message = "El umbral no puede ser negativo." });
+        if (request.Umbral < 0 || request.Umbral > 999999.99m)
+            return BadRequest(new { message = "El umbral debe estar entre 0 y 999999.99." });
 
         var regla = await _context.ReglasEvaluacion.FirstOrDefaultAsync(r => r.Id == id);
         if (regla == null) return NotFound(new { message = "Regla no encontrada." });
+
+        if (regla.ProyectoId != null && !_acceso.TieneAccesoAProyecto(User, regla.ProyectoId.Value)) return Forbid();
 
         var umbralAnterior = regla.Umbral;
         regla.Umbral      = request.Umbral;

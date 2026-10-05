@@ -145,6 +145,12 @@ WHERE u.email = 'gerente@roshka.com' AND r.nombre_rol = 'Gerente QA';
 --   tiempo_ejecucion → segundos ejecución   (tipo: menor_igual)
 --
 -- Umbrales alineados con casos de prueba CP-U01/CP-U04 de la tesis.
+--
+-- Fundamento teórico (ISO/IEC 25010:2011, SQuaRE — modelo de calidad de
+-- producto de software): tasa_exito/tasa_fallo miden Fiabilidad (subcaracte-
+-- rística Madurez); cobertura mide Adecuación funcional (subcaracterística
+-- Completitud funcional); tiempo_ejecucion mide Eficiencia de desempeño
+-- (subcaracterística Comportamiento temporal).
 -- =============================================================
 INSERT INTO reglas_evaluacion (nombre_regla, descripcion, criterio, umbral, estado, id_usuario_creacion)
 SELECT

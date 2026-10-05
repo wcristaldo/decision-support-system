@@ -1,33 +1,16 @@
 {
   "info": {
-    "_postman_id": "9bbdc857-f397-4395-bb05-24ed979a7894",
     "name": "Roshka DSS - Decision Support System",
-    "description": "Colección completa de endpoints de la API REST del Roshka DSS (tesis UNIDA). Base URL: http://localhost:5000/api\n\n**Setup rápido:**\n1. Ejecutar 'POST Login' → el token se guarda automáticamente en la variable `{{token}}`.\n2. Todos los endpoints protegidos ya usan `Bearer {{token}}`.\n\n**Flujo AdamsPay (staging):**\n1. Login → 2. GET Planes → 3. POST Iniciar Pago → 4. POST Simular Webhook Pago → 5. GET Suscripción Actual",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "48542171",
-    "_collection_link": "https://go.postman.co/collection/48542171-9bbdc857-f397-4395-bb05-24ed979a7894?source=collection_link"
+    "description": "Colección de endpoints de la API REST del Roshka DSS (tesis UNIDA). Base URL: http://localhost:5000/api\n\n**Actualizada el 2026-09-27** contra el código real de backend/Controllers: la versión anterior tenía credenciales vencidas, un endpoint de depuración que ya no existe, un flujo de Pagopar reemplazado por AdamsPay/PayPal y le faltaban los endpoints de Reports (CI/CD), respaldo de base de datos (RNF12), asignación de proyectos a usuarios (RF13), permisos por rol (RF14), adherencia, actas en PDF y exportación del historial.\n\n**Configuración rápida:**\n1. Seleccionar *No Environment* (las variables de otros entornos pisan {{baseUrl}} y {{token}}).\n2. Ejecutar un request de la carpeta Auth → el token se guarda automáticamente en {{token}}.\n3. Todos los endpoints protegidos usan `Bearer {{token}}`.\n\n**Contraseñas (no se versionan):** las variables {{passwordAdmin}} y {{passwordPruebas}} tienen valor inicial vacío a propósito. Cargarlas como *Current value* en la pestaña Variables de la colección: ese valor queda solo en esta PC y no se sincroniza con la nube de Postman ni se sube a git.\n- Administrador: wcristaldo@roshka.com → {{passwordAdmin}} (DSS_ADMIN_PASSWORD del .env)\n- Líder Técnico: lider@roshka.com → {{passwordPruebas}}\n- Analista QA: analista@roshka.com → {{passwordPruebas}}\n- Gerente QA: gerente@roshka.com → {{passwordPruebas}}\n\n**Casos de prueba de la tesis:** la primera carpeta, «Casos de prueba de la tesis (CP-05 a CP-14)», reúne las solicitudes con las que se verificaron por API los casos de la sección 4.5 (Pruebas y validación): CP-05, CP-08, CP-09, CP-10, CP-11, CP-13 y CP-14. Cada una trae tests automáticos con el resultado esperado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Auth",
+      "name": "Casos de prueba de la tesis (CP-05 a CP-14)",
+      "description": "Solicitudes con las que se verificaron por API los casos de prueba de la sección 4.5 (Pruebas y validación) del libro de tesis. Cada una trae tests automáticos con el resultado esperado de la ficha del caso. Se pueden ejecutar de a una o con el Collection Runner, en el orden en que aparecen: el login correcto de CP-05 guarda en {{token}} el token de Analista QA, que usan CP-08 a CP-11, y antes de CP-13 se inicia sesión como Gerente QA, el mismo usuario del plan de JMeter.\n\n- CP-05: inicio de sesión con contraseña correcta (200) e incorrecta (401).\n- CP-08: acta PDF de la decisión de despliegue 51.\n- CP-09 y CP-10: ingesta del output.json de Robot Framework con token válido (201) e inválido (401). CP-09 registra un nuevo resultado de prueba cada vez que se ejecuta.\n- CP-11: un Analista QA intenta modificar un umbral de evaluación (403).\n- CP-13: los cuatro endpoints del dashboard que el plan de Apache JMeter (JMeter/dashboard-load-test-RNF07-RNF09.jmx) somete a carga concurrente; aquí se verifican de a uno.\n- CP-14: disponibilidad del backend (health check).\n\nLos casos CP-01 a CP-04, CP-06, CP-07 y CP-12 se verificaron desde la interfaz web del sistema, por eso no figuran en esta carpeta.",
       "item": [
         {
-          "name": "Login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const json = pm.response.json();",
-                  "    pm.collectionVariables.set('token', json.token);",
-                  "    console.log('Token guardado:', json.token);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
+          "name": "CP-05 · POST Login con contraseña correcta (esperado 200 OK)",
           "request": {
             "method": "POST",
             "header": [
@@ -36,443 +19,860 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@roshka.com\",\n  \"password\": \"Admin2026!\"\n}"
-            },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "La contraseña se verifica contra su hash BCrypt. Requiere cargar {{passwordPruebas}} como Current value. Guarda el token de Analista QA en {{token}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"analista@roshka.com\",\n  \"password\": \"{{passwordPruebas}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CP-05: contraseña correcta aceptada (HTTP 200)', () => pm.response.to.have.status(200));",
+                  "pm.test('CP-05: se emite un token JWT', () => pm.expect(pm.response.json().token).to.be.a('string').and.not.empty);",
+                  "pm.test('CP-05: la respuesta no expone la contraseña ni su hash BCrypt', () => {",
+                  "    const cuerpo = pm.response.text().toLowerCase();",
+                  "    pm.expect(cuerpo).to.not.include('password');",
+                  "    pm.expect(cuerpo).to.not.include('$2a$');",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-05 · POST Login con contraseña incorrecta (esperado 401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"analista@roshka.com\",\n  \"password\": \"ClaveIncorrecta#2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CP-05: contraseña incorrecta rechazada (HTTP 401)', () => pm.response.to.have.status(401));",
+                  "pm.test('CP-05: mensaje de credenciales inválidas', () => pm.expect(pm.response.json().message).to.eql('Credenciales inválidas'));",
+                  "pm.test('CP-05: no se emite token JWT', () => pm.expect(pm.response.json()).to.not.have.property('token'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-08 · GET Acta PDF de una decisión de despliegue (esperado 200 OK)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/decisionesDespliegue/51/acta",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "decisionesDespliegue",
+                "51",
+                "acta"
+              ]
+            },
+            "description": "Acta de la decisión 51 (versión 1.0.1 del proyecto «Login», rechazada por el Líder Técnico). Para otra decisión, cambiar el id en la URL y en el test del nombre del archivo."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CP-08: el acta se genera con HTTP 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('CP-08: la respuesta es un documento PDF', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'));",
+                  "pm.test('CP-08: el archivo lleva el número de la decisión', () => pm.expect(pm.response.headers.get('Content-Disposition')).to.include('Acta-Despliegue-000051.pdf'));",
+                  "pm.test('CP-08: el contenido es un PDF válido (firma %PDF)', () => pm.expect(pm.response.stream.slice(0, 4).toString()).to.eql('%PDF'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-09 · POST Ingestar reporte - token válido (esperado 201 Created)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports"
+              ]
+            },
+            "description": "Sube el output.json real de la suite 03-Dashboard de Robot Framework (6 pruebas) a la versión 566. Requiere el permiso 'cargar_resultados'. Cada ejecución registra un nuevo resultado.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "versionId",
+                  "value": "566",
+                  "type": "text"
+                },
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "json-tests/ci-cd/output.json"
+                },
+                {
+                  "key": "observaciones",
+                  "value": "Ejecución del pipeline CI/CD",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CP-09: el reporte se ingesta con HTTP 201 Created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('CP-09: se registra el archivo output.json recibido', () => pm.expect(r.resultado.nombreArchivo).to.eql('output.json'));",
+                  "pm.test('CP-09: el backend extrae las métricas del output.json de Robot Framework', () => {",
+                  "    pm.expect(r.reporte.herramienta).to.include('Robot');",
+                  "    pm.expect(r.reporte.totalPruebas).to.eql(r.reporte.pruebasExitosas + r.reporte.pruebasFallidas + r.reporte.pruebasOmitidas);",
+                  "});",
+                  "pm.test('CP-09: se genera la recomendación de despliegue', () => pm.expect(['desplegar', 'desplegar_con_observaciones', 'no_desplegar']).to.include(r.recomendacion));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-10 · POST Ingestar reporte - token inválido (esperado 401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer token-invalido-de-prueba-xyz"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports"
+              ]
+            },
+            "description": "Usa a propósito un token inválido fijo (no {{token}}): el reporte no se procesa ni se registra.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "versionId",
+                  "value": "566",
+                  "type": "text"
+                },
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "json-tests/ci-cd/output.json"
+                },
+                {
+                  "key": "observaciones",
+                  "value": "Ejecución del pipeline CI/CD",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CP-10: la ingesta se rechaza con HTTP 401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-11 · PUT Actualizar umbral de regla (esperado 403 con Analista QA)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reglaEvaluacion/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reglaEvaluacion",
+                "1"
+              ]
+            },
+            "description": "Requiere el permiso 'gestionar_reglas', que Analista QA no tiene (control de acceso por rol). Con el token de Administrador devolvería 200 y modificaría la regla.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"umbral\": 90.0,\n  \"descripcion\": \"Tasa de éxito mínima requerida para aprobar el despliegue\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CP-11: Analista QA recibe HTTP 403 Forbidden', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-13 · POST Login - Gerente QA (usuario del plan de JMeter)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "El plan de carga de JMeter se autentica como Gerente QA, que tiene el permiso 'ver_auditoria' que exige el endpoint de estadísticas de auditoría; guarda su token en {{token}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"gerente@roshka.com\",\n  \"password\": \"{{passwordPruebas}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login exitoso (HTTP 200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-13 · GET Proyectos (dashboard)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CP-13: GET /api/proyectos responde HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('CP-13: GET /api/proyectos responde en menos de 2 s (RNF07)', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-13 · GET Historial de análisis (dashboard)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/analisis/historial",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analisis",
+                "historial"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CP-13: GET /api/analisis/historial responde HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('CP-13: GET /api/analisis/historial responde en menos de 2 s (RNF07)', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-13 · GET Adherencia a las recomendaciones (dashboard)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/decisionesDespliegue/adherencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "decisionesDespliegue",
+                "adherencia"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CP-13: GET /api/decisionesDespliegue/adherencia responde HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('CP-13: GET /api/decisionesDespliegue/adherencia responde en menos de 2 s (RNF07)', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-13 · GET Estadísticas de auditoría (dashboard)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auditoria/estadisticas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auditoria",
+                "estadisticas"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CP-13: GET /api/auditoria/estadisticas responde HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('CP-13: GET /api/auditoria/estadisticas responde en menos de 2 s (RNF07)', () => pm.expect(pm.response.responseTime).to.be.below(2000));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CP-14 · GET Health Check (esperado 200 OK)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Smoke test: el backend queda disponible tras iniciar los servicios."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('CP-14: el backend responde HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login - Administrador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"wcristaldo@roshka.com\",\n  \"password\": \"{{passwordAdmin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login exitoso (HTTP 200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Login - Líder Técnico",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type","value": "application/json"}],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"lider@roshka.com\",\n  \"password\": \"Lider2026!\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/auth/login","host": ["{{baseUrl}}"],"path": ["auth","login"]}
+              "raw": "{\n  \"email\": \"lider@roshka.com\",\n  \"password\": \"{{passwordPruebas}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login exitoso (HTTP 200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Login - Analista QA",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type","value": "application/json"}],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"analista@roshka.com\",\n  \"password\": \"Analista2026!\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/auth/login","host": ["{{baseUrl}}"],"path": ["auth","login"]}
+              "raw": "{\n  \"email\": \"analista@roshka.com\",\n  \"password\": \"{{passwordPruebas}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login exitoso (HTTP 200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Login - Gerente QA",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type","value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"gerente@roshka.com\",\n  \"password\": \"Gerente2026!\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/auth/login","host": ["{{baseUrl}}"],"path": ["auth","login"]}
-          },
-          "response": []
-        },
-        {
-          "name": "Cambiar contraseña (usuario autenticado)",
-          "request": {
-            "method": "POST",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"currentPassword\": \"Admin2026!\",\n  \"newPassword\": \"Admin2027!\",\n  \"confirmPassword\": \"Admin2027!\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/auth/change-password","host": ["{{baseUrl}}"],"path": ["auth","change-password"]}
-          },
-          "response": []
-        },
-        {
-          "name": "Reset contraseña de usuario (solo Admin)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"newPassword\": \"NuevaClave2026!\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/auth/reset-password/2","host": ["{{baseUrl}}"],"path": ["auth","reset-password","2"]}
-          },
-          "response": []
-        },
-        {
-          "name": "[DEBUG] Obtener hash de contraseña",
-          "request": {
-            "method": "POST",
-            "header": [{"key": "Content-Type","value": "application/json"}],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"cualquiera@test.com\",\n  \"password\": \"MiClave123!\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/auth/debug/hash","host": ["{{baseUrl}}"],"path": ["auth","debug","hash"]}
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "🔔 Suscripción / Pagopar (staging)",
-      "description": "Flujo completo de pago con Pagopar en entorno staging.\n\n**Orden de ejecución:**\n1. Login (guarda {{token}})\n2. GET Planes disponibles\n3. POST Iniciar Pago → guarda {{hashPedido}} automáticamente\n4. POST Simular Webhook Pago → calcula token SHA1 automáticamente y activa la suscripción\n5. GET Suscripción actual → verificar que está activa\n6. GET Historial de pagos\n\n**Claves staging:** PUBLIC=7fde2c9a716450803053bb4a1c0d4971 | PRIVATE=9321226ee984b4a5dda826d4c8ed555f",
-      "item": [
-        {
-          "name": "1 · GET Planes disponibles",
-          "request": {
-            "method": "GET",
-            "header": [
-              {"key": "Authorization","value": "Bearer {{token}}"}
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/suscripcion/planes",
-              "host": ["{{baseUrl}}"],
-              "path": ["suscripcion","planes"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "2 · GET Suscripción actual",
-          "request": {
-            "method": "GET",
-            "header": [
-              {"key": "Authorization","value": "Bearer {{token}}"}
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/suscripcion/actual",
-              "host": ["{{baseUrl}}"],
-              "path": ["suscripcion","actual"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "3 · POST Iniciar Pago (crea pedido en Pagopar)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const json = pm.response.json();",
-                  "    pm.collectionVariables.set('hashPedido', json.hashPedido);",
-                  "    pm.collectionVariables.set('numeroPedido', json.numeroPedido);",
-                  "    console.log('✅ Hash pedido guardado:', json.hashPedido);",
-                  "    console.log('📋 Número pedido:', json.numeroPedido);",
-                  "    console.log('🔗 URL checkout Pagopar:', json.checkoutUrl);",
-                  "    pm.test('Pedido creado correctamente en Pagopar', () => {",
-                  "        pm.expect(json.hashPedido).to.be.a('string').and.not.empty;",
-                  "    });",
-                  "} else {",
-                  "    console.error('❌ Error al iniciar pago:', pm.response.text());",
-                  "}"
-                ],
-                "type": "text/javascript"
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"idPlan\": 2,\n  \"nombreComprador\": \"Willian Cristaldo\",\n  \"emailComprador\": \"scristaldopy@gmail.com\",\n  \"documentoComprador\": \"5812345\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/suscripcion/iniciar-pago",
-              "host": ["{{baseUrl}}"],
-              "path": ["suscripcion","iniciar-pago"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "4 · POST Simular Webhook — Pago APROBADO ✅",
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  "// Calcula el token SHA1 que Pagopar enviaría: sha1(privateKey + hashPedido)",
-                  "const privateKey = pm.collectionVariables.get('pagoparPrivateKey');",
-                  "const hashPedido = pm.collectionVariables.get('hashPedido');",
-                  "",
-                  "if (!hashPedido) {",
-                  "    console.error('❌ hashPedido vacío. Ejecutá primero el request 3 · Iniciar Pago.');",
-                  "    return;",
-                  "}",
-                  "",
-                  "const token = CryptoJS.SHA1(privateKey + hashPedido).toString();",
-                  "pm.collectionVariables.set('webhookToken', token);",
-                  "console.log('🔑 hashPedido:', hashPedido);",
-                  "console.log('🔐 token webhook calculado:', token);",
-                  "",
-                  "// Armar el body dinámicamente con los valores calculados",
-                  "const body = {",
-                  "    resultado: [{",
-                  "        pagado: true,",
-                  "        cancelado: false,",
-                  "        hash_pedido: hashPedido,",
-                  "        token: token,",
-                  "        numero_pedido: pm.collectionVariables.get('numeroPedido') || '9999',",
-                  "        numero_comprobante_interno: '8888888',",
-                  "        ultimo_mensaje_error: null,",
-                  "        forma_pago: 'Tarjetas de crédito/débito',",
-                  "        forma_pago_identificador: '9',",
-                  "        fecha_pago: new Date().toISOString().replace('T', ' ').substring(0, 19),",
-                  "        monto: '150000.00',",
-                  "        fecha_maxima_pago: new Date(Date.now() + 86400000).toISOString().replace('T', ' ').substring(0, 19)",
-                  "    }],",
-                  "    respuesta: true",
-                  "};",
-                  "pm.collectionVariables.set('webhookBody', JSON.stringify(body));"
-                ],
-                "type": "text/javascript"
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Webhook procesado con HTTP 200', () => {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "console.log('✅ Respuesta webhook:', pm.response.text());"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {"key": "Content-Type","value": "application/json"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{{webhookBody}}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/suscripcion/webhook",
-              "host": ["{{baseUrl}}"],
-              "path": ["suscripcion","webhook"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "4b · POST Simular Webhook — Pago REVERTIDO ❌",
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  "const privateKey = pm.collectionVariables.get('pagoparPrivateKey');",
-                  "const hashPedido = pm.collectionVariables.get('hashPedido');",
-                  "",
-                  "if (!hashPedido) {",
-                  "    console.error('❌ hashPedido vacío. Ejecutá primero el request 3 · Iniciar Pago.');",
-                  "    return;",
-                  "}",
-                  "",
-                  "const token = CryptoJS.SHA1(privateKey + hashPedido).toString();",
-                  "pm.collectionVariables.set('webhookToken', token);",
-                  "",
-                  "const body = {",
-                  "    resultado: [{",
-                  "        pagado: false,",
-                  "        cancelado: false,",
-                  "        hash_pedido: hashPedido,",
-                  "        token: token,",
-                  "        numero_pedido: pm.collectionVariables.get('numeroPedido') || '9999',",
-                  "        numero_comprobante_interno: '8888888',",
-                  "        ultimo_mensaje_error: 'Pago revertido por el comercio',",
-                  "        forma_pago: 'Tarjetas de crédito/débito',",
-                  "        forma_pago_identificador: '9',",
-                  "        fecha_pago: null,",
-                  "        monto: '150000.00',",
-                  "        fecha_maxima_pago: new Date(Date.now() + 86400000).toISOString().replace('T', ' ').substring(0, 19)",
-                  "    }],",
-                  "    respuesta: true",
-                  "};",
-                  "pm.collectionVariables.set('webhookBody', JSON.stringify(body));"
-                ],
-                "type": "text/javascript"
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Webhook reversión procesada con HTTP 200', () => {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "console.log('↩️ Reversión procesada:', pm.response.text());"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {"key": "Content-Type","value": "application/json"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{{webhookBody}}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/suscripcion/webhook",
-              "host": ["{{baseUrl}}"],
-              "path": ["suscripcion","webhook"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "5 · GET Suscripción actual (verificar activación)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const json = pm.response.json();",
-                  "    if (json.activa) {",
-                  "        console.log('✅ Suscripción ACTIVA — Plan:', json.plan?.nombre);",
-                  "        console.log('📅 Vence:', json.fechaVencimiento);",
-                  "    } else {",
-                  "        console.log('⚠️ Sin suscripción activa:', json.mensaje);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [
-              {"key": "Authorization","value": "Bearer {{token}}"}
             ],
             "url": {
-              "raw": "{{baseUrl}}/suscripcion/actual",
-              "host": ["{{baseUrl}}"],
-              "path": ["suscripcion","actual"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "6 · GET Historial de pagos",
-          "request": {
-            "method": "GET",
-            "header": [
-              {"key": "Authorization","value": "Bearer {{token}}"}
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/suscripcion/pagos",
-              "host": ["{{baseUrl}}"],
-              "path": ["suscripcion","pagos"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "POST Cambiar plan",
-          "request": {
-            "method": "POST",
-            "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"idPlan\": 3\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/suscripcion/cambiar-plan",
-              "host": ["{{baseUrl}}"],
-              "path": ["suscripcion","cambiar-plan"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Auditoría (solo Admin)",
-      "item": [
-        {
-          "name": "Listar registros de auditoría con filtros",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {
-              "raw": "{{baseUrl}}/auditoria?pagina=1&limite=50",
-              "host": ["{{baseUrl}}"],
-              "path": ["auditoria"],
-              "query": [
-                {"key": "usuario","value": "admin","disabled": true},
-                {"key": "accion","value": "","disabled": true},
-                {"key": "entidad","value": "Proyecto","disabled": true},
-                {"key": "fechaDesde","value": "2026-07-01T00:00:00","disabled": true},
-                {"key": "fechaHasta","value": "2026-07-31T23:59:59","disabled": true},
-                {"key": "pagina","value": "1"},
-                {"key": "limite","value": "50"}
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
               ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"gerente@roshka.com\",\n  \"password\": \"{{passwordPruebas}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login exitoso (HTTP 200)', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Mi perfil (me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Rol y permisos leídos en vivo desde la base (no los del JWT original)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST Cambiar contraseña (usuario autenticado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "change-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{passwordPruebas}}\",\n  \"newPassword\": \"NuevaClave2027!\",\n  \"confirmPassword\": \"NuevaClave2027!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": []
         },
         {
-          "name": "Obtener registro de auditoría por ID",
+          "name": "POST Recuperar contraseña (forgot-password)",
           "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/auditoria/1","host": ["{{baseUrl}}"],"path": ["auditoria","1"]}
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "description": "Siempre responde el mismo mensaje genérico, exista o no la cuenta (evita la enumeración de usuarios).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"analista@roshka.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
         {
-          "name": "Obtener estadísticas de auditoría",
+          "name": "POST Restablecer contraseña con código",
           "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/auditoria/estadisticas",
-              "host": ["{{baseUrl}}"],
-              "path": ["auditoria","estadisticas"],
-              "query": [
-                {"key": "desde","value": "2026-07-01T00:00:00","disabled": true},
-                {"key": "hasta","value": "2026-07-31T23:59:59","disabled": true}
+              "raw": "{{baseUrl}}/auth/reset-password-with-code",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password-with-code"
               ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"analista@roshka.com\",\n  \"codigo\": \"123456\",\n  \"newPassword\": \"NuevaClave2027!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST Restablecer contraseña de un usuario (solo Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password/2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password",
+                "2"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newPassword\": \"NuevaClave2026!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": []
@@ -483,11 +883,215 @@
       "name": "Health",
       "item": [
         {
-          "name": "Health Check",
+          "name": "GET Health Check",
           "request": {
             "method": "GET",
             "header": [],
-            "url": {"raw": "{{baseUrl}}/health","host": ["{{baseUrl}}"],"path": ["health"]}
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('El backend responde HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reports (Ingesta CI/CD)",
+      "description": "CU-05 de la tesis: ingesta automatizada del output.json de Robot Framework desde un pipeline CI/CD (multipart/form-data: versionId, archivo y observaciones opcionales). Comparte el mismo pipeline de ingesta que POST /api/resultadosPrueba (carga manual). El campo 'archivo' usa la ruta relativa json-tests/ci-cd/output.json: Postman la busca dentro de su carpeta de trabajo (Settings > General > Working directory, por defecto ~/Postman/files), donde debe copiarse el archivo del repositorio, y newman la resuelve desde la raíz del repositorio.",
+      "item": [
+        {
+          "name": "POST Ingestar reporte de Robot Framework (output.json)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports"
+              ]
+            },
+            "description": "Requiere un token con el permiso 'cargar_resultados'. Cada ejecución registra un nuevo resultado de prueba en la versión indicada.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "versionId",
+                  "value": "566",
+                  "type": "text"
+                },
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "json-tests/ci-cd/output.json"
+                },
+                {
+                  "key": "observaciones",
+                  "value": "Ejecución del pipeline CI/CD",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('El reporte se ingesta con HTTP 201 Created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Resultados de Prueba (carga manual)",
+      "item": [
+        {
+          "name": "Listar resultados por versión",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resultadosPrueba/version/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resultadosPrueba",
+                "version",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener resultado por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resultadosPrueba/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resultadosPrueba",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cargar resultado (con métricas → genera recomendación automática)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resultadosPrueba",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resultadosPrueba"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"versionId\": 1,\n  \"nombreArchivo\": \"output.json\",\n  \"formatoArchivo\": \"JSON\",\n  \"rutaArchivo\": null,\n  \"observaciones\": \"Suite: 01-Login | Estado: PASS | Herramienta: Robot 7.4\",\n  \"totalPruebas\": 3,\n  \"pruebasExitosas\": 3,\n  \"pruebasFallidas\": 0,\n  \"pruebasOmitidas\": 0,\n  \"cobertura\": 100.0,\n  \"tiempoEjecucion\": 12.44\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Validar / cambiar estado de resultado",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resultadosPrueba/1/validar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resultadosPrueba",
+                "1",
+                "validar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estadoValidacion\": \"valido\",\n  \"observaciones\": \"Revisión manual OK\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }
@@ -497,11 +1101,24 @@
       "name": "Proyectos",
       "item": [
         {
-          "name": "Listar todos los proyectos",
+          "name": "Listar proyectos (filtrados por asignación, RF13)",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/proyectos","host": ["{{baseUrl}}"],"path": ["proyectos"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos"
+              ]
+            }
           },
           "response": []
         },
@@ -509,8 +1126,22 @@
           "name": "Obtener proyecto por ID",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/proyectos/1","host": ["{{baseUrl}}"],"path": ["proyectos","1"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "1"
+              ]
+            }
           },
           "response": []
         },
@@ -518,8 +1149,23 @@
           "name": "Obtener versiones de un proyecto",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/proyectos/1/versiones","host": ["{{baseUrl}}"],"path": ["proyectos","1","versiones"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/1/versiones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "1",
+                "versiones"
+              ]
+            }
           },
           "response": []
         },
@@ -528,14 +1174,33 @@
           "request": {
             "method": "POST",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Portal de Clientes\",\n  \"descripcion\": \"Módulo de acceso y gestión de clientes\",\n  \"tipoSolucion\": \"web\",\n  \"versionInicial\": \"1.0.0\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/proyectos","host": ["{{baseUrl}}"],"path": ["proyectos"]}
+              "raw": "{\n  \"nombre\": \"Portal de Clientes\",\n  \"descripcion\": \"Módulo de acceso y gestión de clientes\",\n  \"tipoSolucion\": \"web\",\n  \"versionInicial\": \"1.0.0\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -544,14 +1209,34 @@
           "request": {
             "method": "PUT",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "1"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Portal de Clientes v2\",\n  \"descripcion\": \"Versión rediseñada\",\n  \"tipoSolucion\": \"web\",\n  \"estado\": \"activo\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/proyectos/1","host": ["{{baseUrl}}"],"path": ["proyectos","1"]}
+              "raw": "{\n  \"nombre\": \"Portal de Clientes v2\",\n  \"descripcion\": \"Versión rediseñada\",\n  \"tipoSolucion\": \"web\",\n  \"estado\": \"activo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -560,14 +1245,34 @@
           "request": {
             "method": "PUT",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "1"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Portal de Clientes\",\n  \"tipoSolucion\": \"web\",\n  \"estado\": \"inactivo\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/proyectos/1","host": ["{{baseUrl}}"],"path": ["proyectos","1"]}
+              "raw": "{\n  \"nombre\": \"Portal de Clientes\",\n  \"tipoSolucion\": \"web\",\n  \"estado\": \"inactivo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -575,8 +1280,22 @@
           "name": "Eliminar proyecto",
           "request": {
             "method": "DELETE",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/proyectos/1","host": ["{{baseUrl}}"],"path": ["proyectos","1"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/proyectos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "proyectos",
+                "1"
+              ]
+            }
           },
           "response": []
         }
@@ -589,8 +1308,23 @@
           "name": "Listar versiones de un proyecto",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/versiones/proyecto/1","host": ["{{baseUrl}}"],"path": ["versiones","proyecto","1"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/versiones/proyecto/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "versiones",
+                "proyecto",
+                "1"
+              ]
+            }
           },
           "response": []
         },
@@ -598,8 +1332,22 @@
           "name": "Obtener versión por ID",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/versiones/1","host": ["{{baseUrl}}"],"path": ["versiones","1"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/versiones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "versiones",
+                "1"
+              ]
+            }
           },
           "response": []
         },
@@ -608,14 +1356,33 @@
           "request": {
             "method": "POST",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/versiones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "versiones"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"proyectoId\": 1,\n  \"numeroVersion\": \"1.1.0\",\n  \"descripcion\": \"Sprint 2 - módulo de reportes\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/versiones","host": ["{{baseUrl}}"],"path": ["versiones"]}
+              "raw": "{\n  \"proyectoId\": 1,\n  \"numeroVersion\": \"1.1.0\",\n  \"descripcion\": \"Sprint 2 - módulo de reportes\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -624,14 +1391,34 @@
           "request": {
             "method": "PUT",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/versiones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "versiones",
+                "1"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"numeroVersion\": \"1.1.1\",\n  \"descripcion\": \"Corrección de bugs Sprint 2\",\n  \"estado\": \"pendiente\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/versiones/1","host": ["{{baseUrl}}"],"path": ["versiones","1"]}
+              "raw": "{\n  \"numeroVersion\": \"1.1.1\",\n  \"descripcion\": \"Corrección de bugs del Sprint 2\",\n  \"estado\": \"pendiente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -639,54 +1426,22 @@
           "name": "Eliminar versión",
           "request": {
             "method": "DELETE",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/versiones/1","host": ["{{baseUrl}}"],"path": ["versiones","1"]}
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Resultados de Prueba",
-      "item": [
-        {
-          "name": "Listar resultados por versión",
-          "request": {
-            "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/resultadosPrueba/version/1","host": ["{{baseUrl}}"],"path": ["resultadosPrueba","version","1"]}
-          },
-          "response": []
-        },
-        {
-          "name": "Cargar resultado (con métricas RF → genera recomendación automática)",
-          "request": {
-            "method": "POST",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"versionId\": 1,\n  \"nombreArchivo\": \"output.json\",\n  \"formatoArchivo\": \"JSON\",\n  \"rutaArchivo\": null,\n  \"observaciones\": \"Suite: 01-Login | Estado: PASS | Herramienta: Robot 7.4\",\n  \"totalPruebas\": 3,\n  \"pruebasExitosas\": 3,\n  \"pruebasFallidas\": 0,\n  \"cobertura\": 100.00,\n  \"tiempoEjecucion\": 12.44\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/resultadosPrueba","host": ["{{baseUrl}}"],"path": ["resultadosPrueba"]}
-          },
-          "response": []
-        },
-        {
-          "name": "Validar / cambiar estado de resultado",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"estadoValidacion\": \"valido\",\n  \"observaciones\": \"Revisión manual OK\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/resultadosPrueba/1/validar","host": ["{{baseUrl}}"],"path": ["resultadosPrueba","1","validar"]}
+            "url": {
+              "raw": "{{baseUrl}}/versiones/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "versiones",
+                "1"
+              ]
+            }
           },
           "response": []
         }
@@ -699,8 +1454,47 @@
           "name": "Obtener métricas por versión",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/metricas/version/1","host": ["{{baseUrl}}"],"path": ["metricas","version","1"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/metricas/version/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metricas",
+                "version",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener métricas por resultado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/metricas/resultado/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metricas",
+                "resultado",
+                "1"
+              ]
+            }
           },
           "response": []
         }
@@ -713,8 +1507,72 @@
           "name": "Obtener recomendaciones por versión",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/recomendaciones/version/1","host": ["{{baseUrl}}"],"path": ["recomendaciones","version","1"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recomendaciones/version/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recomendaciones",
+                "version",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener recomendación por resultado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recomendaciones/resultado/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recomendaciones",
+                "resultado",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener reglas aplicadas a un resultado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recomendaciones/resultado/1/reglas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recomendaciones",
+                "resultado",
+                "1",
+                "reglas"
+              ]
+            }
           },
           "response": []
         },
@@ -722,8 +1580,23 @@
           "name": "Generar recomendación manualmente",
           "request": {
             "method": "POST",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/recomendaciones/generar/1","host": ["{{baseUrl}}"],"path": ["recomendaciones","generar","1"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recomendaciones/generar/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recomendaciones",
+                "generar",
+                "1"
+              ]
+            }
           },
           "response": []
         }
@@ -733,20 +1606,98 @@
       "name": "Decisiones de Despliegue",
       "item": [
         {
-          "name": "Obtener decisiones por versión",
+          "name": "Obtener decisiones por recomendación",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/decisionesDespliegue/version/1","host": ["{{baseUrl}}"],"path": ["decisionesDespliegue","version","1"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/decisionesDespliegue/recomendacion/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "decisionesDespliegue",
+                "recomendacion",
+                "1"
+              ]
+            }
           },
           "response": []
         },
         {
-          "name": "Obtener decisiones por recomendación",
+          "name": "Obtener decisiones por versión",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/decisionesDespliegue/recomendacion/1","host": ["{{baseUrl}}"],"path": ["decisionesDespliegue","recomendacion","1"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/decisionesDespliegue/version/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "decisionesDespliegue",
+                "version",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener decisión por resultado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/decisionesDespliegue/resultado/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "decisionesDespliegue",
+                "resultado",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener adherencia (decisiones vs. recomendación del sistema)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/decisionesDespliegue/adherencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "decisionesDespliegue",
+                "adherencia"
+              ]
+            },
+            "description": "Total, alineadas, overrides y % de adherencia; se usa en el dashboard y en el capítulo de resultados."
           },
           "response": []
         },
@@ -755,28 +1706,116 @@
           "request": {
             "method": "POST",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/decisionesDespliegue",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "decisionesDespliegue"
+              ]
+            },
+            "description": "decisionFinal: 'aprobado' | 'rechazado' | 'postergado'. Si contradice la recomendación del sistema (override), el comentario debe tener al menos 20 caracteres.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"recomendacionId\": 1,\n  \"decisionFinal\": \"DESPLEGAR\",\n  \"comentario\": \"Todas las pruebas pasaron. Se aprueba el despliegue a producción.\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/decisionesDespliegue","host": ["{{baseUrl}}"],"path": ["decisionesDespliegue"]}
+              "raw": "{\n  \"recomendacionId\": 1,\n  \"decisionFinal\": \"aprobado\",\n  \"comentario\": \"Todas las pruebas pasaron. Se aprueba el despliegue a producción.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }
       ]
     },
     {
-      "name": "Análisis y Métricas",
+      "name": "Análisis e Historial",
       "item": [
         {
           "name": "Historial de análisis (todas las versiones evaluadas)",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/analisis/historial","host": ["{{baseUrl}}"],"path": ["analisis","historial"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/analisis/historial",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analisis",
+                "historial"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Exportar historial a PDF",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/analisis/historial/exportar-pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analisis",
+                "historial",
+                "exportar-pdf"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Exportar historial a planilla (xlsx o csv)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/analisis/historial/exportar?formato=xlsx",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analisis",
+                "historial",
+                "exportar"
+              ],
+              "query": [
+                {
+                  "key": "formato",
+                  "value": "xlsx"
+                }
+              ]
+            }
           },
           "response": []
         }
@@ -786,11 +1825,111 @@
       "name": "Reglas de Evaluación",
       "item": [
         {
-          "name": "Listar todas las reglas activas",
+          "name": "Listar reglas globales activas",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/reglaEvaluacion","host": ["{{baseUrl}}"],"path": ["reglaEvaluacion"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reglaEvaluacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reglaEvaluacion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener umbrales efectivos de un proyecto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reglaEvaluacion/proyecto/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reglaEvaluacion",
+                "proyecto",
+                "1"
+              ]
+            },
+            "description": "Para cada criterio activo devuelve el override del proyecto si existe; si no, el valor global."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear o actualizar umbral personalizado de un proyecto (solo Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reglaEvaluacion/proyecto/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reglaEvaluacion",
+                "proyecto",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"criterio\": \"tasa_exito\",\n  \"umbral\": 92.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar override de un proyecto (vuelve a regir el umbral global)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reglaEvaluacion/proyecto/1/tasa_exito",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reglaEvaluacion",
+                "proyecto",
+                "1",
+                "tasa_exito"
+              ]
+            }
           },
           "response": []
         },
@@ -798,24 +1937,22 @@
           "name": "Obtener regla por ID",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/reglaEvaluacion/1","host": ["{{baseUrl}}"],"path": ["reglaEvaluacion","1"]}
-          },
-          "response": []
-        },
-        {
-          "name": "Actualizar umbral de regla (solo Admin)",
-          "request": {
-            "method": "PUT",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"umbral\": 90.00,\n  \"descripcion\": \"Tasa de éxito mínima requerida para aprobar despliegue\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/reglaEvaluacion/1","host": ["{{baseUrl}}"],"path": ["reglaEvaluacion","1"]}
+            "url": {
+              "raw": "{{baseUrl}}/reglaEvaluacion/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reglaEvaluacion",
+                "1"
+              ]
+            }
           },
           "response": []
         }
@@ -825,11 +1962,24 @@
       "name": "Usuarios (solo Admin)",
       "item": [
         {
-          "name": "Listar todos los usuarios",
+          "name": "Listar usuarios",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/usuarios","host": ["{{baseUrl}}"],"path": ["usuarios"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
           },
           "response": []
         },
@@ -838,14 +1988,33 @@
           "request": {
             "method": "POST",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"María\",\n  \"email\": \"maria@roshka.com\",\n  \"password\": \"Maria2026!\",\n  \"rol\": \"Desarrollador\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/usuarios","host": ["{{baseUrl}}"],"path": ["usuarios"]}
+              "raw": "{\n  \"nombre\": \"María\",\n  \"email\": \"maria@roshka.com\",\n  \"password\": \"Maria2026!\",\n  \"rol\": \"Analista QA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -854,14 +2023,34 @@
           "request": {
             "method": "PUT",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "4"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"María López\",\n  \"email\": \"maria.lopez@roshka.com\",\n  \"rol\": \"Líder Técnico\"\n}"
-            },
-            "url": {"raw": "{{baseUrl}}/usuarios/4","host": ["{{baseUrl}}"],"path": ["usuarios","4"]}
+              "raw": "{\n  \"nombre\": \"María López\",\n  \"email\": \"maria.lopez@roshka.com\",\n  \"rol\": \"Líder Técnico\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -870,11 +2059,35 @@
           "request": {
             "method": "PATCH",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
-            "body": {"mode": "raw","raw": "{\n  \"activo\": true\n}"},
-            "url": {"raw": "{{baseUrl}}/usuarios/4/estado","host": ["{{baseUrl}}"],"path": ["usuarios","4","estado"]}
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/4/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "4",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -883,25 +2096,597 @@
           "request": {
             "method": "PATCH",
             "header": [
-              {"key": "Content-Type","value": "application/json"},
-              {"key": "Authorization","value": "Bearer {{token}}"}
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
-            "body": {"mode": "raw","raw": "{\n  \"activo\": false\n}"},
-            "url": {"raw": "{{baseUrl}}/usuarios/4/estado","host": ["{{baseUrl}}"],"path": ["usuarios","4","estado"]}
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/4/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "4",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener proyectos asignados a un usuario (RF13)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/4/proyectos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "4",
+                "proyectos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reemplazar proyectos asignados a un usuario (RF13)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/4/proyectos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "4",
+                "proyectos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"proyectoIds\": [\n    1,\n    2,\n    3\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }
       ]
     },
     {
-      "name": "Roles",
+      "name": "Roles y Permisos (RF14)",
       "item": [
         {
           "name": "Listar roles activos",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization","value": "Bearer {{token}}"}],
-            "url": {"raw": "{{baseUrl}}/roles","host": ["{{baseUrl}}"],"path": ["roles"]}
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener matriz de permisos de un rol",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles/5/permisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles",
+                "5",
+                "permisos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reemplazar permisos de un rol (solo Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/roles/5/permisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles",
+                "5",
+                "permisos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permisoIds\": [\n    1,\n    2,\n    3,\n    4,\n    5\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auditoría",
+      "item": [
+        {
+          "name": "Listar registros de auditoría con filtros",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auditoria?pagina=1&limite=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auditoria"
+              ],
+              "query": [
+                {
+                  "key": "usuario",
+                  "value": "Carlos",
+                  "disabled": true
+                },
+                {
+                  "key": "accion",
+                  "value": "Create",
+                  "disabled": true
+                },
+                {
+                  "key": "entidad",
+                  "value": "DecisionDespliegue",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaDesde",
+                  "value": "2026-09-01T00:00:00",
+                  "disabled": true
+                },
+                {
+                  "key": "fechaHasta",
+                  "value": "2026-09-30T23:59:59",
+                  "disabled": true
+                },
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener registro de auditoría por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auditoria/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auditoria",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener estadísticas de auditoría",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auditoria/estadisticas?",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auditoria",
+                "estadisticas"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-09-01T00:00:00",
+                  "disabled": true
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-09-30T23:59:59",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Respaldo de Base de Datos (RNF12)",
+      "item": [
+        {
+          "name": "Obtener configuración de respaldo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/backup/configuracion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "backup",
+                "configuracion"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar configuración de respaldo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/backup/configuracion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "backup",
+                "configuracion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"intervaloHoras\": 24,\n  \"carpetaDestino\": \"backups\",\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ejecutar respaldo ahora",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/backup/ejecutar-ahora",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "backup",
+                "ejecutar-ahora"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar respaldos generados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/backup/historial",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "backup",
+                "historial"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Suscripción / Pagos (fuera del alcance de la tesis)",
+      "description": "Módulo de monetización (AdamsPay + PayPal), no asociado a ningún RF/RNF de la tesis (se excluye explícitamente del cálculo de cobertura de RNF08). Los webhooks reales (POST /api/suscripcion/webhook/adams y /webhook/paypal) requieren la firma real de cada pasarela y no se pueden simular de forma confiable desde Postman, por eso se omiten. La versión anterior simulaba un webhook de Pagopar que ya no existe en el código.",
+      "item": [
+        {
+          "name": "GET Planes disponibles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/planes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suscripcion",
+                "planes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Suscripción actual",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/actual",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suscripcion",
+                "actual"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST Iniciar pago (AdamsPay)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/iniciar-pago",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suscripcion",
+                "iniciar-pago"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlan\": 2,\n  \"nombreComprador\": \"Willian Cristaldo\",\n  \"emailComprador\": \"scristaldopy@gmail.com\",\n  \"documentoComprador\": \"5812345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST Iniciar pago (PayPal)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/iniciar-pago-paypal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suscripcion",
+                "iniciar-pago-paypal"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlan\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET Historial de pagos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/pagos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suscripcion",
+                "pagos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST Cambiar plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/suscripcion/cambiar-plan",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suscripcion",
+                "cambiar-plan"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPlan\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }
@@ -918,24 +2703,12 @@
       "value": ""
     },
     {
-      "key": "pagoparPrivateKey",
-      "value": "9321226ee984b4a5dda826d4c8ed555f"
+      "key": "passwordAdmin",
+      "value": "12345678"
     },
     {
-      "key": "hashPedido",
-      "value": ""
-    },
-    {
-      "key": "numeroPedido",
-      "value": ""
-    },
-    {
-      "key": "webhookToken",
-      "value": ""
-    },
-    {
-      "key": "webhookBody",
-      "value": ""
+      "key": "passwordPruebas",
+      "value": "12345678"
     }
   ]
 }

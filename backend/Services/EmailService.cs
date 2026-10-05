@@ -30,7 +30,7 @@ public interface IEmailService
 
     /// <summary>
     /// Envía una alerta automática a los administradores cuando un resultado
-    /// genera recomendación "No Apto para despliegue".
+    /// genera recomendación "No desplegar".
     /// Requiere que el plan activo tenga NotificacionesEmail = true.
     /// </summary>
     Task EnviarAlertaNoAptoAsync(
@@ -38,6 +38,12 @@ public interface IEmailService
         string versionNumero,
         string archivoNombre,
         List<string> destinatarios);
+
+    /// <summary>
+    /// Envía el código de 6 dígitos para el autoservicio de restablecimiento
+    /// de contraseña ("¿Olvidaste tu contraseña?" en Login).
+    /// </summary>
+    Task EnviarCodigoRecuperacionAsync(string destinatario, string nombreUsuario, string codigo, int minutosVigencia);
 }
 
 // ── Implementación ────────────────────────────────────────────────────────────
@@ -171,6 +177,14 @@ public class EmailService : IEmailService
     {
         if (destinatarios.Count == 0) return;
 
+        // Datos controlados por el usuario (nombre de proyecto/versión/archivo):
+        // deben escaparse antes de interpolarlos en HTML — sin esto, un nombre de
+        // archivo con una etiqueta &lt;a&gt;/&lt;script&gt; se enviaría sin escapar en el
+        // correo de alerta a todos los Administradores (HTML injection real).
+        proyectoNombre = System.Net.WebUtility.HtmlEncode(proyectoNombre);
+        versionNumero  = System.Net.WebUtility.HtmlEncode(versionNumero);
+        archivoNombre  = System.Net.WebUtility.HtmlEncode(archivoNombre);
+
         var host     = _config["Email:SmtpHost"]    ?? "";
         var port     = int.Parse(_config["Email:SmtpPort"] ?? "587");
         var user     = _config["Email:Username"]    ?? "";
@@ -204,7 +218,7 @@ public class EmailService : IEmailService
               <div class="header">
                 <h1>Roshka DSS · Alerta de Calidad</h1>
                 <p>Notificación automática del sistema</p>
-                <span class="badge">&#9888; No Apto para Despliegue</span>
+                <span class="badge">&#9888; No Desplegar</span>
               </div>
               <div class="body">
                 <div class="alerta">
@@ -215,7 +229,7 @@ public class EmailService : IEmailService
                   <tr><td>Versión</td><td>{{versionNumero}}</td></tr>
                   <tr><td>Archivo evaluado</td><td>{{archivoNombre}}</td></tr>
                   <tr><td>Fecha de evaluación</td><td>{{fecha}}</td></tr>
-                  <tr><td>Recomendación</td><td><strong style="color:#c0392b">No Apto para Despliegue</strong></td></tr>
+                  <tr><td>Recomendación</td><td><strong style="color:#c0392b">No Desplegar</strong></td></tr>
                 </table>
                 <p style="color:#7e9ab2;font-size:0.82rem;">
                   Ingresá al sistema para revisar las métricas en detalle y registrar la decisión de despliegue correspondiente.
@@ -232,7 +246,73 @@ public class EmailService : IEmailService
         message.From.Add(new MailboxAddress(fromName, from));
         foreach (var dest in destinatarios)
             message.To.Add(MailboxAddress.Parse(dest));
-        message.Subject = $"[Roshka DSS] ⚠ No Apto para Despliegue — {proyectoNombre} v{versionNumero}";
+        message.Subject = $"[Roshka DSS] ⚠ No Desplegar — {proyectoNombre} v{versionNumero}";
+        message.Body = new BodyBuilder { HtmlBody = html }.ToMessageBody();
+
+        using var client = new SmtpClient();
+        await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+        await client.AuthenticateAsync(user, password);
+        await client.SendAsync(message);
+        await client.DisconnectAsync(true);
+    }
+
+    public async Task EnviarCodigoRecuperacionAsync(string destinatario, string nombreUsuario, string codigo, int minutosVigencia)
+    {
+        // Dato controlado por el usuario (nombre) — igual criterio que
+        // EnviarAlertaNoAptoAsync: nunca interpolar sin escapar en HTML.
+        nombreUsuario = System.Net.WebUtility.HtmlEncode(nombreUsuario);
+
+        var host     = _config["Email:SmtpHost"]    ?? "smtp.gmail.com";
+        var port     = int.Parse(_config["Email:SmtpPort"] ?? "587");
+        var user     = _config["Email:Username"]    ?? "";
+        var password = _config["Email:Password"]    ?? "";
+        var from     = _config["Email:FromAddress"] ?? user;
+        var fromName = _config["Email:FromName"]    ?? "Roshka DSS";
+
+        if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(password))
+        {
+            _logger.LogWarning("Email no configurado — omitiendo envío de código de recuperación.");
+            return;
+        }
+
+        var anio = DateTime.Now.Year;
+
+        var html = $$"""
+            <!DOCTYPE html><html><head><meta charset="utf-8">
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #f5f7fa; }
+              .wrap { max-width: 480px; margin: 32px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+              .header { background: #1c2b3a; color: #fff; padding: 28px 32px; }
+              .header h1 { margin: 0 0 4px; font-size: 1.1rem; font-weight: 600; }
+              .header p { margin: 0; font-size: 0.85rem; opacity: .85; }
+              .body { padding: 28px 32px; }
+              .intro { color: #4a647a; font-size: 0.92rem; margin-bottom: 20px; }
+              .codigo { text-align: center; font-size: 2.2rem; font-weight: 800; letter-spacing: 0.35em; color: #1c2b3a; background: #f0f4f8; border-radius: 10px; padding: 18px 12px; margin-bottom: 20px; }
+              .aviso { color: #7e9ab2; font-size: 0.82rem; }
+              .footer { background: #f5f7fa; padding: 20px 32px; text-align: center; font-size: 0.8rem; color: #7e9ab2; }
+            </style></head>
+            <body>
+            <div class="wrap">
+              <div class="header">
+                <h1>Roshka DSS · Recuperación de contraseña</h1>
+                <p>Hola, {{nombreUsuario}}</p>
+              </div>
+              <div class="body">
+                <p class="intro">Recibimos una solicitud para restablecer tu contraseña. Usá el siguiente código en la pantalla de recuperación:</p>
+                <div class="codigo">{{codigo}}</div>
+                <p class="aviso">Este código vence en {{minutosVigencia}} minutos y solo puede usarse una vez. Si no solicitaste este cambio, ignorá este correo — tu contraseña actual sigue siendo válida.</p>
+              </div>
+              <div class="footer">
+                Roshka DSS &copy; {{anio}} &nbsp;|&nbsp; Notificación automática — no responder a este correo.
+              </div>
+            </div>
+            </body></html>
+            """;
+
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress(fromName, from));
+        message.To.Add(MailboxAddress.Parse(destinatario));
+        message.Subject = $"[Roshka DSS] Tu código de recuperación es {codigo}";
         message.Body = new BodyBuilder { HtmlBody = html }.ToMessageBody();
 
         using var client = new SmtpClient();

@@ -15,16 +15,20 @@ public class VersionesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly IAuditoriaService _auditoriaService;
+    private readonly IProyectoAccesoService _acceso;
 
-    public VersionesController(ApplicationDbContext context, IAuditoriaService auditoriaService)
+    public VersionesController(ApplicationDbContext context, IAuditoriaService auditoriaService, IProyectoAccesoService acceso)
     {
         _context = context;
         _auditoriaService = auditoriaService;
+        _acceso = acceso;
     }
 
     [HttpGet("proyecto/{proyectoId}")]
     public async Task<ActionResult<List<VersionDto>>> GetByProyecto(int proyectoId)
     {
+        if (!_acceso.TieneAccesoAProyecto(User, proyectoId)) return Forbid();
+
         var versiones = await _context.Versiones
             .Where(v => v.ProyectoId == proyectoId)
             .ToListAsync();
@@ -43,6 +47,8 @@ public class VersionesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<VersionDto>> GetById(int id)
     {
+        if (!await _acceso.TieneAccesoAVersionAsync(User, id)) return Forbid();
+
         var version = await _context.Versiones.FirstOrDefaultAsync(v => v.Id == id);
         if (version == null)
             return NotFound();
@@ -65,10 +71,22 @@ public class VersionesController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        var proyectoExiste = await _context.Proyectos.AnyAsync(p => p.Id == request.ProyectoId);
+        if (!proyectoExiste)
+            return NotFound(new { message = "El proyecto indicado no existe." });
+
+        if (!_acceso.TieneAccesoAProyecto(User, request.ProyectoId)) return Forbid();
+
+        var numeroTrim = request.NumeroVersion.Trim();
+        var yaExiste = await _context.Versiones.AnyAsync(v =>
+            v.ProyectoId == request.ProyectoId && v.NumeroVersion.ToLower() == numeroTrim.ToLower());
+        if (yaExiste)
+            return BadRequest(new { message = $"Ya existe la versión {numeroTrim} para este proyecto." });
+
         var version = new Models.Version
         {
             ProyectoId = request.ProyectoId,
-            NumeroVersion = request.NumeroVersion,
+            NumeroVersion = numeroTrim,
             Descripcion = request.Descripcion
         };
 
@@ -88,17 +106,39 @@ public class VersionesController : ControllerBase
         });
     }
 
+    private static readonly HashSet<string> EstadosVersionValidos = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "pendiente", "en_evaluacion", "aprobada", "rechazada", "desplegada"
+    };
+
     [HttpPut("{id}")]
     [Authorize(Policy = "gestionar_proyectos")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateVersionDto request)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (request.Estado != null && !EstadosVersionValidos.Contains(request.Estado))
+            return BadRequest(new { message = "estado debe ser 'pendiente', 'en_evaluacion', 'aprobada', 'rechazada' o 'desplegada'." });
+
+        if (!await _acceso.TieneAccesoAVersionAsync(User, id)) return Forbid();
+
         var version = await _context.Versiones.FirstOrDefaultAsync(v => v.Id == id);
         if (version == null)
             return NotFound();
 
+        if (request.NumeroVersion != null)
+        {
+            var numeroTrim = request.NumeroVersion.Trim();
+            var yaExiste = await _context.Versiones.AnyAsync(v =>
+                v.Id != id && v.ProyectoId == version.ProyectoId && v.NumeroVersion.ToLower() == numeroTrim.ToLower());
+            if (yaExiste)
+                return BadRequest(new { message = $"Ya existe la versión {numeroTrim} para este proyecto." });
+        }
+
         var anterior = $"Numero: {version.NumeroVersion}";
 
-        if (request.NumeroVersion != null) version.NumeroVersion = request.NumeroVersion;
+        if (request.NumeroVersion != null) version.NumeroVersion = request.NumeroVersion.Trim();
         if (request.Descripcion != null)   version.Descripcion   = request.Descripcion;
         if (request.Estado != null)        version.Estado        = request.Estado;
 
@@ -115,6 +155,8 @@ public class VersionesController : ControllerBase
     [Authorize(Policy = "gestionar_proyectos")]
     public async Task<IActionResult> Delete(int id)
     {
+        if (!await _acceso.TieneAccesoAVersionAsync(User, id)) return Forbid();
+
         var version = await _context.Versiones.FirstOrDefaultAsync(v => v.Id == id);
         if (version == null)
             return NotFound();

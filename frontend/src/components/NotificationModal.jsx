@@ -5,7 +5,7 @@ function NotificationModal({ isOpen, type, title, message, onClose }) {
 
   return (
     <div className="notif-overlay" onClick={onClose}>
-      <div className="notif-modal" onClick={(e) => e.stopPropagation()}>
+      <div className={`notif-modal ${type === 'success' ? 'notif-success' : 'notif-error'}`} onClick={(e) => e.stopPropagation()}>
         <div className="notif-header">
           <div className="notif-icon-box">
             {type === 'success' ? (

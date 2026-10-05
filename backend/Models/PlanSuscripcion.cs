@@ -23,7 +23,6 @@ public class PlanSuscripcion
 
     // Notificaciones e integraciones
     public bool    NotificacionesEmail   { get; set; }
-    public bool    NotificacionesSlack   { get; set; }
     public bool    IntegracionCicd       { get; set; }
 
     // Soporte

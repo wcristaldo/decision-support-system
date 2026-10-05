@@ -1,0 +1,4 @@
+{
+  "esto": "no tiene la estructura requerida por Robot Framework",
+  "faltan": ["generator", "suite", "statistics"]
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
+import { IconBarChart, IconGear, IconSearch, IconLock } from '../components/icons'
 import '../styles/Login.css'
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -24,26 +25,26 @@ function AboutContent() {
 
       <div className="lm-section">
         <h3>¿Cómo funciona?</h3>
-        <p>El sistema analiza automáticamente los resultados de las pruebas generadas por el pipeline CI/CD y calcula métricas clave de calidad: porcentaje de pruebas exitosas, cobertura de código, tiempo de ejecución y tendencia histórica. Estas métricas se comparan contra umbrales configurables y el sistema emite una recomendación categorizada en tres estados:</p>
+        <p>El sistema analiza automáticamente los resultados de las pruebas generadas por el pipeline CI/CD y calcula métricas clave de calidad: tasa de éxito, tasa de fallo, cobertura de ejecución de pruebas (pruebas ejecutadas sobre el total) y tiempo de ejecución, además de su tendencia histórica. Estas métricas se comparan contra umbrales configurables y el sistema emite una recomendación categorizada en tres estados:</p>
         <div className="lm-states">
           <div className="lm-state lm-state--green">
             <span className="lm-state-dot" />
             <div>
-              <strong>Apto para despliegue</strong>
+              <strong>Desplegar</strong>
               <span>Todos los indicadores superan los umbrales configurados.</span>
             </div>
           </div>
           <div className="lm-state lm-state--yellow">
             <span className="lm-state-dot" />
             <div>
-              <strong>Despliegue condicional</strong>
+              <strong>Revisar</strong>
               <span>Uno o más indicadores están dentro del rango de tolerancia.</span>
             </div>
           </div>
           <div className="lm-state lm-state--red">
             <span className="lm-state-dot" />
             <div>
-              <strong>No apto para despliegue</strong>
+              <strong>No desplegar</strong>
               <span>Indicadores críticos por debajo del umbral mínimo.</span>
             </div>
           </div>
@@ -59,28 +60,28 @@ function AboutContent() {
         <h3>Capacidades principales</h3>
         <div className="lm-caps-grid">
           <div className="lm-cap">
-            <span className="lm-cap-icon">📊</span>
+            <span className="lm-cap-icon"><IconBarChart size={22} /></span>
             <div>
               <strong>Análisis de métricas</strong>
               <span>Cobertura, tasa de éxito, tiempo de ejecución y tendencia histórica por versión.</span>
             </div>
           </div>
           <div className="lm-cap">
-            <span className="lm-cap-icon">⚙️</span>
+            <span className="lm-cap-icon"><IconGear size={22} /></span>
             <div>
               <strong>Reglas configurables</strong>
               <span>Umbrales de calidad ajustables por el administrador según los estándares del equipo.</span>
             </div>
           </div>
           <div className="lm-cap">
-            <span className="lm-cap-icon">🔍</span>
+            <span className="lm-cap-icon"><IconSearch size={22} /></span>
             <div>
               <strong>Trazabilidad completa</strong>
               <span>Historial de decisiones con justificación escrita y registro de auditoría.</span>
             </div>
           </div>
           <div className="lm-cap">
-            <span className="lm-cap-icon">🔒</span>
+            <span className="lm-cap-icon"><IconLock size={22} /></span>
             <div>
               <strong>Control por roles</strong>
               <span>Acceso segmentado para Administrador, Analista QA, Líder Técnico y Gerente QA.</span>
@@ -124,8 +125,9 @@ function planToCard(p, idx) {
       { label: 'Dashboard avanzado',       ok: !!fn.dashboardAvanzado },
       { label: 'Exportar PDF',             ok: !!fn.exportarPdf },
       { label: 'Exportar Excel/CSV',       ok: !!fn.exportarExcel },
-      { label: 'Alertas email/Slack',      ok: !!fn.notificacionesEmail || !!fn.notificacionesSlack },
-      { label: 'Integración CI/CD nativa', ok: !!fn.integracionCicd },
+      { label: 'Alertas por email',        ok: !!fn.notificacionesEmail },
+      { label: 'Carga automática desde CI/CD', ok: !!fn.integracionCicd },
+      { label: 'Auditoría detallada',      ok: !!fn.auditoriaDetallada },
       { label: 'Soporte prioritario',      ok: !!fn.soportePrioritario },
     ],
   }
@@ -184,7 +186,7 @@ function PrivacyContent() {
   return (
     <div className="lm-body lm-body--privacy">
       <h2 className="lm-title">Política de Privacidad</h2>
-      <p className="lm-subtitle">Roshka DSS — Versión 1.0 · Vigente desde enero de 2026</p>
+      <p className="lm-subtitle">Roshka DSS — Versión 1.1 · Última actualización: 26 de septiembre de 2026</p>
 
       <div className="lm-privacy-meta">
         <div><strong>Responsable:</strong> Roshka S.A.</div>
@@ -207,8 +209,8 @@ function PrivacyContent() {
 
         <section>
           <h3>3. Datos Personales Recopilados</h3>
-          <p><strong>Datos de identificación y acceso:</strong> nombre completo del usuario, correo electrónico institucional, contraseña almacenada mediante hashing bcrypt (factor mínimo 10, nunca en texto plano) y rol asignado (Administrador, Analista QA, Líder Técnico o Gerente QA).</p>
-          <p><strong>Registros operativos:</strong> registros de auditoría (acción realizada, fecha, hora, usuario) y decisiones de despliegue (Aprobar / Rechazar / Posponer) con su justificación escrita.</p>
+          <p><strong>Datos de identificación y acceso:</strong> nombre completo del usuario, correo electrónico institucional, contraseña almacenada como hash bcrypt (factor de costo 12, nunca en texto plano), rol asignado (Administrador, Analista QA, Líder Técnico o Gerente QA) y proyectos asignados.</p>
+          <p><strong>Registros operativos:</strong> registros de auditoría (acción realizada, entidad afectada, fecha, hora y usuario), decisiones de despliegue (aprobado / rechazado / postergado) con su justificación escrita y códigos temporales de recuperación de contraseña (de un solo uso, con vigencia de 15 minutos).</p>
           <p><strong>No se recopilan:</strong> número de documento de identidad, teléfono, fecha de nacimiento, datos biométricos ni geolocalización. Los reportes JSON contienen métricas técnicas de software y no constituyen datos personales.</p>
         </section>
 
@@ -219,7 +221,7 @@ function PrivacyContent() {
 
         <section>
           <h3>5. Base Jurídica del Tratamiento</h3>
-          <p>El tratamiento se sustenta en el consentimiento del titular (otorgado al registrarse), la ejecución de la relación laboral, el interés legítimo en garantizar trazabilidad y control interno, y el cumplimiento de obligaciones legales aplicables, conforme a la Ley N.º 7593/2025.</p>
+          <p>El tratamiento se sustenta en la relación laboral o contractual que vincula al usuario con Roshka S.A., en el interés legítimo de garantizar la trazabilidad y el control interno del proceso de despliegue, en el consentimiento del titular y en el cumplimiento de las obligaciones legales aplicables, conforme a la Ley N.º 7593/2025.</p>
         </section>
 
         <section>
@@ -234,7 +236,7 @@ function PrivacyContent() {
 
         <section>
           <h3>8. Medidas de Seguridad de la Información</h3>
-          <p><strong>Técnicas:</strong> autenticación JWT con tiempo de expiración, control de acceso RBAC, contraseñas con bcrypt (mínimo 10 iteraciones), comunicaciones HTTPS/TLS, registros de auditoría, despliegue en contenedores Docker aislados con Nginx como proxy inverso, y gestión de credenciales mediante variables de entorno seguras.</p>
+          <p><strong>Técnicas:</strong> autenticación JWT con tiempo de expiración, control de acceso RBAC por rol y por proyecto asignado, contraseñas con bcrypt (factor de costo 12), limitación de intentos de inicio de sesión, comunicaciones HTTPS/TLS en el entorno de producción, registros de auditoría, respaldo periódico de la base de datos, despliegue en contenedores Docker con Nginx como proxy inverso y gestión de credenciales mediante variables de entorno.</p>
           <p><strong>Organizativas:</strong> acceso por principio de mínimo privilegio, revisión periódica de roles y capacitación del personal en materia de protección de datos.</p>
         </section>
 
@@ -245,12 +247,12 @@ function PrivacyContent() {
 
         <section>
           <h3>10. Consentimiento</h3>
-          <p>Al registrarse en el Sistema, el usuario es informado sobre esta Política y presta su consentimiento de forma activa mediante la aceptación de una casilla de verificación no marcada por defecto. El Sistema registra evidencia del consentimiento: usuario, fecha y hora, versión de la Política y finalidad autorizada.</p>
+          <p>El Sistema no admite el autorregistro: las cuentas son creadas por el Administrador a solicitud de Roshka S.A. Al momento del alta, el usuario es informado sobre esta Política y sobre los Términos y Condiciones de Uso, que permanecen publicados y accesibles en todo momento desde la pantalla de inicio de sesión. El inicio de sesión y el uso del Sistema implican la aceptación de ambos documentos. El titular puede revocar su consentimiento en cualquier momento escribiendo a privacidad@roshka.com.py, lo que conlleva la inactivación de su cuenta.</p>
         </section>
 
         <section>
           <h3>11. Gestión de Sesiones</h3>
-          <p>El Sistema no utiliza cookies de rastreo ni tecnologías de seguimiento de terceros. La sesión se gestiona mediante tokens JWT con vigencia de 24 horas, invalidados automáticamente al cerrar sesión o al expirar el período de inactividad configurado.</p>
+          <p>El Sistema no utiliza cookies de rastreo ni tecnologías de seguimiento de terceros. La sesión se gestiona mediante tokens JWT con una vigencia configurable de 60 minutos por defecto, que se guardan en el almacenamiento de sesión del navegador y se eliminan al cerrar sesión o al cerrar la pestaña. Si el usuario activa la opción «Recordarme», el Sistema guarda únicamente su correo electrónico en el almacenamiento local del navegador para completar el formulario de ingreso; desmarcar la opción lo elimina.</p>
         </section>
 
         <section>
@@ -272,28 +274,290 @@ function PrivacyContent() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────
-   Contenido: Olvidé mi contraseña
+   Contenido: Términos y condiciones de uso
 ───────────────────────────────────────────────────────────────────── */
+function TermsContent() {
+  return (
+    <div className="lm-body lm-body--privacy">
+      <h2 className="lm-title">Términos y Condiciones de Uso</h2>
+      <p className="lm-subtitle">Roshka DSS — Versión 1.0 · Vigente desde el 26 de septiembre de 2026</p>
+
+      <div className="lm-privacy-meta">
+        <div><strong>Titular del servicio:</strong> Roshka S.A.</div>
+        <div><strong>Domicilio:</strong> Asunción, República del Paraguay</div>
+        <div><strong>Contacto:</strong> privacidad@roshka.com.py</div>
+        <div><strong>Marco normativo:</strong> legislación de la República del Paraguay</div>
+      </div>
+
+      <div className="lm-privacy-sections">
+        <section>
+          <h3>1. Objeto y aceptación</h3>
+          <p>Los presentes Términos y Condiciones regulan el acceso y uso de Roshka DSS, sistema de apoyo a la toma de decisiones para el despliegue de software mediante el análisis automatizado de resultados de pruebas. El inicio de sesión en el Sistema implica la aceptación plena de estos Términos y de la Política de Privacidad. Quien no esté de acuerdo debe abstenerse de utilizarlo.</p>
+        </section>
+
+        <section>
+          <h3>2. Definiciones</h3>
+          <p><strong>Sistema:</strong> la aplicación web Roshka DSS y su API. <strong>Usuario:</strong> persona con una cuenta activa en el Sistema. <strong>Administrador:</strong> usuario responsable de gestionar cuentas, roles, permisos, proyectos, reglas de evaluación y respaldos. <strong>Recomendación:</strong> resultado automático del análisis de métricas (Desplegar, Revisar o No desplegar). <strong>Decisión:</strong> resolución final registrada por un usuario autorizado (aprobado, rechazado o postergado).</p>
+        </section>
+
+        <section>
+          <h3>3. Cuentas de usuario y acceso</h3>
+          <p>Las cuentas son creadas por el Administrador; el Sistema no admite el autorregistro. Las credenciales son personales e intransferibles, y el usuario es responsable de su confidencialidad y de toda actividad realizada con ellas. Cada usuario accede únicamente a las funciones de su rol (Administrador, Analista QA, Líder Técnico o Gerente QA) y a los proyectos que tiene asignados, conforme al principio de mínimo privilegio.</p>
+        </section>
+
+        <section>
+          <h3>4. Obligaciones del usuario</h3>
+          <p>El usuario se compromete a: (a) utilizar el Sistema exclusivamente para fines laborales vinculados al proceso de evaluación y despliegue de software; (b) cargar reportes de pruebas auténticos, sin alterar sus resultados; (c) no intentar acceder a información o funciones no autorizadas, ni vulnerar las medidas de seguridad; (d) no divulgar fuera de la organización la información del Sistema; y (e) informar al Administrador cualquier incidente de seguridad o uso indebido del que tenga conocimiento.</p>
+        </section>
+
+        <section>
+          <h3>5. Naturaleza de las recomendaciones</h3>
+          <p>Las recomendaciones que genera el Sistema son de carácter consultivo: resultan de comparar las métricas de cada ejecución de pruebas con los umbrales configurados y no reemplazan el juicio profesional. La decisión final de despliegue y su responsabilidad corresponden exclusivamente al usuario autorizado que la registra, quien debe consignar una justificación escrita, que será más extensa cuando la decisión contradiga la recomendación del Sistema.</p>
+        </section>
+
+        <section>
+          <h3>6. Información cargada</h3>
+          <p>Los reportes de pruebas, métricas, versiones y decisiones registradas en el Sistema son información de Roshka S.A. y de sus clientes, y se utilizan solo para las finalidades del Sistema. El usuario garantiza que cuenta con autorización para cargar la información que ingresa.</p>
+        </section>
+
+        <section>
+          <h3>7. Auditoría y trazabilidad</h3>
+          <p>El Sistema registra en su bitácora de auditoría las acciones relevantes de cada usuario (inicios de sesión, cargas de resultados, cambios de configuración, gestión de usuarios y decisiones de despliegue), con fecha, hora y autor. El usuario acepta este registro, que tiene por objeto garantizar la trazabilidad y la rendición de cuentas del proceso.</p>
+        </section>
+
+        <section>
+          <h3>8. Disponibilidad, mantenimiento y respaldos</h3>
+          <p>Roshka S.A. procurará mantener el Sistema disponible y en funcionamiento, sin garantizar un servicio ininterrumpido ni libre de errores. Podrán realizarse interrupciones programadas por mantenimiento o actualización. La base de datos cuenta con respaldos periódicos configurados por el Administrador.</p>
+        </section>
+
+        <section>
+          <h3>9. Suscripciones y pagos</h3>
+          <p>En la modalidad de suscripción, las condiciones de cada plan (cantidad de usuarios, funcionalidades y precio) son las publicadas en la sección «Planes». Los pagos se procesan a través de pasarelas de terceros, sujetas a sus propios términos; el Sistema no almacena números de tarjeta ni códigos de seguridad, y solo conserva la referencia, el estado y el monto de cada transacción.</p>
+        </section>
+
+        <section>
+          <h3>10. Propiedad intelectual</h3>
+          <p>El Sistema fue desarrollado en el marco de un trabajo de tesis de grado de la carrera de Ingeniería en Sistemas de la Universidad de la Integración de las Américas (UNIDA), en y para Roshka S.A. Los componentes de terceros que lo integran se utilizan conforme a sus respectivas licencias de código abierto. Queda prohibida la copia, modificación o distribución del Sistema sin autorización expresa.</p>
+        </section>
+
+        <section>
+          <h3>11. Suspensión y baja de cuentas</h3>
+          <p>El Administrador podrá inactivar una cuenta ante el incumplimiento de estos Términos, la desvinculación del usuario de la organización o un riesgo para la seguridad del Sistema. La inactivación no elimina los registros de auditoría ni las decisiones asociadas, que se conservan como historial trazable.</p>
+        </section>
+
+        <section>
+          <h3>12. Limitación de responsabilidad</h3>
+          <p>Roshka S.A. no será responsable por daños derivados del uso indebido del Sistema, de la carga de información inexacta, de decisiones de despliegue adoptadas por los usuarios ni de fallas atribuibles a servicios de terceros.</p>
+        </section>
+
+        <section>
+          <h3>13. Datos personales</h3>
+          <p>El tratamiento de los datos personales de los usuarios se rige por la Política de Privacidad del Sistema, elaborada conforme a la Ley N.º 7593/2025 de Protección de Datos Personales.</p>
+        </section>
+
+        <section>
+          <h3>14. Modificaciones</h3>
+          <p>Roshka S.A. podrá modificar estos Términos cuando resulte necesario. La nueva versión se publicará en el Sistema con su fecha de vigencia, y el uso posterior implica su aceptación.</p>
+        </section>
+
+        <section>
+          <h3>15. Ley aplicable y jurisdicción</h3>
+          <p>Estos Términos se rigen por las leyes de la República del Paraguay. Cualquier controversia será sometida a los tribunales ordinarios de la ciudad de Asunción.</p>
+        </section>
+      </div>
+
+      <p className="lm-privacy-footer">© 2026 Roshka S.A. — Todos los derechos reservados. Consultas: privacidad@roshka.com.py</p>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Contenido: Olvidé mi contraseña
+   Autoservicio en 2 pasos: 1) pedir código por correo, 2) ingresar el
+   código de 6 dígitos + nueva contraseña. El backend siempre responde el
+   mismo mensaje genérico en el paso 1, exista o no la cuenta.
+───────────────────────────────────────────────────────────────────── */
+const CODIGO_RE = /^\d{6}$/
+
 function ForgotPasswordContent() {
+  const [paso, setPaso] = useState(1)
+  const [email, setEmail] = useState('')
+  const [codigo, setCodigo] = useState('')
+  const [nuevaPassword, setNuevaPassword] = useState('')
+  const [confirmarPassword, setConfirmarPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [info, setInfo] = useState(null)
+  const [listo, setListo] = useState(false)
+
+  const handlePedirCodigo = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await api.post('/auth/forgot-password', { email })
+      setInfo(res.data?.message || 'Si el correo está registrado, te enviamos un código de recuperación.')
+      setPaso(2)
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo procesar la solicitud. Intentá de nuevo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRestablecer = async (e) => {
+    e.preventDefault()
+    setError(null)
+
+    if (!CODIGO_RE.test(codigo)) {
+      setError('El código tiene 6 dígitos numéricos.')
+      return
+    }
+    if (nuevaPassword.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres.')
+      return
+    }
+    if (nuevaPassword !== confirmarPassword) {
+      setError('Las contraseñas no coinciden.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      await api.post('/auth/reset-password-with-code', { email, codigo, newPassword: nuevaPassword })
+      setListo(true)
+    } catch (err) {
+      setError(err.response?.data?.message || 'El código es inválido o ya venció. Pedí uno nuevo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (listo) {
+    return (
+      <div className="lm-body">
+        <div className="lm-header">
+          <div className="lm-header-icon">DSS</div>
+          <div>
+            <h2 className="lm-title">Contraseña actualizada</h2>
+            <p className="lm-subtitle">Ya podés iniciar sesión con tu nueva contraseña.</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="lm-body">
       <div className="lm-header">
         <div className="lm-header-icon">DSS</div>
         <div>
           <h2 className="lm-title">¿Olvidaste tu contraseña?</h2>
-          <p className="lm-subtitle">Restablecimiento de contraseña</p>
+          <p className="lm-subtitle">
+            {paso === 1
+              ? 'Ingresá tu correo y te enviamos un código de recuperación.'
+              : 'Ingresá el código que te llegó por correo y elegí una nueva contraseña.'}
+          </p>
         </div>
       </div>
 
       <div className="lm-section">
-        <p>
-          Por seguridad, Roshka DSS no envía enlaces de restablecimiento por correo. El restablecimiento de tu
-          contraseña lo realiza un <strong>Administrador del sistema</strong> desde la pantalla de Gestión de Usuarios.
-        </p>
-        <p style={{ marginTop: '0.6rem' }}>
-          Contactate con el administrador de tu equipo para que te asigne una contraseña temporal, y cambiala por una
-          propia desde "Mi perfil" apenas ingreses.
-        </p>
+        {paso === 1 ? (
+          <form onSubmit={handlePedirCodigo} className="lm-forgot-form">
+            <div className="form-group">
+              <label htmlFor="fp-email">Correo electrónico</label>
+              <input
+                id="fp-email"
+                type="email"
+                className="form-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="usuario@roshka.com"
+                autoComplete="email"
+                required
+              />
+            </div>
+
+            {error && (
+              <div className="error-box">
+                <span className="error-icon">!</span>
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button type="submit" className="btn-login" disabled={loading}>
+              {loading ? <><span className="spinner" /> Enviando…</> : 'Enviar código'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleRestablecer} className="lm-forgot-form">
+            {info && <p className="lm-forgot-info">{info}</p>}
+
+            <div className="form-group">
+              <label htmlFor="fp-codigo">Código de 6 dígitos</label>
+              <input
+                id="fp-codigo"
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                className="form-input lm-codigo-input"
+                value={codigo}
+                onChange={(e) => setCodigo(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                autoComplete="one-time-code"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="fp-nueva">Nueva contraseña</label>
+              <input
+                id="fp-nueva"
+                type="password"
+                className="form-input"
+                value={nuevaPassword}
+                onChange={(e) => setNuevaPassword(e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+                autoComplete="new-password"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="fp-confirmar">Confirmar contraseña</label>
+              <input
+                id="fp-confirmar"
+                type="password"
+                className="form-input"
+                value={confirmarPassword}
+                onChange={(e) => setConfirmarPassword(e.target.value)}
+                placeholder="Repetí la nueva contraseña"
+                autoComplete="new-password"
+                required
+              />
+            </div>
+
+            {error && (
+              <div className="error-box">
+                <span className="error-icon">!</span>
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button type="submit" className="btn-login" disabled={loading}>
+              {loading ? <><span className="spinner" /> Restableciendo…</> : 'Restablecer contraseña'}
+            </button>
+
+            <button
+              type="button"
+              className="lp-nav-btn lm-forgot-back"
+              onClick={() => { setPaso(1); setError(null); setCodigo('') }}
+              disabled={loading}
+            >
+              Pedir un código nuevo
+            </button>
+          </form>
+        )}
       </div>
     </div>
   )
@@ -316,6 +580,7 @@ function InfoModal({ type, onClose }) {
         {type === 'about'   && <AboutContent />}
         {type === 'plans'   && <PlansContent />}
         {type === 'privacy' && <PrivacyContent />}
+        {type === 'terms'   && <TermsContent />}
         {type === 'forgot'  && <ForgotPasswordContent />}
       </div>
     </div>
@@ -345,13 +610,17 @@ function Login({ onLogin }) {
     try {
       const response = await api.post('/auth/login', { email, password })
       sessionStorage.setItem('token', response.data.token)
-      sessionStorage.setItem('userRoles', JSON.stringify(response.data.usuario.roles))
       if (recordar) localStorage.setItem(RECORDAR_EMAIL_KEY, email)
       else localStorage.removeItem(RECORDAR_EMAIL_KEY)
       onLogin()
       navigate('/')
     } catch (err) {
-      setError(err.response?.data?.message || 'Credenciales inválidas. Verificá tu correo y contraseña.')
+      if (err.response?.status === 429) {
+        // El backend limita los intentos de inicio de sesión (8 cada 5 minutos por dirección IP)
+        setError('Demasiados intentos de inicio de sesión. Esperá unos minutos antes de volver a intentar.')
+      } else {
+        setError(err.response?.data?.message || 'Credenciales inválidas. Verificá tu correo y contraseña.')
+      }
     } finally {
       setLoading(false)
     }
@@ -409,6 +678,10 @@ function Login({ onLogin }) {
             <span className="lp-nav-sep">·</span>
             <button className="lp-nav-btn" onClick={() => setActiveModal('privacy')}>
               Política de privacidad
+            </button>
+            <span className="lp-nav-sep">·</span>
+            <button className="lp-nav-btn" onClick={() => setActiveModal('terms')}>
+              Términos y condiciones
             </button>
           </nav>
 
@@ -477,10 +750,21 @@ function Login({ onLogin }) {
 
               <div className="form-options">
                 <label className="remember-me">
-                  <input type="checkbox" name="remember" />
+                  <input
+                    type="checkbox"
+                    name="remember"
+                    checked={recordar}
+                    onChange={(e) => setRecordar(e.target.checked)}
+                  />
                   <span>Recordarme</span>
                 </label>
-                <a href="#forgot" className="forgot-link">¿Olvidaste tu contraseña?</a>
+                <button
+                  type="button"
+                  className="forgot-link"
+                  onClick={() => setActiveModal('forgot')}
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
               </div>
 
               {error && (
@@ -498,6 +782,13 @@ function Login({ onLogin }) {
                 )}
               </button>
             </form>
+            <p className="login-aviso">
+              Aviso de privacidad: al ingresar aceptás la{' '}
+              <button type="button" className="forgot-link" onClick={() => setActiveModal('privacy')}>Política de Privacidad</button>
+              {' '}y los{' '}
+              <button type="button" className="forgot-link" onClick={() => setActiveModal('terms')}>Términos y Condiciones de Uso</button>.
+              {' '}Tus datos se tratan conforme a la Ley N.º 7593/2025.
+            </p>
           </div>
         </div>
       </div>

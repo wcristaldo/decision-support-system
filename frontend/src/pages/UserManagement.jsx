@@ -2,10 +2,13 @@
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
 import ResizableTh from '../components/ResizableTh'
+import FilterableTh from '../components/FilterableTh'
+import Pagination from '../components/Pagination'
 import { useResizableColumns } from '../hooks/useResizableColumns'
 import RolesPermisosPanel from '../components/RolesPermisosPanel'
 import { permisoLabel } from '../utils/permisos'
 import { fmtFechaCompleta } from '../utils/fecha'
+import { hasPermiso } from '../utils/auth'
 import '../styles/UserManagement.css'
 
 const UM_COLUMNS = [
@@ -113,10 +116,62 @@ function RolPermisosPreview({ roles, nombreRol }) {
   )
 }
 
+// ── Selector de proyectos asignados (RF13) ─────────────────────────────────────
+// Administrador ve todos los proyectos sin necesidad de asignación explícita
+// (ver ProyectoAccesoService.EsIrrestricto en el backend), así que este
+// selector se oculta por completo cuando el rol elegido es "Administrador".
+
+function ProyectosAsignadosField({ nombreRol, selected, onChange }) {
+  const [proyectos, setProyectos] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (nombreRol === 'Administrador' || !nombreRol) return
+    setLoading(true)
+    api.get('/proyectos')
+      .then(res => setProyectos(res.data))
+      .catch(() => setProyectos([]))
+      .finally(() => setLoading(false))
+  }, [nombreRol])
+
+  if (!nombreRol || nombreRol === 'Administrador') return null
+
+  const toggle = (id) => {
+    onChange(selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id])
+  }
+
+  return (
+    <div className="um-form-group">
+      <label>Proyectos asignados</label>
+      <p className="um-rol-preview-title" style={{ marginTop: 0 }}>
+        Este usuario solo va a ver/operar los proyectos que marques acá.
+      </p>
+      {loading ? (
+        <span className="um-rol-preview-loading">Cargando proyectos…</span>
+      ) : !proyectos || proyectos.length === 0 ? (
+        <span className="um-rol-preview-loading">No hay proyectos creados todavía.</span>
+      ) : (
+        <ul className="um-rol-preview-list" style={{ maxHeight: 180, overflowY: 'auto' }}>
+          {proyectos.map(p => (
+            <li key={p.id}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                <input type="checkbox" style={{ width: 'auto', flex: '0 0 auto', margin: 0 }}
+                  checked={selected.includes(p.id)} onChange={() => toggle(p.id)} />
+                <span>{p.nombre}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 // ── Modal: Crear usuario ──────────────────────────────────────────────────────
 
 function CreateUserModal({ onClose, onSaved, roles }) {
   const [fields, setFields] = useState({ nombre: '', email: '', password: '', confirmar: '', rol: '' })
+  const [proyectosAsignados, setProyectosAsignados] = useState([])
   const [errors, setErrors] = useState({})
   const [showPwd, setShowPwd] = useState(false)
   const [showConf, setShowConf] = useState(false)
@@ -143,12 +198,15 @@ function CreateUserModal({ onClose, onSaved, roles }) {
     setSaving(true)
     setApiError(null)
     try {
-      await api.post('/usuarios', {
+      const res = await api.post('/usuarios', {
         nombre:   fields.nombre.trim(),
         email:    fields.email.trim(),
         password: fields.password,
         rol:      fields.rol,
       })
+      if (fields.rol !== 'Administrador' && proyectosAsignados.length > 0) {
+        await api.put(`/usuarios/${res.data.id}/proyectos`, { proyectoIds: proyectosAsignados })
+      }
       onSaved('Usuario creado correctamente.')
     } catch (err) {
       setApiError(err.response?.data?.message || err.response?.data?.title || 'No se pudo crear el usuario.')
@@ -197,6 +255,8 @@ function CreateUserModal({ onClose, onSaved, roles }) {
               {errors.rol && <span className="um-field-error">{errors.rol}</span>}
               <RolPermisosPreview roles={roles} nombreRol={fields.rol} />
             </div>
+
+            <ProyectosAsignadosField nombreRol={fields.rol} selected={proyectosAsignados} onChange={setProyectosAsignados} />
 
             <div className={`um-form-group ${errors.password ? 'has-error' : ''}`}>
               <label htmlFor="cu-pwd">Contraseña <span className="um-required">*</span></label>
@@ -251,6 +311,7 @@ function EditUserModal({ usuario, onClose, onSaved, roles }) {
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
   const [apiError, setApiError] = useState(null)
+  const [proyectosAsignados, setProyectosAsignados] = useState([])
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -259,6 +320,12 @@ function EditUserModal({ usuario, onClose, onSaved, roles }) {
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
   }, [onClose])
+
+  useEffect(() => {
+    api.get(`/usuarios/${uid}/proyectos`)
+      .then(res => setProyectosAsignados(res.data.proyectoIds || []))
+      .catch(() => setProyectosAsignados([]))
+  }, [uid])
 
   const set = (k) => (e) => {
     setFields(prev => ({ ...prev, [k]: e.target.value }))
@@ -277,6 +344,9 @@ function EditUserModal({ usuario, onClose, onSaved, roles }) {
         email:  fields.email.trim(),
         rol:    fields.rol,
       })
+      if (fields.rol !== 'Administrador') {
+        await api.put(`/usuarios/${uid}/proyectos`, { proyectoIds: proyectosAsignados })
+      }
       onSaved('Usuario actualizado correctamente.')
     } catch (err) {
       setApiError(err.response?.data?.message || err.response?.data?.title || 'No se pudo actualizar el usuario.')
@@ -325,6 +395,8 @@ function EditUserModal({ usuario, onClose, onSaved, roles }) {
               {errors.rol && <span className="um-field-error">{errors.rol}</span>}
               <RolPermisosPreview roles={roles} nombreRol={fields.rol} />
             </div>
+
+            <ProyectosAsignadosField nombreRol={fields.rol} selected={proyectosAsignados} onChange={setProyectosAsignados} />
 
           </div>
           <div className="um-modal-footer">
@@ -448,6 +520,17 @@ export default function UserManagement() {
   const [togglingId,    setTogglingId]    = useState(null)
   const [tab,           setTab]           = useState('usuarios')
   const { widths, startResize } = useResizableColumns('usuarios-lista', UM_COLUMNS)
+  const puedeGestionar = hasPermiso('gestionar_usuarios')
+
+  // ── Filtro por columna + paginación ──────────────────────────────────────
+  const [filtros, setFiltros] = useState({ nombre: '', correo: '', rol: '', estado: '' })
+  const [pagina, setPagina] = useState(1)
+  const [porPagina, setPorPagina] = useState(5)
+
+  const setFiltro = (columna) => (valor) => {
+    setFiltros((prev) => ({ ...prev, [columna]: valor }))
+    setPagina(1)
+  }
 
   const showNotification = (type, title, message) => {
     setNotification({ type, title, message })
@@ -471,7 +554,11 @@ export default function UserManagement() {
 
   useEffect(() => {
     fetchUsuarios()
-    api.get('/roles').then(res => setRoles(res.data)).catch(() => {})
+    if (puedeGestionar) {
+      api.get('/roles').then(res => setRoles(res.data)).catch(() =>
+        showNotification('error', 'Error', 'No se pudieron cargar los roles disponibles.'))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const openCreate = () => { setTarget(null); setModal('create') }
@@ -501,6 +588,31 @@ export default function UserManagement() {
     }
   }
 
+  // Substring, sin distinguir mayúsculas/minúsculas (ej. "Log" encuentra "Login").
+  const contiene = (texto, filtro) =>
+    !filtro || (texto || '').toLowerCase().includes(filtro.trim().toLowerCase())
+
+  const usuariosFiltrados = usuarios
+    .filter((u) => {
+      const rolLabel = u.rol || u.roles?.[0] || ''
+      return (
+        contiene(u.nombre, filtros.nombre) &&
+        contiene(u.email, filtros.correo) &&
+        contiene(rolLabel, filtros.rol) &&
+        contiene(u.estado, filtros.estado)
+      )
+    })
+    // Más nuevos primero: con paginación, un usuario recien creado tiene que
+    // aparecer en la primera pagina, no quedar enterrado al final de la lista.
+    .sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion))
+
+  const totalPaginas = Math.max(1, Math.ceil(usuariosFiltrados.length / porPagina))
+  const paginaSegura = Math.min(pagina, totalPaginas)
+  const usuariosPagina = usuariosFiltrados.slice(
+    (paginaSegura - 1) * porPagina,
+    paginaSegura * porPagina
+  )
+
   return (
     <div className="um-page">
 
@@ -513,7 +625,7 @@ export default function UserManagement() {
               {loading ? '' : `${usuarios.length} usuario${usuarios.length !== 1 ? 's' : ''} registrado${usuarios.length !== 1 ? 's' : ''}`}
             </p>
           </div>
-          {tab === 'usuarios' && (
+          {tab === 'usuarios' && puedeGestionar && (
             <button className="um-btn-nuevo" onClick={openCreate}>
               + Nuevo usuario
             </button>
@@ -524,7 +636,7 @@ export default function UserManagement() {
       <div className="um-tabs">
         {[
           { id: 'usuarios', label: 'Usuarios' },
-          { id: 'roles',    label: 'Roles y permisos' },
+          ...(puedeGestionar ? [{ id: 'roles', label: 'Roles y permisos' }] : []),
         ].map(t => (
           <button
             key={t.id}
@@ -534,7 +646,7 @@ export default function UserManagement() {
         ))}
       </div>
 
-      {tab === 'roles' && (
+      {tab === 'roles' && puedeGestionar && (
         <div className="um-body">
           <RolesPermisosPanel roles={roles} />
         </div>
@@ -546,6 +658,7 @@ export default function UserManagement() {
         {loading ? (
           <div className="um-loading"><span className="um-spinner" /> Cargando usuarios…</div>
         ) : (
+          <>
           <div className="um-table-wrap dss-table-wrap">
             <table className="um-table dss-resizable">
               <colgroup>
@@ -558,10 +671,14 @@ export default function UserManagement() {
               </colgroup>
               <thead>
                 <tr>
-                  <ResizableTh onResizeStart={startResize('nombre', 100)}>Nombre</ResizableTh>
-                  <ResizableTh onResizeStart={startResize('correo', 120)}>Correo</ResizableTh>
-                  <ResizableTh onResizeStart={startResize('rol', 90)}>Rol</ResizableTh>
-                  <ResizableTh onResizeStart={startResize('estado', 70)}>Estado</ResizableTh>
+                  <FilterableTh onResizeStart={startResize('nombre', 100)}
+                    filterValue={filtros.nombre} onFilterChange={setFiltro('nombre')}>Nombre</FilterableTh>
+                  <FilterableTh onResizeStart={startResize('correo', 120)}
+                    filterValue={filtros.correo} onFilterChange={setFiltro('correo')}>Correo</FilterableTh>
+                  <FilterableTh onResizeStart={startResize('rol', 90)}
+                    filterValue={filtros.rol} onFilterChange={setFiltro('rol')}>Rol</FilterableTh>
+                  <FilterableTh onResizeStart={startResize('estado', 70)}
+                    filterValue={filtros.estado} onFilterChange={setFiltro('estado')}>Estado</FilterableTh>
                   <ResizableTh onResizeStart={startResize('creado', 100)}>Creado el</ResizableTh>
                   <ResizableTh onResizeStart={startResize('acciones', 120)}>Acciones</ResizableTh>
                 </tr>
@@ -572,15 +689,20 @@ export default function UserManagement() {
                     <td colSpan={6} className="um-empty-row">No hay usuarios registrados.</td>
                   </tr>
                 )}
-                {usuarios.map((u) => {
+                {usuarios.length > 0 && usuariosFiltrados.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="um-empty-row">Ningún usuario coincide con los filtros aplicados.</td>
+                  </tr>
+                )}
+                {usuariosPagina.map((u) => {
                   const uid     = u.idUsuario ?? u.id
                   const esActivo = u.estado === 'activo' || u.activo === true
                   const rolLabel = u.rol || u.roles?.[0] || '-'
                   return (
                     <tr key={uid}>
-                      <td className="um-td-name">{u.nombre}</td>
-                      <td className="um-td-email">{u.email}</td>
-                      <td className="um-td-rol">{rolLabel}</td>
+                      <td className="um-td-name" title={u.nombre}>{u.nombre}</td>
+                      <td className="um-td-email" title={u.email}>{u.email}</td>
+                      <td className="um-td-rol" title={rolLabel}>{rolLabel}</td>
                       <td>
                         <span className={`um-estado-badge um-estado-badge--${u.estado}`}>{u.estado}</span>
                       </td>
@@ -589,22 +711,28 @@ export default function UserManagement() {
                       </td>
                       <td>
                         <div className="um-actions">
-                          <button className="um-btn-action um-btn-edit"
-                            onClick={() => openEdit(u)} title="Editar usuario">
-                            Editar
-                          </button>
-                          <button
-                            className={`um-btn-action ${esActivo ? 'um-btn-inactivar' : 'um-btn-activar'}`}
-                            onClick={() => toggleEstado(u)}
-                            disabled={togglingId === uid}
-                            title={esActivo ? 'Inactivar usuario' : 'Activar usuario'}
-                          >
-                            {togglingId === uid ? '…' : esActivo ? 'Inactivar' : 'Activar'}
-                          </button>
-                          <button className="um-btn-action um-btn-reset"
-                            onClick={() => openReset(u)} title="Resetear contraseña">
-                            Contraseña
-                          </button>
+                          {puedeGestionar ? (
+                            <>
+                              <button className="um-btn-action um-btn-edit"
+                                onClick={() => openEdit(u)} title="Editar usuario">
+                                Editar
+                              </button>
+                              <button
+                                className={`um-btn-action ${esActivo ? 'um-btn-inactivar' : 'um-btn-activar'}`}
+                                onClick={() => toggleEstado(u)}
+                                disabled={togglingId === uid}
+                                title={esActivo ? 'Inactivar usuario' : 'Activar usuario'}
+                              >
+                                {togglingId === uid ? '…' : esActivo ? 'Inactivar' : 'Activar'}
+                              </button>
+                              <button className="um-btn-action um-btn-reset"
+                                onClick={() => openReset(u)} title="Resetear contraseña">
+                                Contraseña
+                              </button>
+                            </>
+                          ) : (
+                            <span className="um-readonly-note">Solo lectura</span>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -613,6 +741,16 @@ export default function UserManagement() {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            page={paginaSegura}
+            totalPages={totalPaginas}
+            onPageChange={setPagina}
+            pageSize={porPagina}
+            onPageSizeChange={(n) => { setPorPagina(n); setPagina(1) }}
+            totalItems={usuariosFiltrados.length}
+          />
+          </>
         )}
       </div>
       )}

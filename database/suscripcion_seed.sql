@@ -10,7 +10,7 @@ INSERT INTO planes_suscripcion (
     max_proyectos, max_usuarios, max_evaluaciones_mes, max_tamano_archivo_mb,
     historial_dias,
     exportar_pdf, exportar_excel, dashboard_avanzado, auditoria_detallada,
-    notificaciones_email, notificaciones_slack,
+    notificaciones_email,
     integracion_cicd,
     soporte_prioritario, estado
 ) VALUES
@@ -20,7 +20,7 @@ INSERT INTO planes_suscripcion (
     3, 10, 100, 5,
     30,
     FALSE, FALSE, FALSE, FALSE,
-    FALSE, FALSE,
+    FALSE,
     FALSE,
     FALSE, 'activo'
 ),
@@ -30,7 +30,7 @@ INSERT INTO planes_suscripcion (
     10, 25, 500, 20,
     NULL,           -- historial completo
     TRUE, FALSE, TRUE, FALSE,
-    TRUE, FALSE,
+    TRUE,
     FALSE,
     FALSE, 'activo'
 ),
@@ -40,7 +40,7 @@ INSERT INTO planes_suscripcion (
     NULL, NULL, NULL, 100,    -- sin límites
     NULL,           -- historial completo
     TRUE, TRUE, TRUE, TRUE,
-    TRUE, TRUE,
+    TRUE,
     TRUE,
     TRUE, 'activo'
 )

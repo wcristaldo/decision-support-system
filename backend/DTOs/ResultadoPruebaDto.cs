@@ -20,15 +20,23 @@ public class CreateResultadoPruebaDto
     [Required]
     public int VersionId { get; set; }
 
-    [Required]
+    [Required, StringLength(255)]
     public required string NombreArchivo { get; set; }
 
+    [StringLength(20)]
     public string? FormatoArchivo { get; set; } = "JSON";
+
+    [StringLength(255)]
     public string? RutaArchivo { get; set; }
+
+    [StringLength(255)]
     public string? Observaciones { get; set; }
 
     // ── Métricas reales del reporte de pruebas ────────────────────────────────
-    [Required, Range(0, int.MaxValue)]
+    // Mínimo 1: un resultado con 0 pruebas no representa una ejecución real (0%
+    // de éxito por ausencia de datos, no por fallas) y confundiría al motor de
+    // recomendación. El frontend (CargarResultados.jsx) ya exige esto mismo.
+    [Required, Range(1, int.MaxValue, ErrorMessage = "El total de pruebas debe ser al menos 1.")]
     public int TotalPruebas { get; set; }
 
     [Required, Range(0, int.MaxValue)]
@@ -41,7 +49,7 @@ public class CreateResultadoPruebaDto
     [Range(0, int.MaxValue)]
     public int PruebasOmitidas { get; set; } = 0;
 
-    /// <summary>Porcentaje de cobertura de código (0-100).</summary>
+    /// <summary>Cobertura de ejecución de pruebas: pruebas ejecutadas (exitosas + fallidas) sobre el total, en porcentaje (0-100).</summary>
     [Required, Range(0, 100)]
     public decimal Cobertura { get; set; }
 

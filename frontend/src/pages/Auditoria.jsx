@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
 import ResizableTh from '../components/ResizableTh'
+import Pagination from '../components/Pagination'
 import { useResizableColumns } from '../hooks/useResizableColumns'
 import '../styles/Auditoria.css'
 
@@ -26,6 +27,7 @@ function Auditoria() {
     fechaHasta: ''
   })
   const [pagina, setPagina] = useState(1)
+  const [porPagina, setPorPagina] = useState(5)
   const [totalRegistros, setTotalRegistros] = useState(0)
   const { widths, startResize } = useResizableColumns('auditoria-log', AUDIT_COLUMNS)
 
@@ -48,7 +50,7 @@ function Auditoria() {
       if (filtros.fechaDesde) params.append('fechaDesde', filtros.fechaDesde)
       if (filtros.fechaHasta) params.append('fechaHasta', filtros.fechaHasta)
       params.append('pagina', pagina)
-      params.append('limite', 50)
+      params.append('limite', porPagina)
 
       const res = await api.get(`/auditoria?${params.toString()}`)
       setRegistros(res.data.registros || [])
@@ -63,7 +65,8 @@ function Auditoria() {
 
   useEffect(() => {
     fetchRegistros()
-  }, [pagina])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagina, porPagina])
 
   const showNotification = (type, title, message) => {
     setNotification({ type, title, message })
@@ -106,13 +109,7 @@ function Auditoria() {
     }).format(new Date(fecha))
   }
 
-  const totalPaginas = Math.ceil(totalRegistros / 50)
-
-  const VENTANA_PAGINAS = 5
-  let inicioVentana = Math.max(1, pagina - Math.floor(VENTANA_PAGINAS / 2))
-  const finVentana = Math.min(totalPaginas, inicioVentana + VENTANA_PAGINAS - 1)
-  inicioVentana = Math.max(1, finVentana - VENTANA_PAGINAS + 1)
-  const paginasVisibles = Array.from({ length: finVentana - inicioVentana + 1 }, (_, i) => inicioVentana + i)
+  const totalPaginas = Math.max(1, Math.ceil(totalRegistros / porPagina))
 
   return (
     <div className="audit-page">
@@ -248,8 +245,8 @@ function Auditoria() {
                         </span>
                       </td>
                       <td className="audit-td-entidad">{reg.entidadAfectada || '-'}</td>
-                      <td className="audit-td-id">{reg.idRegistroAfectado || '-'}</td>
-                      <td className="audit-td-detalle">{reg.detalle || '-'}</td>
+                      <td className="audit-td-id" title={reg.idRegistroAfectado || undefined}>{reg.idRegistroAfectado || '-'}</td>
+                      <td className="audit-td-detalle" title={reg.detalle || undefined}>{reg.detalle || '-'}</td>
                     </tr>
                   )
                 })}
@@ -258,39 +255,14 @@ function Auditoria() {
           </div>
         )}
 
-        {/* Paginación */}
-        {totalPaginas > 1 && (
-          <div className="audit-pagination">
-            <span className="audit-info">
-              Mostrando {(pagina - 1) * 50 + 1} al {Math.min(pagina * 50, totalRegistros)} de {totalRegistros} registros
-            </span>
-            <div className="audit-pages">
-              <button
-                className="audit-page-btn"
-                disabled={pagina === 1}
-                onClick={() => setPagina(p => Math.max(1, p - 1))}
-              >
-                Anterior
-              </button>
-              {paginasVisibles.map(p => (
-                <button
-                  key={p}
-                  className={`audit-page-btn ${pagina === p ? 'active' : ''}`}
-                  onClick={() => setPagina(p)}
-                >
-                  {p}
-                </button>
-              ))}
-              <button
-                className="audit-page-btn"
-                disabled={pagina === totalPaginas}
-                onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
-              >
-                Siguiente
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          page={pagina}
+          totalPages={totalPaginas}
+          onPageChange={setPagina}
+          pageSize={porPagina}
+          onPageSizeChange={(n) => { setPorPagina(n); setPagina(1) }}
+          totalItems={totalRegistros}
+        />
       </div>
 
       <NotificationModal

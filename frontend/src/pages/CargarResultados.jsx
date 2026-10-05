@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
 import '../styles/CargarResultados.css'
@@ -96,6 +97,9 @@ function parsearRobotFramework(texto) {
 
 function CargarResultados() {
   const fileRef = useRef(null)
+  const [searchParams] = useSearchParams()
+  const proyectoIdUrl = searchParams.get('proyectoId')
+  const versionIdUrl  = searchParams.get('versionId')
 
   const [proyectos,        setProyectos]        = useState([])
   const [versiones,        setVersiones]        = useState([])
@@ -103,6 +107,11 @@ function CargarResultados() {
   const [loadingVersiones, setLoadingVersiones] = useState(false)
   const [proyectoId,       setProyectoId]       = useState('')
   const [versionId,        setVersionId]        = useState('')
+  // Si se llegó desde "Analizar" con proyecto/versión ya conocidos (deep link
+  // "+ Cargar resultado" de AnalisisVersion.jsx), esos dos campos arrancan
+  // precargados y bloqueados para no obligar a re-seleccionar algo que el
+  // sistema ya sabe -- "Cambiar" los libera por si el link no era el correcto.
+  const [bloqueado,        setBloqueado]        = useState(!!(proyectoIdUrl && versionIdUrl))
   const [observaciones,    setObservaciones]    = useState('')
   const [archivo,          setArchivo]          = useState(null)
   const [metricas,         setMetricas]         = useState(null)
@@ -111,19 +120,46 @@ function CargarResultados() {
   const [saving,           setSaving]           = useState(false)
   const [notification,     setNotification]     = useState(null)
 
-  const showNotification = (type, title, message) => {
-    setNotification({ type, title, message })
+  const showNotification = (type, title, message, onAccept) => {
+    setNotification({ type, title, message, onAccept })
   }
   const closeNotification = () => {
+    const onAccept = notification?.onAccept
     setNotification(null)
+    onAccept?.()
   }
 
   useEffect(() => {
     api.get('/proyectos')
       .then(res => setProyectos(res.data))
-      .catch(() => {})
+      .catch(() => showNotification('error', 'Error', 'No se pudieron cargar los proyectos. Recargá la página e intentá de nuevo.'))
       .finally(() => setLoadingProyectos(false))
   }, [])
+
+  const cargarVersionesDeProyecto = async (id) => {
+    setLoadingVersiones(true)
+    try {
+      const res = await api.get(`/versiones/proyecto/${id}`)
+      setVersiones(res.data)
+      return res.data
+    } catch {
+      setVersiones([])
+      return []
+    } finally {
+      setLoadingVersiones(false)
+    }
+  }
+
+  // Precarga proyecto/versión si se llegó desde un deep link (ver ${bloqueado}).
+  useEffect(() => {
+    if (!proyectoIdUrl || !versionIdUrl || loadingProyectos) return
+    if (!proyectos.some(p => String(p.id) === proyectoIdUrl)) return
+    setProyectoId(proyectoIdUrl)
+    cargarVersionesDeProyecto(proyectoIdUrl).then((vs) => {
+      if (vs.some(v => String(v.id) === versionIdUrl)) setVersionId(versionIdUrl)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingProyectos, proyectos])
 
   const handleProyectoChange = async (e) => {
     const val = e.target.value
@@ -131,15 +167,14 @@ function CargarResultados() {
     setVersionId('')
     setVersiones([])
     if (!val) return
-    setLoadingVersiones(true)
-    try {
-      const res = await api.get(`/versiones/proyecto/${val}`)
-      setVersiones(res.data)
-    } catch {
-      setVersiones([])
-    } finally {
-      setLoadingVersiones(false)
-    }
+    cargarVersionesDeProyecto(val)
+  }
+
+  const desbloquear = () => {
+    setBloqueado(false)
+    setProyectoId('')
+    setVersionId('')
+    setVersiones([])
   }
 
   const handleFileChange = async (e) => {
@@ -204,8 +239,10 @@ function CargarResultados() {
         tiempoEjecucion: metricas.tiempoEjecucion,
         tamanoBytes:     archivo.size ?? null,
       })
-      showNotification('success', 'Éxito', 'El resultado fue registrado correctamente.')
-      handleNuevo()
+      showNotification('success', 'Éxito', 'El resultado fue registrado correctamente.', () => {
+        handleNuevo()
+        document.querySelector('.app-main')?.scrollTo({ top: 0, behavior: 'smooth' })
+      })
     } catch (err) {
       const msg = err.response?.data?.message
         || err.response?.data?.title
@@ -217,6 +254,7 @@ function CargarResultados() {
   }
 
   const handleNuevo = () => {
+    setBloqueado(false)
     setProyectoId('')
     setVersionId('')
     setVersiones([])
@@ -256,7 +294,15 @@ function CargarResultados() {
               <h3 className="cr-section-title">
                 <span className="cr-step">1</span>
                 Proyecto y versión
+                {bloqueado && (
+                  <button type="button" className="cr-cambiar-btn" onClick={desbloquear}>
+                    Cambiar
+                  </button>
+                )}
               </h3>
+              {bloqueado && (
+                <p className="cr-precargado-hint">Proyecto y versión precargados desde el análisis.</p>
+              )}
 
               <div className="cr-grid-2">
                 <div className="proy-form-group">
@@ -267,7 +313,7 @@ function CargarResultados() {
                     id="cr-proyecto"
                     value={proyectoId}
                     onChange={handleProyectoChange}
-                    disabled={loadingProyectos}
+                    disabled={loadingProyectos || bloqueado}
                   >
                     <option value="">
                       {loadingProyectos ? 'Cargando proyectos…' : 'Seleccionar proyecto…'}
@@ -289,7 +335,7 @@ function CargarResultados() {
                       setVersionId(e.target.value)
                       if (errores.versionId) setErrores(p => { const n = { ...p }; delete n.versionId; return n })
                     }}
-                    disabled={!proyectoId || loadingVersiones}
+                    disabled={!proyectoId || loadingVersiones || bloqueado}
                   >
                     <option value="">
                       {!proyectoId        ? 'Primero seleccioná un proyecto'
@@ -396,8 +442,8 @@ function CargarResultados() {
                       <span className="cr-rf-meta-val">{metricas.herramienta}</span>
                     </span>
                     <span className="cr-rf-meta-sep" />
-                    <span className="cr-rf-meta-item">
-                      <span className="cr-rf-meta-lbl">Estado</span>
+                    <span className="cr-rf-meta-item" title="Estado que reporta Robot Framework para la suite completa: FAIL si al menos un caso falló, aunque la tasa de éxito general supere el umbral configurado. La recomendación del sistema se calcula sobre esa tasa de éxito, no sobre este estado binario.">
+                      <span className="cr-rf-meta-lbl">Estado de la suite</span>
                       <span className={`cr-rf-badge cr-rf-badge--${metricas.estadoSuite === 'PASS' ? 'pass' : 'fail'}`}>
                         {metricas.estadoSuite}
                       </span>

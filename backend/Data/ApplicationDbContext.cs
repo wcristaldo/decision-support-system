@@ -12,6 +12,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Permiso>          Permisos           { get; set; }
     public DbSet<RolPermiso>       RolPermisos        { get; set; }
     public DbSet<UsuarioRol>       UsuarioRoles       { get; set; }
+    public DbSet<UsuarioProyecto>  UsuarioProyectos   { get; set; }
     public DbSet<Proyecto>         Proyectos          { get; set; }
     public DbSet<Models.Version>   Versiones          { get; set; }
     public DbSet<ReglaEvaluacion>  ReglasEvaluacion   { get; set; }
@@ -22,6 +23,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Recomendacion>    Recomendaciones    { get; set; }
     public DbSet<DecisionDespliegue> DecisionesDespliegue { get; set; }
     public DbSet<Auditoria>        Auditoria          { get; set; }
+    public DbSet<ConfiguracionBackup> ConfiguracionesBackup { get; set; }
+    public DbSet<CodigoResetPassword> CodigosResetPassword { get; set; }
 
     // ── Módulo de suscripciones ──────────────────────────────────────────
     public DbSet<PlanSuscripcion>  PlanesSuscripcion  { get; set; }
@@ -96,6 +99,33 @@ public class ApplicationDbContext : DbContext
             e.Property(ur => ur.Estado).HasColumnName("estado");
             e.HasOne(ur => ur.Usuario).WithMany(u => u.UsuarioRoles).HasForeignKey(ur => ur.IdUsuario);
             e.HasOne(ur => ur.Rol).WithMany(r => r.UsuarioRoles).HasForeignKey(ur => ur.IdRol);
+        });
+
+        // ── USUARIO_PROYECTO ───────────────────────────────────────
+        modelBuilder.Entity<UsuarioProyecto>(e =>
+        {
+            e.ToTable("usuario_proyecto");
+            e.HasKey(up => up.IdUsuarioProyecto);
+            e.Property(up => up.IdUsuarioProyecto).HasColumnName("id_usuario_proyecto");
+            e.Property(up => up.IdUsuario).HasColumnName("id_usuario");
+            e.Property(up => up.IdProyecto).HasColumnName("id_proyecto");
+            e.Property(up => up.FechaAsignacion).HasColumnName("fecha_asignacion");
+            e.HasOne(up => up.Usuario).WithMany().HasForeignKey(up => up.IdUsuario);
+            e.HasOne(up => up.Proyecto).WithMany().HasForeignKey(up => up.IdProyecto);
+        });
+
+        // ── CODIGO_RESET_PASSWORD ──────────────────────────────────
+        modelBuilder.Entity<CodigoResetPassword>(e =>
+        {
+            e.ToTable("codigo_reset_password");
+            e.HasKey(c => c.IdCodigo);
+            e.Property(c => c.IdCodigo).HasColumnName("id_codigo");
+            e.Property(c => c.IdUsuario).HasColumnName("id_usuario");
+            e.Property(c => c.Codigo).HasColumnName("codigo");
+            e.Property(c => c.FechaCreacion).HasColumnName("fecha_creacion");
+            e.Property(c => c.FechaExpiracion).HasColumnName("fecha_expiracion");
+            e.Property(c => c.Usado).HasColumnName("usado");
+            e.HasOne(c => c.Usuario).WithMany().HasForeignKey(c => c.IdUsuario);
         });
 
         // ── PROYECTOS ────────────────────────────────────────────
@@ -235,6 +265,18 @@ public class ApplicationDbContext : DbContext
             e.Property(a => a.IpOrigen).HasColumnName("ip_origen");
         });
 
+        // ── CONFIGURACION_BACKUP ─────────────────────────────────
+        modelBuilder.Entity<ConfiguracionBackup>(e =>
+        {
+            e.ToTable("configuracion_backup");
+            e.HasKey(c => c.Id);
+            e.Property(c => c.Id).HasColumnName("id");
+            e.Property(c => c.IntervaloHoras).HasColumnName("intervalo_horas");
+            e.Property(c => c.CarpetaDestino).HasColumnName("carpeta_destino");
+            e.Property(c => c.Activo).HasColumnName("activo");
+            e.Property(c => c.FechaUltimaEjecucion).HasColumnName("fecha_ultima_ejecucion");
+        });
+
         // ── PLANES_SUSCRIPCION ────────────────────────────────────
         modelBuilder.Entity<PlanSuscripcion>(e =>
         {
@@ -253,7 +295,6 @@ public class ApplicationDbContext : DbContext
             e.Property(p => p.DashboardAvanzado).HasColumnName("dashboard_avanzado");
             e.Property(p => p.AuditoriaDetallada).HasColumnName("auditoria_detallada");
             e.Property(p => p.NotificacionesEmail).HasColumnName("notificaciones_email");
-            e.Property(p => p.NotificacionesSlack).HasColumnName("notificaciones_slack");
             e.Property(p => p.IntegracionCicd).HasColumnName("integracion_cicd");
             e.Property(p => p.SoportePrioritario).HasColumnName("soporte_prioritario");
             e.Property(p => p.Estado).HasColumnName("estado");

@@ -6,7 +6,8 @@ import {
 import api from '../services/api'
 import { decodeJwtPayload } from '../utils/jwt'
 import { fmtFechaCorta } from '../utils/fecha'
-import { getRoles } from '../utils/auth'
+import { getRoles, isGerenteQA, hasPermiso } from '../utils/auth'
+import { IconFolder, IconBarChart, IconCheck, IconWarning, IconLock } from '../components/icons'
 import '../styles/Dashboard.css'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -41,7 +42,7 @@ function fmtFechaHora(dateStr) {
 
 const BASE_MODULES = [
   { to: '/proyectos',          title: 'Proyectos',          desc: 'Gestión de proyectos y versiones.' },
-  { to: '/cargar-resultados',  title: 'Cargar resultados',  desc: 'Registrar un nuevo resultado de pruebas.' },
+  { to: '/cargar-resultados',  title: 'Cargar resultados',  desc: 'Registrar un nuevo resultado de pruebas.', permiso: 'cargar_resultados' },
   { to: '/analisis',           title: 'Análisis y métricas', desc: 'Historial completo de evaluaciones.' },
   { to: '/suscripcion',        title: 'Suscripción',        desc: 'Plan activo, uso y pagos.' },
 ]
@@ -56,8 +57,13 @@ function Dashboard({ onLogout }) {
   const [proyectos, setProyectos] = useState([])
   const [historial, setHistorial] = useState([])
   const [adherencia, setAdherencia] = useState(null)
+  const [dashboardAvanzado, setDashboardAvanzado] = useState(true)
   const [loadingDatos, setLoadingDatos] = useState(true)
   const isAdmin = getRoles().includes('Administrador')
+  // "Adherencia a las recomendaciones" es una métrica de negocio (Gerente QA)
+  // — quedó visible a todos los roles por descuido, inconsistente con el mismo
+  // gateo ya aplicado al "Resumen ejecutivo" de AnalisisVersion.jsx.
+  const esGerente = isAdmin || isGerenteQA()
 
   useEffect(() => {
     const token = sessionStorage.getItem('token')
@@ -74,11 +80,13 @@ function Dashboard({ onLogout }) {
     Promise.all([
       api.get('/proyectos').catch(() => ({ data: [] })),
       api.get('/analisis/historial').catch(() => ({ data: [] })),
-      api.get('/decisionesDespliegue/adherencia').catch(() => ({ data: null })),
-    ]).then(([pRes, hRes, aRes]) => {
+      esGerente ? api.get('/decisionesDespliegue/adherencia').catch(() => ({ data: null })) : Promise.resolve({ data: null }),
+      api.get('/suscripcion/actual').catch(() => ({ data: null })),
+    ]).then(([pRes, hRes, aRes, sRes]) => {
       setProyectos(pRes.data)
       setHistorial(hRes.data)
       setAdherencia(aRes.data)
+      if (sRes.data?.activa) setDashboardAvanzado(!!sRes.data.funcionalidades?.dashboardAvanzado)
     }).finally(() => setLoadingDatos(false))
   }, [])
 
@@ -97,17 +105,27 @@ function Dashboard({ onLogout }) {
     }
   }, [proyectos, historial])
 
-  // Tendencia: últimas 10 evaluaciones cargadas, en orden cronológico
+  // Tendencia: últimas 10 evaluaciones cargadas, en orden cronológico. Si un
+  // mismo día tiene más de una carga, la etiqueta del eje incluye la hora
+  // (fmtFechaHora) — de lo contrario varios puntos quedaban con la misma
+  // etiqueta ("31/8") y no se podía distinguir cuál era cuál de un vistazo.
   const tendencia = useMemo(() => {
-    return [...historial]
+    const ultimas = [...historial]
       .filter(h => h.fechaCarga)
       .sort((a, b) => new Date(a.fechaCarga) - new Date(b.fechaCarga))
       .slice(-10)
-      .map(h => ({
-        fecha:     fmtFechaCorta(h.fechaCarga),
-        tasaExito: h.tasaExito != null ? Number(h.tasaExito) : null,
-        cobertura: h.cobertura != null ? Number(h.cobertura) : null,
-      }))
+
+    const cargasPorDia = ultimas.reduce((acc, h) => {
+      const dia = fmtFechaCorta(h.fechaCarga)
+      acc[dia] = (acc[dia] || 0) + 1
+      return acc
+    }, {})
+
+    return ultimas.map(h => ({
+      fecha:     cargasPorDia[fmtFechaCorta(h.fechaCarga)] > 1 ? fmtFechaHora(h.fechaCarga) : fmtFechaCorta(h.fechaCarga),
+      tasaExito: h.tasaExito != null ? Number(h.tasaExito) : null,
+      cobertura: h.cobertura != null ? Number(h.cobertura) : null,
+    }))
   }, [historial])
 
   // Actividad reciente: últimas 5 evaluaciones
@@ -124,7 +142,8 @@ function Dashboard({ onLogout }) {
     </div>
   )
 
-  const modules = isAdmin ? [...BASE_MODULES, ADMIN_MODULE] : BASE_MODULES
+  const modules = (isAdmin ? [...BASE_MODULES, ADMIN_MODULE] : BASE_MODULES)
+    .filter(m => !m.permiso || hasPermiso(m.permiso))
   const primerNombre = usuario.nombre?.split(' ')[0] || usuario.nombre
   const rolDisplay   = usuario.roles.length > 0 ? usuario.roles[0] : 'Usuario'
 
@@ -152,28 +171,28 @@ function Dashboard({ onLogout }) {
         {/* ── KPIs ── */}
         <div className="dash-stats">
           <div className="dash-stat">
-            <div className="dash-stat-icon dash-stat-icon--total">📁</div>
+            <div className="dash-stat-icon dash-stat-icon--total"><IconFolder size={20} /></div>
             <div>
               <div className="dash-stat-val">{loadingDatos ? '-' : stats.totalProyectos}</div>
               <div className="dash-stat-lbl">Proyectos activos</div>
             </div>
           </div>
           <div className="dash-stat">
-            <div className="dash-stat-icon dash-stat-icon--total">📊</div>
+            <div className="dash-stat-icon dash-stat-icon--total"><IconBarChart size={20} /></div>
             <div>
               <div className="dash-stat-val">{loadingDatos ? '-' : stats.evaluacionesRecientes}</div>
               <div className="dash-stat-lbl">Evaluaciones (30 días)</div>
             </div>
           </div>
           <div className="dash-stat">
-            <div className="dash-stat-icon dash-stat-icon--ok">✓</div>
+            <div className="dash-stat-icon dash-stat-icon--ok"><IconCheck size={20} /></div>
             <div>
               <div className="dash-stat-val">{loadingDatos ? '-' : stats.aptas}</div>
               <div className="dash-stat-lbl">Aptas para desplegar</div>
             </div>
           </div>
           <div className="dash-stat">
-            <div className="dash-stat-icon dash-stat-icon--warn">⚠</div>
+            <div className="dash-stat-icon dash-stat-icon--warn"><IconWarning size={20} /></div>
             <div>
               <div className="dash-stat-val">{loadingDatos ? '-' : stats.atencion}</div>
               <div className="dash-stat-lbl">Requieren atención</div>
@@ -185,7 +204,13 @@ function Dashboard({ onLogout }) {
         <div className="dash-panels">
           <div className="dash-panel dash-panel-chart">
             <h2 className="dash-panel-title">Tendencia de calidad</h2>
-            {tendencia.length > 1 ? (
+            {!dashboardAvanzado ? (
+              <div className="dash-feature-locked">
+                <span className="dash-feature-locked-icon"><IconLock size={22} /></span>
+                <p>El gráfico de tendencia es parte del Dashboard avanzado, no incluido en tu plan actual.</p>
+                <Link to="/suscripcion" className="dash-feature-locked-link">Ver planes</Link>
+              </div>
+            ) : tendencia.length > 1 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={tendencia} margin={{ top: 8, right: 20, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e9ecf1" />
@@ -224,8 +249,8 @@ function Dashboard({ onLogout }) {
           </div>
         </div>
 
-        {/* ── Adherencia a recomendaciones ── */}
-        {!loadingDatos && adherencia && adherencia.total > 0 && (
+        {/* ── Adherencia a recomendaciones (Gerente QA / Admin) ── */}
+        {esGerente && !loadingDatos && adherencia && adherencia.total > 0 && (
           <div className="dash-panel dash-adherencia-panel">
             <div className="dash-adherencia-main">
               <div className="dash-adherencia-value">{adherencia.porcentajeAdherencia}%</div>

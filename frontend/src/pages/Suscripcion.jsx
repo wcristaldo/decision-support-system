@@ -90,7 +90,7 @@ export default function Suscripcion() {
 
   // ── Historial: filtros + paginación ──────────────────────────────────────
   const [paginaActual, setPaginaActual] = useState(1)
-  const [porPagina, setPorPagina]       = useState(10)
+  const [porPagina, setPorPagina]       = useState(5)
   const { widths: pagosWidths, startResize: startPagosResize } = useResizableColumns('suscripcion-pagos', PAGOS_COLUMNS)
   const [filtroEstado, setFiltroEstado] = useState('')
   const [filtroPlan, setFiltroPlan]     = useState('')
@@ -120,11 +120,13 @@ export default function Suscripcion() {
       errores.push(`/actual: ${e.response?.status ?? 'network'} ${e.response?.data?.message ?? e.message}`)
     }
 
-    try {
-      const r = await api.get('/suscripcion/pagos')
-      setPagos(r.data)
-    } catch (e) {
-      errores.push(`/pagos: ${e.response?.status ?? 'network'} ${e.response?.data?.message ?? e.message}`)
+    if (isAdmin()) {
+      try {
+        const r = await api.get('/suscripcion/pagos')
+        setPagos(r.data)
+      } catch (e) {
+        errores.push(`/pagos: ${e.response?.status ?? 'network'} ${e.response?.data?.message ?? e.message}`)
+      }
     }
 
     if (errores.length > 0) setError('Errores al cargar: ' + errores.join(' | '))
@@ -311,7 +313,7 @@ export default function Suscripcion() {
         {[
           { id: 'estado', label: 'Estado actual' },
           { id: 'planes', label: 'Planes' },
-          { id: 'pagos',  label: 'Historial de pagos' },
+          ...(esAdmin ? [{ id: 'pagos', label: 'Historial de pagos' }] : []),
         ].map(t => (
           <button
             key={t.id}
@@ -423,8 +425,7 @@ export default function Suscripcion() {
                     <FeatRow label="Exportar PDF"               ok={p.funcionalidades?.exportarPdf} />
                     <FeatRow label="Exportar Excel/CSV"         ok={p.funcionalidades?.exportarExcel} />
                     <FeatRow label="Alertas por email"          ok={p.funcionalidades?.notificacionesEmail} />
-                    <FeatRow label="Alertas Slack/Teams"        ok={p.funcionalidades?.notificacionesSlack} />
-                    <FeatRow label="Integración CI/CD nativa"   ok={p.funcionalidades?.integracionCicd} />
+                    <FeatRow label="Carga automática desde CI/CD"   ok={p.funcionalidades?.integracionCicd} />
                     <FeatRow label="Auditoría detallada"        ok={p.funcionalidades?.auditoriaDetallada} />
                     <FeatRow label="Soporte prioritario (24 h)" ok={p.funcionalidades?.soportePrioritario} />
                   </div>
@@ -454,7 +455,7 @@ export default function Suscripcion() {
       )}
 
       {/* ══ TAB: HISTORIAL DE PAGOS ══════════════════════════════════════════ */}
-      {tab === 'pagos' && (
+      {tab === 'pagos' && esAdmin && (
         <div className="sus-content">
           <div className="sus-recibo-nota">
             <IcMail />
@@ -503,7 +504,7 @@ export default function Suscripcion() {
                       className="sus-hist-clear"
                       onClick={() => { setFiltroEstado(''); setFiltroPlan(''); setFiltroDesde(''); setFiltroHasta(''); setPaginaActual(1) }}
                     >
-                      ✕ Limpiar filtros
+                      Limpiar filtros
                     </button>
                   )}
                 </div>
@@ -565,7 +566,7 @@ export default function Suscripcion() {
                       onClick={() => setPaginaActual(p => Math.max(1, p - 1))}
                       disabled={paginaActual === 1}
                     >
-                      ← Anterior
+                      Anterior
                     </button>
 
                     <div className="sus-pag-nums">
@@ -589,7 +590,7 @@ export default function Suscripcion() {
                       onClick={() => setPaginaActual(p => Math.min(totalPaginas, p + 1))}
                       disabled={paginaActual === totalPaginas}
                     >
-                      Siguiente →
+                      Siguiente
                     </button>
 
                     <select
@@ -597,7 +598,7 @@ export default function Suscripcion() {
                       onChange={e => { setPorPagina(Number(e.target.value)); setPaginaActual(1) }}
                       className="sus-hist-select sus-pag-size"
                     >
-                      {[5, 10, 15, 20].map(n => (
+                      {[5, 10, 20].map(n => (
                         <option key={n} value={n}>{n} por página</option>
                       ))}
                     </select>

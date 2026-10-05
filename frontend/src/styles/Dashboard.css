@@ -269,6 +269,33 @@
   padding: 1.5rem 0;
 }
 
+.dash-feature-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: auto 0;
+  text-align: center;
+  padding: 1.5rem 1rem;
+}
+
+.dash-feature-locked-icon { color: var(--text-light); display: flex; }
+
+.dash-feature-locked p {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  max-width: 320px;
+  margin: 0;
+}
+
+.dash-feature-locked-link {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--blue-500);
+  text-decoration: none;
+}
+.dash-feature-locked-link:hover { text-decoration: underline; }
+
 .dash-activity-list {
   list-style: none;
   margin: 0; padding: 0;

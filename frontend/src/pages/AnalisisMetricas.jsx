@@ -6,8 +6,10 @@ import {
 import api from '../services/api'
 import NotificationModal from '../components/NotificationModal'
 import ResizableTh from '../components/ResizableTh'
+import Pagination from '../components/Pagination'
 import { useResizableColumns } from '../hooks/useResizableColumns'
 import { fmtFechaCorta, fmtFechaCompleta } from '../utils/fecha'
+import { IconBarChart, IconCheck, IconWarning, IconX, IconFileText, IconTable } from '../components/icons'
 import '../styles/AnalisisMetricas.css'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -78,6 +80,7 @@ function AnalisisMetricas() {
   const [notification, setNotification] = useState(null)
   const [filtro,       setFiltro]       = useState('Todos')
   const [usuarioFiltro, setUsuarioFiltro] = useState('')
+  const [proyectoFiltro, setProyectoFiltro] = useState('')
   const [fechaDesde,    setFechaDesde]    = useState('')
   const [fechaHasta,    setFechaHasta]    = useState('')
   const { widths, startResize } = useResizableColumns('analisis-historial', AM_COLUMNS)
@@ -149,21 +152,37 @@ function AnalisisMetricas() {
     [...new Set(historial.map(h => h.usuarioCargaNombre).filter(Boolean))].sort()
   ), [historial])
 
-  // RF11: historial filtrable por estado, fecha y usuario responsable
+  // Proyectos disponibles para el filtro (derivados de los datos, igual criterio
+  // que usuariosDisponibles) -- con muchos proyectos el historial se vuelve
+  // dificil de leer sin poder acotarlo a uno solo.
+  const proyectosDisponibles = useMemo(() => (
+    [...new Set(historial.map(h => h.proyectoNombre).filter(Boolean))].sort()
+  ), [historial])
+
+  // RF11: historial filtrable por estado, fecha, proyecto y usuario responsable
   const filas = useMemo(() => {
     return historial.filter(h => {
       if (filtro !== 'Todos' && normalizeRec(h.recomendacion) !== filtro) return false
+      if (proyectoFiltro && h.proyectoNombre !== proyectoFiltro) return false
       if (usuarioFiltro && h.usuarioCargaNombre !== usuarioFiltro) return false
       if (fechaDesde && h.fechaCarga && h.fechaCarga.slice(0, 10) < fechaDesde) return false
       if (fechaHasta && h.fechaCarga && h.fechaCarga.slice(0, 10) > fechaHasta) return false
       return true
     })
-  }, [historial, filtro, usuarioFiltro, fechaDesde, fechaHasta])
+  }, [historial, filtro, proyectoFiltro, usuarioFiltro, fechaDesde, fechaHasta])
 
-  const hayFiltrosActivos = filtro !== 'Todos' || usuarioFiltro || fechaDesde || fechaHasta
+  const hayFiltrosActivos = filtro !== 'Todos' || proyectoFiltro || usuarioFiltro || fechaDesde || fechaHasta
   const limpiarFiltros = () => {
-    setFiltro('Todos'); setUsuarioFiltro(''); setFechaDesde(''); setFechaHasta('')
+    setFiltro('Todos'); setProyectoFiltro(''); setUsuarioFiltro(''); setFechaDesde(''); setFechaHasta('')
   }
+
+  // ── Paginación ────────────────────────────────────────────────────────────
+  const [pagina, setPagina] = useState(1)
+  const [porPagina, setPorPagina] = useState(5)
+  useEffect(() => { setPagina(1) }, [filtro, proyectoFiltro, usuarioFiltro, fechaDesde, fechaHasta])
+  const totalPaginas = Math.max(1, Math.ceil(filas.length / porPagina))
+  const paginaSegura = Math.min(pagina, totalPaginas)
+  const filasPagina = filas.slice((paginaSegura - 1) * porPagina, paginaSegura * porPagina)
 
   return (
     <div className="am-page">
@@ -184,28 +203,28 @@ function AnalisisMetricas() {
         {/* ── Cards de resumen ── */}
         <div className="am-stats">
           <div className="am-stat">
-            <div className="am-stat-icon am-stat-icon--total">📊</div>
+            <div className="am-stat-icon am-stat-icon--total"><IconBarChart size={20} /></div>
             <div>
               <div className="am-stat-val">{loading ? '-' : stats.total}</div>
               <div className="am-stat-lbl">Total analizados</div>
             </div>
           </div>
           <div className="am-stat">
-            <div className="am-stat-icon am-stat-icon--ok">✓</div>
+            <div className="am-stat-icon am-stat-icon--ok"><IconCheck size={20} /></div>
             <div>
               <div className="am-stat-val">{loading ? '-' : stats.desplegar}</div>
               <div className="am-stat-lbl">Aptos para desplegar</div>
             </div>
           </div>
           <div className="am-stat">
-            <div className="am-stat-icon am-stat-icon--warn">⚠</div>
+            <div className="am-stat-icon am-stat-icon--warn"><IconWarning size={20} /></div>
             <div>
               <div className="am-stat-val">{loading ? '-' : stats.revisar}</div>
               <div className="am-stat-lbl">Requieren revisión</div>
             </div>
           </div>
           <div className="am-stat">
-            <div className="am-stat-icon am-stat-icon--danger">✕</div>
+            <div className="am-stat-icon am-stat-icon--danger"><IconX size={20} /></div>
             <div>
               <div className="am-stat-val">{loading ? '-' : stats.noDesplegar}</div>
               <div className="am-stat-lbl">No aptos</div>
@@ -264,8 +283,17 @@ function AnalisisMetricas() {
             </div>
           </div>
 
-          {/* RF11: filtros adicionales por fecha y usuario responsable */}
+          {/* RF11: filtros adicionales por proyecto, fecha y usuario responsable */}
           <div className="am-filters-row">
+            <select
+              className="am-filter-select"
+              value={proyectoFiltro}
+              onChange={(e) => setProyectoFiltro(e.target.value)}
+            >
+              <option value="">Todos los proyectos</option>
+              {proyectosDisponibles.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+
             <select
               className="am-filter-select"
               value={usuarioFiltro}
@@ -285,18 +313,18 @@ function AnalisisMetricas() {
             </label>
 
             {hayFiltrosActivos && (
-              <button className="am-filter-clear" onClick={limpiarFiltros}>✕ Limpiar filtros</button>
+              <button className="am-filter-clear" onClick={limpiarFiltros}>Limpiar filtros</button>
             )}
 
             <div className="am-export-group">
               <button className="am-export-btn" disabled={!!exportando} onClick={() => handleExport('pdf')}>
-                {exportando === 'pdf' ? <span className="am-spinner am-spinner-sm" /> : '📄'} PDF
+                {exportando === 'pdf' ? <span className="am-spinner am-spinner-sm" /> : <IconFileText size={16} />} PDF
               </button>
               <button className="am-export-btn" disabled={!!exportando} onClick={() => handleExport('xlsx')}>
-                {exportando === 'xlsx' ? <span className="am-spinner am-spinner-sm" /> : '📊'} Excel
+                {exportando === 'xlsx' ? <span className="am-spinner am-spinner-sm" /> : <IconTable size={16} />} Excel
               </button>
               <button className="am-export-btn" disabled={!!exportando} onClick={() => handleExport('csv')}>
-                {exportando === 'csv' ? <span className="am-spinner am-spinner-sm" /> : '📋'} CSV
+                {exportando === 'csv' ? <span className="am-spinner am-spinner-sm" /> : <IconFileText size={16} />} CSV
               </button>
             </div>
           </div>
@@ -308,7 +336,7 @@ function AnalisisMetricas() {
             </div>
           ) : filas.length === 0 ? (
             <div className="am-empty">
-              <div className="am-empty-icon">📋</div>
+              <div className="am-empty-icon"><IconFileText size={32} /></div>
               <p className="am-empty-title">
                 {filtro === 'Todos' ? 'Aún no hay versiones analizadas' : `Sin resultados para "${badgeLabel(filtro)}"`}
               </p>
@@ -348,10 +376,10 @@ function AnalisisMetricas() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filas.map((h, idx) => (
+                  {filasPagina.map((h, idx) => (
                     <tr key={`${h.versionId}-${h.recomendacionId}-${idx}`}>
                       <td>
-                        <div className="am-td-proyecto">{h.proyectoNombre}</div>
+                        <div className="am-td-proyecto" title={h.proyectoNombre}>{h.proyectoNombre}</div>
                         {h.proyectoTipo && <div className="am-td-tipo">{h.proyectoTipo}</div>}
                       </td>
                       <td>
@@ -388,7 +416,7 @@ function AnalisisMetricas() {
                           to={`/versiones/${h.versionId}/analisis?resultado=${h.resultadoId}`}
                           className="am-btn-ver"
                         >
-                          Ver →
+                          Ver
                         </Link>
                       </td>
                     </tr>
@@ -396,6 +424,17 @@ function AnalisisMetricas() {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {filas.length > 0 && (
+            <Pagination
+              page={paginaSegura}
+              totalPages={totalPaginas}
+              onPageChange={setPagina}
+              pageSize={porPagina}
+              onPageSizeChange={(n) => { setPorPagina(n); setPagina(1) }}
+              totalItems={filas.length}
+            />
           )}
         </div>
 

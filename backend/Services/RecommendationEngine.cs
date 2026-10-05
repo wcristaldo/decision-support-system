@@ -14,7 +14,10 @@ public interface IRecommendationEngine
 /// <summary>
 /// Motor de recomendación automática de despliegue.
 /// Implementa la lógica definida en la tesis (modelo de toma de decisiones,
-/// Capítulo II) y los casos de prueba CP-U01 a CP-U04:
+/// Capítulo II) y los casos de prueba CP-U01 a CP-U04. Los criterios evaluados
+/// se fundamentan en ISO/IEC 25010:2011 (SQuaRE): tasa_exito/tasa_fallo miden
+/// Fiabilidad, cobertura mide Adecuación funcional, tiempo_ejecucion mide
+/// Eficiencia de desempeño.
 ///
 ///   - "mayor_igual": métricas cuyo valor debe ser ≥ umbral (tasa_exito, cobertura)
 ///   - "menor_igual": métricas cuyo valor debe ser ≤ umbral (tasa_fallo, tiempo_ejecucion)
@@ -129,6 +132,11 @@ public class RecommendationEngine : IRecommendationEngine
             bool hayRevisar  = false;
             var detalles     = new List<string>();
 
+            // Formato numérico invariable (punto decimal) — el resto de la app
+            // nunca usa coma decimal, y esta cadena ahora se muestra en la UI
+            // (detalle técnico de AnalisisVersion.jsx).
+            static string F2(decimal v) => v.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+
             foreach (var regla in reglas)
             {
                 if (!metricaDict.TryGetValue(regla.Criterio ?? "", out var valor))
@@ -143,18 +151,18 @@ public class RecommendationEngine : IRecommendationEngine
                     if (valor >= umbral)
                     {
                         resultadoRegla = "cumple";
-                        observacion    = $"{regla.Criterio}: {valor:F2} ≥ {umbral:F2} (umbral)";
+                        observacion    = $"{regla.Criterio}: {F2(valor)} ≥ {F2(umbral)} (umbral)";
                     }
                     else if (valor >= umbral * (1 - Tolerancia))
                     {
                         resultadoRegla = "revisar";
-                        observacion    = $"{regla.Criterio}: {valor:F2} está dentro del margen de tolerancia (umbral: {umbral:F2})";
+                        observacion    = $"{regla.Criterio}: {F2(valor)} está dentro del margen de tolerancia (umbral: {F2(umbral)})";
                         hayRevisar     = true;
                     }
                     else
                     {
                         resultadoRegla = "no_cumple";
-                        observacion    = $"{regla.Criterio}: {valor:F2} < {umbral:F2} (umbral)";
+                        observacion    = $"{regla.Criterio}: {F2(valor)} < {F2(umbral)} (umbral)";
                         hayNoCumple    = true;
                     }
                 }
@@ -163,18 +171,18 @@ public class RecommendationEngine : IRecommendationEngine
                     if (valor <= umbral)
                     {
                         resultadoRegla = "cumple";
-                        observacion    = $"{regla.Criterio}: {valor:F2} ≤ {umbral:F2} (umbral)";
+                        observacion    = $"{regla.Criterio}: {F2(valor)} ≤ {F2(umbral)} (umbral)";
                     }
                     else if (valor <= umbral * (1 + Tolerancia))
                     {
                         resultadoRegla = "revisar";
-                        observacion    = $"{regla.Criterio}: {valor:F2} está dentro del margen de tolerancia (umbral: {umbral:F2})";
+                        observacion    = $"{regla.Criterio}: {F2(valor)} está dentro del margen de tolerancia (umbral: {F2(umbral)})";
                         hayRevisar     = true;
                     }
                     else
                     {
                         resultadoRegla = "no_cumple";
-                        observacion    = $"{regla.Criterio}: {valor:F2} > {umbral:F2} (umbral)";
+                        observacion    = $"{regla.Criterio}: {F2(valor)} > {F2(umbral)} (umbral)";
                         hayNoCumple    = true;
                     }
                 }
@@ -204,19 +212,19 @@ public class RecommendationEngine : IRecommendationEngine
             if (hayNoCumple)
             {
                 tipoRecomendacion = "no_desplegar";
-                resumen           = "No apto para despliegue: una o más métricas están por debajo del umbral mínimo requerido.";
+                resumen           = "No desplegar: una o más métricas están por debajo del umbral mínimo requerido.";
                 evaluacion.EstadoEvaluacion = "completada";
             }
             else if (hayRevisar)
             {
                 tipoRecomendacion = "desplegar_con_observaciones";
-                resumen           = "Requiere revisión: algunas métricas están dentro del margen de tolerancia (±5%) pero no superan el umbral.";
+                resumen           = "Revisar: algunas métricas están dentro del margen de tolerancia (±5%) pero no superan el umbral.";
                 evaluacion.EstadoEvaluacion = "completada";
             }
             else
             {
                 tipoRecomendacion = "desplegar";
-                resumen           = "Apto para despliegue: todas las métricas cumplen los umbrales de calidad establecidos.";
+                resumen           = "Desplegar: todas las métricas cumplen los umbrales de calidad establecidos.";
                 evaluacion.EstadoEvaluacion = "completada";
             }
 
@@ -237,13 +245,20 @@ public class RecommendationEngine : IRecommendationEngine
 
     public async Task<List<Recomendacion>> GetRecommendationsByVersionAsync(int versionId)
     {
-        var resultadoIds = await _context.ResultadosPrueba
+        // Mismo criterio que GetMetricsByVersionAsync (resultado más reciente): si se
+        // mezclaran recomendaciones de ejecuciones anteriores, el semáforo de la versión
+        // podía mostrar "No desplegar" junto a las métricas de una ejecución aprobada.
+        var ultimoResultadoId = await _context.ResultadosPrueba
             .Where(r => r.VersionId == versionId)
+            .OrderByDescending(r => r.FechaCarga)
             .Select(r => r.Id)
-            .ToListAsync();
+            .FirstOrDefaultAsync();
+
+        if (ultimoResultadoId == 0)
+            return new List<Recomendacion>();
 
         var evaluacionIds = await _context.Evaluaciones
-            .Where(e => resultadoIds.Contains(e.ResultadoId))
+            .Where(e => e.ResultadoId == ultimoResultadoId)
             .Select(e => e.Id)
             .ToListAsync();
 

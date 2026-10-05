@@ -1,0 +1,32 @@
+{
+  "generator": "Robot 7.4 (Python 3.12.0 on win32)",
+  "generated": "2026-09-26T11:10:00.000000",
+  "rpa": false,
+  "suite": {
+    "id": "s1",
+    "name": "CP-03 - Recomendacion No desplegar por tasa de exito insuficiente",
+    "status": "FAIL",
+    "start_time": "2026-09-26T11:10:00.000000",
+    "elapsed_time": 30
+  },
+  "statistics": {
+    "total": {
+      "label": "All Tests",
+      "pass": 75,
+      "fail": 15,
+      "skip": 10
+    },
+    "suites": [
+      {
+        "label": "CP-03 - Recomendacion No desplegar por tasa de exito insuficiente",
+        "name": "CP-03 - Recomendacion No desplegar por tasa de exito insuficiente",
+        "id": "s1",
+        "pass": 75,
+        "fail": 15,
+        "skip": 10
+      }
+    ],
+    "tags": []
+  },
+  "errors": []
+}

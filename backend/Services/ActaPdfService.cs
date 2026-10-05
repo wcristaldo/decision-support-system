@@ -49,9 +49,9 @@ public class ActaPdfService : IActaPdfService
 
     private static readonly Dictionary<string, string> RecomendacionLabel = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["desplegar"] = "Apto para despliegue",
-        ["desplegar_con_observaciones"] = "Apto con observaciones (requiere revisión)",
-        ["no_desplegar"] = "No apto para despliegue",
+        ["desplegar"] = "Desplegar",
+        ["desplegar_con_observaciones"] = "Revisar",
+        ["no_desplegar"] = "No desplegar",
     };
 
     private static readonly Dictionary<string, string> DecisionLabel = new(StringComparer.OrdinalIgnoreCase)

@@ -1,0 +1,1680 @@
+{
+"generator":"Robot 7.4 (Python 3.12.0 on win32)",
+"generated":"2026-09-27T12:30:54.157458",
+"rpa":false,
+"suite":{
+"id":"s1",
+"suites":[{
+"id":"s1-s1",
+"setup":{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"${creds} = {'token': '<token-redactado>",
+"level":"INFO",
+"timestamp":"2026-09-27T12:30:54.639534"
+}],
+"name":"Get Cached Login Token",
+"owner":"auth_helper",
+"args":["${DSS_BACKEND_URL}","admin","${DSS_ADMIN_EMAIL}","${DSS_ADMIN_PASSWORD}"],
+"assign":["${creds}"],
+"doc":"Devuelve {token, roles_json} para ${role_key}, reusando un token\ncacheado en disco si todavia no vencio; si no, pide uno real y lo\npersiste para que el resto de los modulos (procesos `robot` separados)\ntambien lo reutilicen.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:54.634521",
+"elapsed_time":0.005013
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening browser 'headlesschrome' to base url 'http://localhost:3000/'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:30:54.639534"
+}],
+"name":"Open Browser",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","${BROWSER}"],
+"doc":"Opens a new browser instance to the optional ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:54.639534",
+"elapsed_time":1.316589
+},{
+"name":"Set Window Size",
+"owner":"SeleniumLibrary",
+"args":["1440","900"],
+"doc":"Sets current windows size to given ``width`` and ``height``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:55.959199",
+"elapsed_time":1.134355
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Executing JavaScript:\nsessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);\nBy using arguments:\n'<token-redactado>' and '[\"Administrador\"]'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:30:57.093554"
+}],
+"name":"Execute Javascript",
+"owner":"SeleniumLibrary",
+"args":["sessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);","ARGUMENTS","${creds}[token]","${creds}[roles_json]"],
+"doc":"Executes the given JavaScript code with possible arguments.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:57.093554",
+"elapsed_time":0.028841
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:30:57.122395"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:57.122395",
+"elapsed_time":0.547301
+},{
+"name":"Wait Until Location Is",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","timeout=10s"],
+"doc":"Waits until the current URL is ``expected``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:57.669696",
+"elapsed_time":0.337556
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:58.007252",
+"elapsed_time":0.010902
+}],
+"name":"Login Session Via Token",
+"owner":"app_keywords",
+"args":["${creds}"],
+"doc":"Entra autenticado inyectando un JWT ya obtenido\ndirectamente en sessionStorage (mismo mecanismo que usa\nLogin.jsx: sessionStorage['token'] + ['userRoles'], ver\nfrontend/src/utils/auth.js) en vez de completar el\nformulario de login. El backend igual revalida el\npermiso real en cada request (DbClaimsTransformation),\nasi que esto no otorga ningun acceso que el usuario no\ntuviera realmente -- solo evita repetir el POST a\n/api/auth/login en cada uno de los 109 archivos de la\nsuite.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:54.639534",
+"elapsed_time":3.378620
+}],
+"name":"Login As Administrador",
+"owner":"app_keywords",
+"doc":"Entra como Administrador SIN pasar por el formulario de\nlogin (ver \"Login Session Via Token\"). El token real se\npide una sola vez por rol y se cachea en disco\n(auth_helper.py) para que TODOS los modulos de la\ncorrida lo reutilicen, aunque cada uno se ejecute como\nun proceso \"robot\" separado (ver run_module.py).",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:54.634521",
+"elapsed_time":3.383633
+},
+"tests":[{
+"id":"s1-s1-t1",
+"body":[{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:30:58.018154"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:58.018154",
+"elapsed_time":0.326940
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:58.345094",
+"elapsed_time":0.105976
+}],
+"name":"Go To Dashboard",
+"owner":"app_keywords",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:58.018154",
+"elapsed_time":0.433465
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"${count} = 4",
+"level":"INFO",
+"timestamp":"2026-09-27T12:30:58.831813"
+}],
+"name":"Get Element Count",
+"owner":"SeleniumLibrary",
+"args":["css=div.dash-stat"],
+"assign":["${count}"],
+"doc":"Returns the number of elements matching ``locator``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:58.451619",
+"elapsed_time":0.380194
+},{
+"name":"Should Be True",
+"owner":"BuiltIn",
+"args":["${count} >= 4"],
+"doc":"Fails if the given condition is not true.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:58.831813",
+"elapsed_time":0.000000
+},{
+"name":"Log To Console",
+"owner":"BuiltIn",
+"args":["CP-DASHBOARD-01: ${count} TARJETAS KPI VISIBLES"],
+"doc":"Logs the given message to the console.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:58.831813",
+"elapsed_time":0.000000
+}],
+"teardown":{
+"name":"Run Keyword If Test Failed",
+"owner":"BuiltIn",
+"args":["Capture Screenshot On Failure","CP-DASHBOARD-01"],
+"doc":"Runs the given keyword with the given arguments, if the test failed.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:58.831813",
+"elapsed_time":0.003801
+},
+"name":"CP-DASHBOARD-01 Acceso al Dashboard y visibilidad de las tarjetas KPI",
+"doc":"Pasos:\n1. Iniciar sesi\u00f3n como Administrador\nResultado esperado: se muestran las 4 tarjetas KPI\n(div.dash-stat): Proyectos activos, Evaluaciones 30 d\u00edas,\nAptas para desplegar, Requieren atenci\u00f3n.",
+"tags":["CP-DASHBOARD-01"],
+"lineno":7,
+"status":"PASS",
+"start_time":"2026-09-27T12:30:58.018154",
+"elapsed_time":0.818056
+}],
+"teardown":{
+"body":[{
+"body":[{
+"name":"Close All Browsers",
+"owner":"SeleniumLibrary",
+"doc":"Closes all open browsers and resets the browser cache.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:58.838207",
+"elapsed_time":2.334948
+}],
+"name":"Run Keyword And Ignore Error",
+"owner":"BuiltIn",
+"args":["Close All Browsers"],
+"doc":"Runs the given keyword with the given arguments and ignores possible error.",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:58.836739",
+"elapsed_time":2.336416
+}],
+"name":"Close Browser If Open",
+"owner":"app_keywords",
+"doc":"Suite Teardown seguro: no falla si el navegador ya se cerro\n(ej. un test que verifica logout ya lo cerro el mismo).",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:58.836739",
+"elapsed_time":2.336416
+},
+"name":"CP-DASHBOARD-01 Acceso Y KPIs Visibles",
+"source":"C:\\Users\\William Cristaldo\\Documents\\automatizaciones\\tesis-automation\\web-robot\\tests\\03-dashboard\\CP-DASHBOARD-01_Acceso_Y_KPIs_Visibles.robot",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:54.203083",
+"elapsed_time":6.970072
+},{
+"id":"s1-s2",
+"setup":{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"${creds} = {'token': '<token-redactado>",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:01.190369"
+}],
+"name":"Get Cached Login Token",
+"owner":"auth_helper",
+"args":["${DSS_BACKEND_URL}","admin","${DSS_ADMIN_EMAIL}","${DSS_ADMIN_PASSWORD}"],
+"assign":["${creds}"],
+"doc":"Devuelve {token, roles_json} para ${role_key}, reusando un token\ncacheado en disco si todavia no vencio; si no, pide uno real y lo\npersiste para que el resto de los modulos (procesos `robot` separados)\ntambien lo reutilicen.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:01.190369",
+"elapsed_time":0.000000
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening browser 'headlesschrome' to base url 'http://localhost:3000/'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:01.190369"
+}],
+"name":"Open Browser",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","${BROWSER}"],
+"doc":"Opens a new browser instance to the optional ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:01.190369",
+"elapsed_time":2.023657
+},{
+"name":"Set Window Size",
+"owner":"SeleniumLibrary",
+"args":["1440","900"],
+"doc":"Sets current windows size to given ``width`` and ``height``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:03.216960",
+"elapsed_time":0.057401
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Executing JavaScript:\nsessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);\nBy using arguments:\n'<token-redactado>' and '[\"Administrador\"]'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:03.278372"
+}],
+"name":"Execute Javascript",
+"owner":"SeleniumLibrary",
+"args":["sessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);","ARGUMENTS","${creds}[token]","${creds}[roles_json]"],
+"doc":"Executes the given JavaScript code with possible arguments.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:03.274361",
+"elapsed_time":0.014695
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:03.289056"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:03.289056",
+"elapsed_time":0.574409
+},{
+"name":"Wait Until Location Is",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","timeout=10s"],
+"doc":"Waits until the current URL is ``expected``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:03.864169",
+"elapsed_time":0.313642
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.177811",
+"elapsed_time":0.014859
+}],
+"name":"Login Session Via Token",
+"owner":"app_keywords",
+"args":["${creds}"],
+"doc":"Entra autenticado inyectando un JWT ya obtenido\ndirectamente en sessionStorage (mismo mecanismo que usa\nLogin.jsx: sessionStorage['token'] + ['userRoles'], ver\nfrontend/src/utils/auth.js) en vez de completar el\nformulario de login. El backend igual revalida el\npermiso real en cada request (DbClaimsTransformation),\nasi que esto no otorga ningun acceso que el usuario no\ntuviera realmente -- solo evita repetir el POST a\n/api/auth/login en cada uno de los 109 archivos de la\nsuite.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:01.190369",
+"elapsed_time":3.002301
+}],
+"name":"Login As Administrador",
+"owner":"app_keywords",
+"doc":"Entra como Administrador SIN pasar por el formulario de\nlogin (ver \"Login Session Via Token\"). El token real se\npide una sola vez por rol y se cachea en disco\n(auth_helper.py) para que TODOS los modulos de la\ncorrida lo reutilicen, aunque cada uno se ejecute como\nun proceso \"robot\" separado (ver run_module.py).",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:01.190369",
+"elapsed_time":3.002301
+},
+"tests":[{
+"id":"s1-s2-t1",
+"body":[{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:04.192670"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.192670",
+"elapsed_time":0.307508
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.502951",
+"elapsed_time":0.054569
+}],
+"name":"Go To Dashboard",
+"owner":"app_keywords",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.192670",
+"elapsed_time":0.364850
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Current page contains element 'xpath=//a[contains(@class,\"dash-card\")][contains(., \"Proyectos\")]'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:04.719816"
+}],
+"name":"Page Should Contain Element",
+"owner":"SeleniumLibrary",
+"args":["xpath=//a[contains(@class,\"dash-card\")][contains(., \"Proyectos\")]"],
+"doc":"Verifies that element ``locator`` is found on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.557520",
+"elapsed_time":0.162296
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Current page contains element 'xpath=//a[contains(@class,\"dash-card\")][contains(., \"Cargar resultados\")]'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:04.733354"
+}],
+"name":"Page Should Contain Element",
+"owner":"SeleniumLibrary",
+"args":["xpath=//a[contains(@class,\"dash-card\")][contains(., \"Cargar resultados\")]"],
+"doc":"Verifies that element ``locator`` is found on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.719816",
+"elapsed_time":0.013538
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Current page contains element 'xpath=//a[contains(@class,\"dash-card\")][contains(., \"Gesti\u00f3n de usuarios\")]'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:04.749657"
+}],
+"name":"Page Should Contain Element",
+"owner":"SeleniumLibrary",
+"args":["xpath=//a[contains(@class,\"dash-card\")][contains(., \"Gesti\u00f3n de usuarios\")]"],
+"doc":"Verifies that element ``locator`` is found on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.733354",
+"elapsed_time":0.018479
+},{
+"name":"Log To Console",
+"owner":"BuiltIn",
+"args":["CP-DASHBOARD-02: ACCESOS RAPIDOS DE ADMIN CORRECTOS"],
+"doc":"Logs the given message to the console.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.751833",
+"elapsed_time":0.000917
+}],
+"teardown":{
+"name":"Run Keyword If Test Failed",
+"owner":"BuiltIn",
+"args":["Capture Screenshot On Failure","CP-DASHBOARD-02"],
+"doc":"Runs the given keyword with the given arguments, if the test failed.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.752750",
+"elapsed_time":0.002898
+},
+"name":"CP-DASHBOARD-02 El grid de accesos r\u00e1pidos incluye \"Gesti\u00f3n de usuarios\" para Administrador",
+"doc":"Pasos:\n1. Iniciar sesi\u00f3n como Administrador\n2. Revisar el grid \"Accesos r\u00e1pidos\" (div.dash-grid)\nResultado esperado: incluye las tarjetas Proyectos, Cargar\nresultados, An\u00e1lisis y m\u00e9tricas, Suscripci\u00f3n, Y ADEM\u00c1S\n\"Gesti\u00f3n de usuarios\" (solo visible para Administrador).",
+"tags":["CP-DASHBOARD-02"],
+"lineno":7,
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.192670",
+"elapsed_time":0.562978
+}],
+"teardown":{
+"body":[{
+"body":[{
+"name":"Close All Browsers",
+"owner":"SeleniumLibrary",
+"doc":"Closes all open browsers and resets the browser cache.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.756894",
+"elapsed_time":2.303974
+}],
+"name":"Run Keyword And Ignore Error",
+"owner":"BuiltIn",
+"args":["Close All Browsers"],
+"doc":"Runs the given keyword with the given arguments and ignores possible error.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.756894",
+"elapsed_time":2.303974
+}],
+"name":"Close Browser If Open",
+"owner":"app_keywords",
+"doc":"Suite Teardown seguro: no falla si el navegador ya se cerro\n(ej. un test que verifica logout ya lo cerro el mismo).",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:04.756894",
+"elapsed_time":2.303974
+},
+"name":"CP-DASHBOARD-02 Accesos Rapidos Admin",
+"source":"C:\\Users\\William Cristaldo\\Documents\\automatizaciones\\tesis-automation\\web-robot\\tests\\03-dashboard\\CP-DASHBOARD-02_Accesos_Rapidos_Admin.robot",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:01.173155",
+"elapsed_time":5.887713
+},{
+"id":"s1-s3",
+"setup":{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"${creds} = {'token': '<token-redactado>",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:07.070714"
+}],
+"name":"Get Cached Login Token",
+"owner":"auth_helper",
+"args":["${DSS_BACKEND_URL}","analista","${DSS_ANALISTA_EMAIL}","${DSS_ANALISTA_PASSWORD}"],
+"assign":["${creds}"],
+"doc":"Devuelve {token, roles_json} para ${role_key}, reusando un token\ncacheado en disco si todavia no vencio; si no, pide uno real y lo\npersiste para que el resto de los modulos (procesos `robot` separados)\ntambien lo reutilicen.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:07.070714",
+"elapsed_time":0.014412
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening browser 'headlesschrome' to base url 'http://localhost:3000/'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:07.085126"
+}],
+"name":"Open Browser",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","${BROWSER}"],
+"doc":"Opens a new browser instance to the optional ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:07.085126",
+"elapsed_time":1.841109
+},{
+"name":"Set Window Size",
+"owner":"SeleniumLibrary",
+"args":["1440","900"],
+"doc":"Sets current windows size to given ``width`` and ``height``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:08.926235",
+"elapsed_time":0.042756
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Executing JavaScript:\nsessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);\nBy using arguments:\n'<token-redactado>' and '[\"Analista QA\"]'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:08.971801"
+}],
+"name":"Execute Javascript",
+"owner":"SeleniumLibrary",
+"args":["sessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);","ARGUMENTS","${creds}[token]","${creds}[roles_json]"],
+"doc":"Executes the given JavaScript code with possible arguments.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:08.970871",
+"elapsed_time":0.010749
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:08.982411"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:08.982411",
+"elapsed_time":0.412666
+},{
+"name":"Wait Until Location Is",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","timeout=10s"],
+"doc":"Waits until the current URL is ``expected``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:09.395077",
+"elapsed_time":0.316803
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:09.712892",
+"elapsed_time":0.013027
+}],
+"name":"Login Session Via Token",
+"owner":"app_keywords",
+"args":["${creds}"],
+"doc":"Entra autenticado inyectando un JWT ya obtenido\ndirectamente en sessionStorage (mismo mecanismo que usa\nLogin.jsx: sessionStorage['token'] + ['userRoles'], ver\nfrontend/src/utils/auth.js) en vez de completar el\nformulario de login. El backend igual revalida el\npermiso real en cada request (DbClaimsTransformation),\nasi que esto no otorga ningun acceso que el usuario no\ntuviera realmente -- solo evita repetir el POST a\n/api/auth/login en cada uno de los 109 archivos de la\nsuite.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:07.085126",
+"elapsed_time":2.640793
+}],
+"name":"Login As Analista Qa",
+"owner":"app_keywords",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:07.070714",
+"elapsed_time":2.655205
+},
+"tests":[{
+"id":"s1-s3-t1",
+"body":[{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:09.733940"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:09.733940",
+"elapsed_time":0.180750
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:09.914690",
+"elapsed_time":0.147514
+}],
+"name":"Go To Dashboard",
+"owner":"app_keywords",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:09.733940",
+"elapsed_time":0.328264
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Current page does not contain element 'xpath=//a[contains(@class,\"dash-card\")][contains(., \"Gesti\u00f3n de usuarios\")]'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:10.115297"
+}],
+"name":"Page Should Not Contain Element",
+"owner":"SeleniumLibrary",
+"args":["xpath=//a[contains(@class,\"dash-card\")][contains(., \"Gesti\u00f3n de usuarios\")]"],
+"doc":"Verifies that element ``locator`` is not found on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:10.062204",
+"elapsed_time":0.053093
+},{
+"name":"Log To Console",
+"owner":"BuiltIn",
+"args":["CP-DASHBOARD-03: ANALISTA QA NO VE GESTION DE USUARIOS"],
+"doc":"Logs the given message to the console.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:10.115297",
+"elapsed_time":0.002072
+}],
+"teardown":{
+"name":"Run Keyword If Test Failed",
+"owner":"BuiltIn",
+"args":["Capture Screenshot On Failure","CP-DASHBOARD-03"],
+"doc":"Runs the given keyword with the given arguments, if the test failed.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:10.117369",
+"elapsed_time":0.000000
+},
+"name":"CP-DASHBOARD-03 El Analista QA no ve la tarjeta \"Gesti\u00f3n de usuarios\"",
+"doc":"Pasos:\n1. Iniciar sesi\u00f3n como Analista QA (sin gestionar_usuarios\n   ni ver_usuarios)\nResultado esperado: el grid \"Accesos r\u00e1pidos\" NO incluye\nla tarjeta \"Gesti\u00f3n de usuarios\" (RBAC, Dashboard.jsx).",
+"tags":["CP-DASHBOARD-03"],
+"lineno":7,
+"status":"PASS",
+"start_time":"2026-09-27T12:31:09.725919",
+"elapsed_time":0.391450
+}],
+"teardown":{
+"body":[{
+"body":[{
+"name":"Close All Browsers",
+"owner":"SeleniumLibrary",
+"doc":"Closes all open browsers and resets the browser cache.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:10.117369",
+"elapsed_time":2.267185
+}],
+"name":"Run Keyword And Ignore Error",
+"owner":"BuiltIn",
+"args":["Close All Browsers"],
+"doc":"Runs the given keyword with the given arguments and ignores possible error.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:10.117369",
+"elapsed_time":2.267852
+}],
+"name":"Close Browser If Open",
+"owner":"app_keywords",
+"doc":"Suite Teardown seguro: no falla si el navegador ya se cerro\n(ej. un test que verifica logout ya lo cerro el mismo).",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:10.117369",
+"elapsed_time":2.268717
+},
+"name":"CP-DASHBOARD-03 Accesos Rapidos Analista Sin Gestion Usuarios",
+"source":"C:\\Users\\William Cristaldo\\Documents\\automatizaciones\\tesis-automation\\web-robot\\tests\\03-dashboard\\CP-DASHBOARD-03_Accesos_Rapidos_Analista_Sin_Gestion_Usuarios.robot",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:07.060868",
+"elapsed_time":5.325218
+},{
+"id":"s1-s4",
+"tests":[{
+"id":"s1-s4-t1",
+"body":[{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"${creds} = {'token': '<token-redactado>",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:12.402480"
+}],
+"name":"Get Cached Login Token",
+"owner":"auth_helper",
+"args":["${DSS_BACKEND_URL}","analista","${DSS_ANALISTA_EMAIL}","${DSS_ANALISTA_PASSWORD}"],
+"assign":["${creds}"],
+"doc":"Devuelve {token, roles_json} para ${role_key}, reusando un token\ncacheado en disco si todavia no vencio; si no, pide uno real y lo\npersiste para que el resto de los modulos (procesos `robot` separados)\ntambien lo reutilicen.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:12.402480",
+"elapsed_time":0.000000
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening browser 'headlesschrome' to base url 'http://localhost:3000/'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:12.412535"
+}],
+"name":"Open Browser",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","${BROWSER}"],
+"doc":"Opens a new browser instance to the optional ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:12.402480",
+"elapsed_time":1.674882
+},{
+"name":"Set Window Size",
+"owner":"SeleniumLibrary",
+"args":["1440","900"],
+"doc":"Sets current windows size to given ``width`` and ``height``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:14.078735",
+"elapsed_time":0.041200
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Executing JavaScript:\nsessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);\nBy using arguments:\n'<token-redactado>' and '[\"Analista QA\"]'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:14.119935"
+}],
+"name":"Execute Javascript",
+"owner":"SeleniumLibrary",
+"args":["sessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);","ARGUMENTS","${creds}[token]","${creds}[roles_json]"],
+"doc":"Executes the given JavaScript code with possible arguments.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:14.119935",
+"elapsed_time":0.009690
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:14.129625"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:14.129625",
+"elapsed_time":0.341812
+},{
+"name":"Wait Until Location Is",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","timeout=10s"],
+"doc":"Waits until the current URL is ``expected``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:14.471437",
+"elapsed_time":0.206831
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:14.678268",
+"elapsed_time":0.008164
+}],
+"name":"Login Session Via Token",
+"owner":"app_keywords",
+"args":["${creds}"],
+"doc":"Entra autenticado inyectando un JWT ya obtenido\ndirectamente en sessionStorage (mismo mecanismo que usa\nLogin.jsx: sessionStorage['token'] + ['userRoles'], ver\nfrontend/src/utils/auth.js) en vez de completar el\nformulario de login. El backend igual revalida el\npermiso real en cada request (DbClaimsTransformation),\nasi que esto no otorga ningun acceso que el usuario no\ntuviera realmente -- solo evita repetir el POST a\n/api/auth/login en cada uno de los 109 archivos de la\nsuite.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:12.402480",
+"elapsed_time":2.283952
+}],
+"name":"Login As Analista Qa",
+"owner":"app_keywords",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:12.402480",
+"elapsed_time":2.283952
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:14.686432"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:14.686432",
+"elapsed_time":0.212254
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:14.898686",
+"elapsed_time":0.152854
+}],
+"name":"Go To Dashboard",
+"owner":"app_keywords",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:14.686432",
+"elapsed_time":0.365108
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Current page does not contain element 'css=div.dash-adherencia-panel'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:15.107591"
+}],
+"name":"Page Should Not Contain Element",
+"owner":"SeleniumLibrary",
+"args":["css=div.dash-adherencia-panel"],
+"doc":"Verifies that element ``locator`` is not found on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:15.051540",
+"elapsed_time":0.056051
+},{
+"body":[{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_LOGOUT_BTN}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:15.107591",
+"elapsed_time":0.016067
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Clicking element 'xpath=//button[@title=\"Cerrar sesi\u00f3n\"]'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:15.123658"
+}],
+"name":"Click Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_LOGOUT_BTN}"],
+"doc":"Click the element identified by ``locator``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:15.123658",
+"elapsed_time":0.104458
+},{
+"name":"Wait Until Location Is",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/login","timeout=10s"],
+"doc":"Waits until the current URL is ``expected``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:15.228116",
+"elapsed_time":0.017668
+},{
+"name":"Wait Until Element Is Visible",
+"owner":"SeleniumLibrary",
+"args":["${EMAIL_INPUT}","timeout=10s"],
+"doc":"Waits until the element ``locator`` is visible.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:15.245784",
+"elapsed_time":0.030337
+}],
+"name":"Logout",
+"owner":"app_keywords",
+"doc":"Cierra sesion desde cualquier pantalla autenticada.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:15.107591",
+"elapsed_time":0.168530
+},{
+"name":"Close Browser",
+"owner":"SeleniumLibrary",
+"doc":"Closes the current browser.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:15.276121",
+"elapsed_time":2.283173
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"${creds} = {'token': '<token-redactado>",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:18.537123"
+}],
+"name":"Get Cached Login Token",
+"owner":"auth_helper",
+"args":["${DSS_BACKEND_URL}","gerente","${DSS_GERENTE_EMAIL}","${DSS_GERENTE_PASSWORD}"],
+"assign":["${creds}"],
+"doc":"Devuelve {token, roles_json} para ${role_key}, reusando un token\ncacheado en disco si todavia no vencio; si no, pide uno real y lo\npersiste para que el resto de los modulos (procesos `robot` separados)\ntambien lo reutilicen.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:17.559294",
+"elapsed_time":0.977829
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening browser 'headlesschrome' to base url 'http://localhost:3000/'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:18.537123"
+}],
+"name":"Open Browser",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","${BROWSER}"],
+"doc":"Opens a new browser instance to the optional ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:18.537123",
+"elapsed_time":2.088650
+},{
+"name":"Set Window Size",
+"owner":"SeleniumLibrary",
+"args":["1440","900"],
+"doc":"Sets current windows size to given ``width`` and ``height``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:20.625773",
+"elapsed_time":0.032609
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Executing JavaScript:\nsessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);\nBy using arguments:\n'<token-redactado>' and '[\"Gerente QA\"]'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:20.659893"
+}],
+"name":"Execute Javascript",
+"owner":"SeleniumLibrary",
+"args":["sessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);","ARGUMENTS","${creds}[token]","${creds}[roles_json]"],
+"doc":"Executes the given JavaScript code with possible arguments.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:20.659127",
+"elapsed_time":0.013796
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:20.675946"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:20.672923",
+"elapsed_time":0.336161
+},{
+"name":"Wait Until Location Is",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","timeout=10s"],
+"doc":"Waits until the current URL is ``expected``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:21.009900",
+"elapsed_time":0.015790
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:21.025690",
+"elapsed_time":0.049938
+}],
+"name":"Login Session Via Token",
+"owner":"app_keywords",
+"args":["${creds}"],
+"doc":"Entra autenticado inyectando un JWT ya obtenido\ndirectamente en sessionStorage (mismo mecanismo que usa\nLogin.jsx: sessionStorage['token'] + ['userRoles'], ver\nfrontend/src/utils/auth.js) en vez de completar el\nformulario de login. El backend igual revalida el\npermiso real en cada request (DbClaimsTransformation),\nasi que esto no otorga ningun acceso que el usuario no\ntuviera realmente -- solo evita repetir el POST a\n/api/auth/login en cada uno de los 109 archivos de la\nsuite.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:18.537123",
+"elapsed_time":2.538505
+}],
+"name":"Login As Gerente Qa",
+"owner":"app_keywords",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:17.559294",
+"elapsed_time":3.516334
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:21.075628"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:21.075628",
+"elapsed_time":0.350178
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:21.425806",
+"elapsed_time":0.034032
+}],
+"name":"Go To Dashboard",
+"owner":"app_keywords",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:21.075628",
+"elapsed_time":0.384210
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Current page contains element 'css=div.dash-adherencia-panel'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:21.627989"
+}],
+"name":"Page Should Contain Element",
+"owner":"SeleniumLibrary",
+"args":["css=div.dash-adherencia-panel"],
+"doc":"Verifies that element ``locator`` is found on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:21.459838",
+"elapsed_time":0.168151
+},{
+"type":"MESSAGE",
+"message":"${visible} = True",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:21.627989"
+}],
+"name":"Run Keyword And Return Status",
+"owner":"BuiltIn",
+"args":["Page Should Contain Element","css=div.dash-adherencia-panel"],
+"assign":["${visible}"],
+"doc":"Runs the specified keyword and returns the status as a Boolean value.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:21.459838",
+"elapsed_time":0.168151
+},{
+"name":"Log To Console",
+"owner":"BuiltIn",
+"args":["CP-DASHBOARD-04: PANEL VISIBLE PARA GERENTE=${visible} (depende de datos existentes)"],
+"doc":"Logs the given message to the console.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:21.627989",
+"elapsed_time":0.000000
+}],
+"teardown":{
+"name":"Run Keyword If Test Failed",
+"owner":"BuiltIn",
+"args":["Capture Screenshot On Failure","CP-DASHBOARD-04"],
+"doc":"Runs the given keyword with the given arguments, if the test failed.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:21.627989",
+"elapsed_time":0.000000
+},
+"name":"CP-DASHBOARD-04 El panel \"Adherencia a las recomendaciones\" solo se muestra a Admin/Gerente QA",
+"doc":"Pasos:\n1. Iniciar sesi\u00f3n como Analista QA (no es esGerente)\n2. Iniciar sesi\u00f3n como Gerente QA (s\u00ed es esGerente)\nResultado esperado: div.dash-adherencia-panel NO aparece\npara Analista QA; para Gerente QA aparece SOLO si adem\u00e1s\nadherencia.total > 0 (puede no haber datos suficientes en\nun ambiente reci\u00e9n sembrado -- se verifica ausencia o\npresencia consistente, no se fuerza un valor).",
+"tags":["CP-DASHBOARD-04"],
+"lineno":6,
+"status":"PASS",
+"start_time":"2026-09-27T12:31:12.402480",
+"elapsed_time":9.225509
+}],
+"teardown":{
+"body":[{
+"body":[{
+"name":"Close All Browsers",
+"owner":"SeleniumLibrary",
+"doc":"Closes all open browsers and resets the browser cache.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:21.636424",
+"elapsed_time":2.246563
+}],
+"name":"Run Keyword And Ignore Error",
+"owner":"BuiltIn",
+"args":["Close All Browsers"],
+"doc":"Runs the given keyword with the given arguments and ignores possible error.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:21.636424",
+"elapsed_time":2.248325
+}],
+"name":"Close Browser If Open",
+"owner":"app_keywords",
+"doc":"Suite Teardown seguro: no falla si el navegador ya se cerro\n(ej. un test que verifica logout ya lo cerro el mismo).",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:21.627989",
+"elapsed_time":2.257449
+},
+"name":"CP-DASHBOARD-04 Adherencia Solo Para Gerentes",
+"source":"C:\\Users\\William Cristaldo\\Documents\\automatizaciones\\tesis-automation\\web-robot\\tests\\03-dashboard\\CP-DASHBOARD-04_Adherencia_Solo_Para_Gerentes.robot",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:12.386086",
+"elapsed_time":11.501057
+},{
+"id":"s1-s5",
+"setup":{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"${creds} = {'token': '<token-redactado>",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:23.935206"
+}],
+"name":"Get Cached Login Token",
+"owner":"auth_helper",
+"args":["${DSS_BACKEND_URL}","admin","${DSS_ADMIN_EMAIL}","${DSS_ADMIN_PASSWORD}"],
+"assign":["${creds}"],
+"doc":"Devuelve {token, roles_json} para ${role_key}, reusando un token\ncacheado en disco si todavia no vencio; si no, pide uno real y lo\npersiste para que el resto de los modulos (procesos `robot` separados)\ntambien lo reutilicen.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:23.905638",
+"elapsed_time":0.031442
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening browser 'headlesschrome' to base url 'http://localhost:3000/'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:23.938555"
+}],
+"name":"Open Browser",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","${BROWSER}"],
+"doc":"Opens a new browser instance to the optional ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:23.938555",
+"elapsed_time":1.872172
+},{
+"name":"Set Window Size",
+"owner":"SeleniumLibrary",
+"args":["1440","900"],
+"doc":"Sets current windows size to given ``width`` and ``height``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:25.810727",
+"elapsed_time":0.036679
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Executing JavaScript:\nsessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);\nBy using arguments:\n'<token-redactado>' and '[\"Administrador\"]'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:25.848447"
+}],
+"name":"Execute Javascript",
+"owner":"SeleniumLibrary",
+"args":["sessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);","ARGUMENTS","${creds}[token]","${creds}[roles_json]"],
+"doc":"Executes the given JavaScript code with possible arguments.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:25.847406",
+"elapsed_time":0.007962
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:25.863218"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:25.855368",
+"elapsed_time":0.393459
+},{
+"name":"Wait Until Location Is",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","timeout=10s"],
+"doc":"Waits until the current URL is ``expected``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:26.248827",
+"elapsed_time":0.346890
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:26.595717",
+"elapsed_time":0.013588
+}],
+"name":"Login Session Via Token",
+"owner":"app_keywords",
+"args":["${creds}"],
+"doc":"Entra autenticado inyectando un JWT ya obtenido\ndirectamente en sessionStorage (mismo mecanismo que usa\nLogin.jsx: sessionStorage['token'] + ['userRoles'], ver\nfrontend/src/utils/auth.js) en vez de completar el\nformulario de login. El backend igual revalida el\npermiso real en cada request (DbClaimsTransformation),\nasi que esto no otorga ningun acceso que el usuario no\ntuviera realmente -- solo evita repetir el POST a\n/api/auth/login en cada uno de los 109 archivos de la\nsuite.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:23.937131",
+"elapsed_time":2.672174
+}],
+"name":"Login As Administrador",
+"owner":"app_keywords",
+"doc":"Entra como Administrador SIN pasar por el formulario de\nlogin (ver \"Login Session Via Token\"). El token real se\npide una sola vez por rol y se cachea en disco\n(auth_helper.py) para que TODOS los modulos de la\ncorrida lo reutilicen, aunque cada uno se ejecute como\nun proceso \"robot\" separado (ver run_module.py).",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:23.905638",
+"elapsed_time":2.703667
+},
+"tests":[{
+"id":"s1-s5-t1",
+"body":[{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:26.609305"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:26.609305",
+"elapsed_time":0.435188
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:27.044493",
+"elapsed_time":0.264381
+}],
+"name":"Go To Dashboard",
+"owner":"app_keywords",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:26.609305",
+"elapsed_time":0.699569
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Current page contains element 'css=ul.dash-activity-list li a.dash-activity-item'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:27.329006"
+}],
+"name":"Page Should Contain Element",
+"owner":"SeleniumLibrary",
+"args":["css=ul.dash-activity-list li a.dash-activity-item"],
+"doc":"Verifies that element ``locator`` is found on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:27.308874",
+"elapsed_time":0.020132
+},{
+"type":"MESSAGE",
+"message":"${hay_actividad} = True",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:27.329006"
+}],
+"name":"Run Keyword And Return Status",
+"owner":"BuiltIn",
+"args":["Page Should Contain Element","css=ul.dash-activity-list li a.dash-activity-item"],
+"assign":["${hay_actividad}"],
+"doc":"Runs the specified keyword and returns the status as a Boolean value.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:27.308874",
+"elapsed_time":0.020132
+},{
+"type":"IF/ELSE ROOT",
+"body":[{
+"type":"IF",
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"${url_antes} = http://localhost:3000/",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:27.343597"
+}],
+"name":"Get Location",
+"owner":"SeleniumLibrary",
+"assign":["${url_antes}"],
+"doc":"Returns the current browser window URL.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:27.329006",
+"elapsed_time":0.014591
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Clicking element 'xpath=(//ul[@class=\"dash-activity-list\"]//a[contains(@class,\"dash-activity-item\")])[1]'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:27.343597"
+}],
+"name":"Click Element",
+"owner":"SeleniumLibrary",
+"args":["xpath=(//ul[@class=\"dash-activity-list\"]//a[contains(@class,\"dash-activity-item\")])[1]"],
+"doc":"Click the element identified by ``locator``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:27.343597",
+"elapsed_time":0.165361
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Slept 1 second.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:28.509418"
+}],
+"name":"Sleep",
+"owner":"BuiltIn",
+"args":["1s"],
+"doc":"Pauses the test executed for the given time.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:27.508958",
+"elapsed_time":1.000460
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"${url_despues} = http://localhost:3000/versiones/566/analisis?resultado=215",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:28.518346"
+}],
+"name":"Get Location",
+"owner":"SeleniumLibrary",
+"assign":["${url_despues}"],
+"doc":"Returns the current browser window URL.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:28.509418",
+"elapsed_time":0.008928
+},{
+"name":"Should Not Be Equal",
+"owner":"BuiltIn",
+"args":["${url_antes}","${url_despues}"],
+"doc":"Fails if the given objects are equal.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:28.518346",
+"elapsed_time":0.000000
+},{
+"name":"Log To Console",
+"owner":"BuiltIn",
+"args":["CP-DASHBOARD-05: NAVEGACION DESDE ACTIVIDAD RECIENTE OK"],
+"doc":"Logs the given message to the console.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:28.518346",
+"elapsed_time":0.000000
+}],
+"condition":"${hay_actividad}",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:27.329006",
+"elapsed_time":1.189340
+},{
+"type":"ELSE",
+"body":[{
+"name":"Log To Console",
+"owner":"BuiltIn",
+"args":["CP-DASHBOARD-05: SIN ACTIVIDAD RECIENTE EN EL AMBIENTE, CASO NO APLICABLE"],
+"doc":"Logs the given message to the console.",
+"status":"NOT RUN",
+"start_time":"2026-09-27T12:31:28.518346",
+"elapsed_time":0.000000
+}],
+"status":"NOT RUN",
+"start_time":"2026-09-27T12:31:28.518346",
+"elapsed_time":0.000000
+}],
+"status":"PASS",
+"start_time":"2026-09-27T12:31:27.329006",
+"elapsed_time":1.189340
+}],
+"teardown":{
+"name":"Run Keyword If Test Failed",
+"owner":"BuiltIn",
+"args":["Capture Screenshot On Failure","CP-DASHBOARD-05"],
+"doc":"Runs the given keyword with the given arguments, if the test failed.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:28.518346",
+"elapsed_time":0.007614
+},
+"name":"CP-DASHBOARD-05 Un \u00edtem de \"Actividad reciente\" navega a su destino correspondiente",
+"doc":"Pasos:\n1. Iniciar sesi\u00f3n como Administrador\n2. Si existe al menos un \u00edtem en ul.dash-activity-list,\n   hacer clic en el primero\nResultado esperado: navega fuera del Dashboard (cada \u00edtem es\nun Link a la entidad relacionada -- proyecto, versi\u00f3n, etc.).\nSi no hay actividad reciente en el ambiente, el caso se\nregistra como no aplicable sin fallar la suite.",
+"tags":["CP-DASHBOARD-05"],
+"lineno":7,
+"status":"PASS",
+"start_time":"2026-09-27T12:31:26.609305",
+"elapsed_time":1.916655
+}],
+"teardown":{
+"body":[{
+"body":[{
+"name":"Close All Browsers",
+"owner":"SeleniumLibrary",
+"doc":"Closes all open browsers and resets the browser cache.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:28.525960",
+"elapsed_time":2.281414
+}],
+"name":"Run Keyword And Ignore Error",
+"owner":"BuiltIn",
+"args":["Close All Browsers"],
+"doc":"Runs the given keyword with the given arguments and ignores possible error.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:28.525960",
+"elapsed_time":2.281414
+}],
+"name":"Close Browser If Open",
+"owner":"app_keywords",
+"doc":"Suite Teardown seguro: no falla si el navegador ya se cerro\n(ej. un test que verifica logout ya lo cerro el mismo).",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:28.525960",
+"elapsed_time":2.281414
+},
+"name":"CP-DASHBOARD-05 Actividad Reciente Navega Al Detalle",
+"source":"C:\\Users\\William Cristaldo\\Documents\\automatizaciones\\tesis-automation\\web-robot\\tests\\03-dashboard\\CP-DASHBOARD-05_Actividad_Reciente_Navega_Al_Detalle.robot",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:23.887143",
+"elapsed_time":6.922251
+},{
+"id":"s1-s6",
+"setup":{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"${creds} = {'token': '<token-redactado>",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:30.835782"
+}],
+"name":"Get Cached Login Token",
+"owner":"auth_helper",
+"args":["${DSS_BACKEND_URL}","admin","${DSS_ADMIN_EMAIL}","${DSS_ADMIN_PASSWORD}"],
+"assign":["${creds}"],
+"doc":"Devuelve {token, roles_json} para ${role_key}, reusando un token\ncacheado en disco si todavia no vencio; si no, pide uno real y lo\npersiste para que el resto de los modulos (procesos `robot` separados)\ntambien lo reutilicen.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:30.824156",
+"elapsed_time":0.011626
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening browser 'headlesschrome' to base url 'http://localhost:3000/'.",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:30.835782"
+}],
+"name":"Open Browser",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","${BROWSER}"],
+"doc":"Opens a new browser instance to the optional ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:30.835782",
+"elapsed_time":1.491262
+},{
+"name":"Set Window Size",
+"owner":"SeleniumLibrary",
+"args":["1440","900"],
+"doc":"Sets current windows size to given ``width`` and ``height``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:32.327591",
+"elapsed_time":0.063296
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Executing JavaScript:\nsessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);\nBy using arguments:\n'<token-redactado>' and '[\"Administrador\"]'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:32.390887"
+}],
+"name":"Execute Javascript",
+"owner":"SeleniumLibrary",
+"args":["sessionStorage.setItem('token', arguments[0]); sessionStorage.setItem('userRoles', arguments[1]);","ARGUMENTS","${creds}[token]","${creds}[roles_json]"],
+"doc":"Executes the given JavaScript code with possible arguments.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:32.390887",
+"elapsed_time":0.033908
+},{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:32.426370"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:32.425303",
+"elapsed_time":0.559772
+},{
+"name":"Wait Until Location Is",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/","timeout=10s"],
+"doc":"Waits until the current URL is ``expected``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:32.985075",
+"elapsed_time":0.291887
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:33.276962",
+"elapsed_time":0.015809
+}],
+"name":"Login Session Via Token",
+"owner":"app_keywords",
+"args":["${creds}"],
+"doc":"Entra autenticado inyectando un JWT ya obtenido\ndirectamente en sessionStorage (mismo mecanismo que usa\nLogin.jsx: sessionStorage['token'] + ['userRoles'], ver\nfrontend/src/utils/auth.js) en vez de completar el\nformulario de login. El backend igual revalida el\npermiso real en cada request (DbClaimsTransformation),\nasi que esto no otorga ningun acceso que el usuario no\ntuviera realmente -- solo evita repetir el POST a\n/api/auth/login en cada uno de los 109 archivos de la\nsuite.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:30.835782",
+"elapsed_time":2.456989
+}],
+"name":"Login As Administrador",
+"owner":"app_keywords",
+"doc":"Entra como Administrador SIN pasar por el formulario de\nlogin (ver \"Login Session Via Token\"). El token real se\npide una sola vez por rol y se cachea en disco\n(auth_helper.py) para que TODOS los modulos de la\ncorrida lo reutilicen, aunque cada uno se ejecute como\nun proceso \"robot\" separado (ver run_module.py).",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:30.824156",
+"elapsed_time":2.468615
+},
+"tests":[{
+"id":"s1-s6-t1",
+"body":[{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Opening url 'http://localhost:3000/'",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:33.292771"
+}],
+"name":"Go To",
+"owner":"SeleniumLibrary",
+"args":["${DSS_URL}/"],
+"doc":"Navigates the current browser window to the provided ``url``.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:33.292771",
+"elapsed_time":0.186681
+},{
+"name":"Wait Until Page Contains Element",
+"owner":"SeleniumLibrary",
+"args":["${SIDEBAR_RAIL}","timeout=10s"],
+"doc":"Waits until the element ``locator`` appears on the current page.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:33.479452",
+"elapsed_time":0.048445
+}],
+"name":"Go To Dashboard",
+"owner":"app_keywords",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:33.292771",
+"elapsed_time":0.239651
+},{
+"body":[{
+"body":[{
+"type":"MESSAGE",
+"message":"Page should have contained element 'css=div.dash-chart-card' but did not.",
+"level":"FAIL",
+"timestamp":"2026-09-27T12:31:33.738902"
+}],
+"name":"Page Should Contain Element",
+"owner":"SeleniumLibrary",
+"args":["css=div.dash-chart-card"],
+"doc":"Verifies that element ``locator`` is found on the current page.",
+"status":"FAIL",
+"message":"Page should have contained element 'css=div.dash-chart-card' but did not.",
+"start_time":"2026-09-27T12:31:33.532422",
+"elapsed_time":0.206480
+},{
+"type":"MESSAGE",
+"message":"${hay_grafico} = False",
+"level":"INFO",
+"timestamp":"2026-09-27T12:31:33.738902"
+}],
+"name":"Run Keyword And Return Status",
+"owner":"BuiltIn",
+"args":["Page Should Contain Element","css=div.dash-chart-card"],
+"assign":["${hay_grafico}"],
+"doc":"Runs the specified keyword and returns the status as a Boolean value.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:33.532422",
+"elapsed_time":0.206480
+},{
+"name":"Log To Console",
+"owner":"BuiltIn",
+"args":["CP-DASHBOARD-06: GRAFICO DE TENDENCIA VISIBLE=${hay_grafico} (depende del historico)"],
+"doc":"Logs the given message to the console.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:33.738902",
+"elapsed_time":0.000000
+}],
+"teardown":{
+"name":"Run Keyword If Test Failed",
+"owner":"BuiltIn",
+"args":["Capture Screenshot On Failure","CP-DASHBOARD-06"],
+"doc":"Runs the given keyword with the given arguments, if the test failed.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:33.749824",
+"elapsed_time":0.000000
+},
+"name":"CP-DASHBOARD-06 El gr\u00e1fico de tendencia solo aparece con m\u00e1s de 1 punto de datos",
+"doc":"Pasos:\n1. Iniciar sesi\u00f3n como Administrador\nResultado esperado: el gr\u00e1fico \"Tendencia de calidad\" solo\nse renderiza si tendencia.length > 1 (Dashboard.jsx). Este\ncaso documenta el comportamiento -- no fuerza datos, ya que\ndepende del hist\u00f3rico real cargado en el ambiente.\n\nNOTA: cuando hay m\u00e1s de una carga en el mismo d\u00eda\ncalendario dentro de los \u00faltimos 10 puntos, el eje X debe\nmostrar fecha+hora (fmtFechaHora) en vez de solo fecha\n(fmtFechaCorta) para diferenciarlas -- corregido en esta\nsesi\u00f3n de desarrollo tras reportarse confusi\u00f3n visual con\ndos cargas del mismo d\u00eda superpuestas en el eje. Verificar\nmanualmente subiendo 2 resultados el mismo d\u00eda si se\nnecesita validar visualmente esta regla.",
+"tags":["CP-DASHBOARD-06"],
+"lineno":7,
+"status":"PASS",
+"start_time":"2026-09-27T12:31:33.292771",
+"elapsed_time":0.457053
+}],
+"teardown":{
+"body":[{
+"body":[{
+"name":"Close All Browsers",
+"owner":"SeleniumLibrary",
+"doc":"Closes all open browsers and resets the browser cache.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:33.751617",
+"elapsed_time":2.308050
+}],
+"name":"Run Keyword And Ignore Error",
+"owner":"BuiltIn",
+"args":["Close All Browsers"],
+"doc":"Runs the given keyword with the given arguments and ignores possible error.",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:33.751617",
+"elapsed_time":2.308050
+}],
+"name":"Close Browser If Open",
+"owner":"app_keywords",
+"doc":"Suite Teardown seguro: no falla si el navegador ya se cerro\n(ej. un test que verifica logout ya lo cerro el mismo).",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:33.751617",
+"elapsed_time":2.308050
+},
+"name":"CP-DASHBOARD-06 Tendencia Calidad Etiquetas Multiples Cargas Mismo Dia",
+"source":"C:\\Users\\William Cristaldo\\Documents\\automatizaciones\\tesis-automation\\web-robot\\tests\\03-dashboard\\CP-DASHBOARD-06_Tendencia_Calidad_Etiquetas_Multiples_Cargas_Mismo_Dia.robot",
+"status":"PASS",
+"start_time":"2026-09-27T12:31:30.810861",
+"elapsed_time":5.248806
+}],
+"name":"03-Dashboard",
+"source":"C:\\Users\\William Cristaldo\\Documents\\automatizaciones\\tesis-automation\\web-robot\\tests\\03-dashboard",
+"status":"PASS",
+"start_time":"2026-09-27T12:30:54.157458",
+"elapsed_time":41.902209
+},
+"statistics":{
+"total":{
+"label":"All Tests",
+"pass":6,
+"fail":0,
+"skip":0
+},
+"suites":[{
+"label":"03-Dashboard",
+"name":"03-Dashboard",
+"id":"s1",
+"pass":6,
+"fail":0,
+"skip":0
+},{
+"label":"03-Dashboard.CP-DASHBOARD-01 Acceso Y KPIs Visibles",
+"name":"CP-DASHBOARD-01 Acceso Y KPIs Visibles",
+"id":"s1-s1",
+"pass":1,
+"fail":0,
+"skip":0
+},{
+"label":"03-Dashboard.CP-DASHBOARD-02 Accesos Rapidos Admin",
+"name":"CP-DASHBOARD-02 Accesos Rapidos Admin",
+"id":"s1-s2",
+"pass":1,
+"fail":0,
+"skip":0
+},{
+"label":"03-Dashboard.CP-DASHBOARD-03 Accesos Rapidos Analista Sin Gestion Usuarios",
+"name":"CP-DASHBOARD-03 Accesos Rapidos Analista Sin Gestion Usuarios",
+"id":"s1-s3",
+"pass":1,
+"fail":0,
+"skip":0
+},{
+"label":"03-Dashboard.CP-DASHBOARD-04 Adherencia Solo Para Gerentes",
+"name":"CP-DASHBOARD-04 Adherencia Solo Para Gerentes",
+"id":"s1-s4",
+"pass":1,
+"fail":0,
+"skip":0
+},{
+"label":"03-Dashboard.CP-DASHBOARD-05 Actividad Reciente Navega Al Detalle",
+"name":"CP-DASHBOARD-05 Actividad Reciente Navega Al Detalle",
+"id":"s1-s5",
+"pass":1,
+"fail":0,
+"skip":0
+},{
+"label":"03-Dashboard.CP-DASHBOARD-06 Tendencia Calidad Etiquetas Multiples Cargas Mismo Dia",
+"name":"CP-DASHBOARD-06 Tendencia Calidad Etiquetas Multiples Cargas Mismo Dia",
+"id":"s1-s6",
+"pass":1,
+"fail":0,
+"skip":0
+}],
+"tags":[{
+"label":"CP-DASHBOARD-01",
+"pass":1,
+"fail":0,
+"skip":0
+},{
+"label":"CP-DASHBOARD-02",
+"pass":1,
+"fail":0,
+"skip":0
+},{
+"label":"CP-DASHBOARD-03",
+"pass":1,
+"fail":0,
+"skip":0
+},{
+"label":"CP-DASHBOARD-04",
+"pass":1,
+"fail":0,
+"skip":0
+},{
+"label":"CP-DASHBOARD-05",
+"pass":1,
+"fail":0,
+"skip":0
+},{
+"label":"CP-DASHBOARD-06",
+"pass":1,
+"fail":0,
+"skip":0
+}]
+},
+"errors":[]
+}
