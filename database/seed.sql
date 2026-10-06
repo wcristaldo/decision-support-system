@@ -166,7 +166,7 @@ FROM (VALUES
      'El porcentaje de pruebas fallidas no debe superar el umbral configurado.',
      'tasa_fallo',        10.00),
     ('Tiempo de ejecución máximo',
-     'El tiempo total de ejecución del pipeline no debe exceder el umbral en segundos.',
+     'El tiempo total de ejecución de la suite de pruebas no debe exceder el umbral en segundos.',
      'tiempo_ejecucion', 120.00)
 ) AS r(nombre_regla, descripcion, criterio, umbral)
 CROSS JOIN (SELECT id_usuario FROM usuarios WHERE email = 'wcristaldo@roshka.com') u;

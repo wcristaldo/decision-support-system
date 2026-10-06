@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Roshka DSS - Decision Support System",
-    "description": "Colección de endpoints de la API REST del Roshka DSS (tesis UNIDA). Base URL: http://localhost:5000/api\n\n**Actualizada el 2026-09-27** contra el código real de backend/Controllers: la versión anterior tenía credenciales vencidas, un endpoint de depuración que ya no existe, un flujo de Pagopar reemplazado por AdamsPay/PayPal y le faltaban los endpoints de Reports (CI/CD), respaldo de base de datos (RNF12), asignación de proyectos a usuarios (RF13), permisos por rol (RF14), adherencia, actas en PDF y exportación del historial.\n\n**Configuración rápida:**\n1. Seleccionar *No Environment* (las variables de otros entornos pisan {{baseUrl}} y {{token}}).\n2. Ejecutar un request de la carpeta Auth → el token se guarda automáticamente en {{token}}.\n3. Todos los endpoints protegidos usan `Bearer {{token}}`.\n\n**Contraseñas (no se versionan):** las variables {{passwordAdmin}} y {{passwordPruebas}} tienen valor inicial vacío a propósito. Cargarlas como *Current value* en la pestaña Variables de la colección: ese valor queda solo en esta PC y no se sincroniza con la nube de Postman ni se sube a git.\n- Administrador: wcristaldo@roshka.com → {{passwordAdmin}} (DSS_ADMIN_PASSWORD del .env)\n- Líder Técnico: lider@roshka.com → {{passwordPruebas}}\n- Analista QA: analista@roshka.com → {{passwordPruebas}}\n- Gerente QA: gerente@roshka.com → {{passwordPruebas}}\n\n**Casos de prueba de la tesis:** la primera carpeta, «Casos de prueba de la tesis (CP-05 a CP-14)», reúne las solicitudes con las que se verificaron por API los casos de la sección 4.5 (Pruebas y validación): CP-05, CP-08, CP-09, CP-10, CP-11, CP-13 y CP-14. Cada una trae tests automáticos con el resultado esperado.",
+    "description": "Colección de endpoints de la API REST del Roshka DSS (tesis UNIDA). Base URL: http://localhost:5000/api\n\n**Actualizada el 2026-09-27** contra el código real de backend/Controllers: la versión anterior tenía credenciales vencidas, un endpoint de depuración que ya no existe, un flujo de Pagopar reemplazado por AdamsPay/PayPal y le faltaban los endpoints de Reports (carga automatizada), respaldo de base de datos (RNF12), asignación de proyectos a usuarios (RF13), permisos por rol (RF14), adherencia, actas en PDF y exportación del historial.\n\n**Configuración rápida:**\n1. Seleccionar *No Environment* (las variables de otros entornos pisan {{baseUrl}} y {{token}}).\n2. Ejecutar un request de la carpeta Auth → el token se guarda automáticamente en {{token}}.\n3. Todos los endpoints protegidos usan `Bearer {{token}}`.\n\n**Contraseñas (no se versionan):** las variables {{passwordAdmin}} y {{passwordPruebas}} tienen valor inicial vacío a propósito. Cargarlas como *Current value* en la pestaña Variables de la colección: ese valor queda solo en esta PC y no se sincroniza con la nube de Postman ni se sube a git.\n- Administrador: wcristaldo@roshka.com → {{passwordAdmin}} (DSS_ADMIN_PASSWORD del .env)\n- Líder Técnico: lider@roshka.com → {{passwordPruebas}}\n- Analista QA: analista@roshka.com → {{passwordPruebas}}\n- Gerente QA: gerente@roshka.com → {{passwordPruebas}}\n\n**Casos de prueba de la tesis:** la primera carpeta, «Casos de prueba de la tesis (CP-05 a CP-14)», reúne las solicitudes con las que se verificaron por API los casos de la sección 4.5 (Pruebas y validación): CP-05, CP-08, CP-09, CP-10, CP-11, CP-13 y CP-14. Cada una trae tests automáticos con el resultado esperado.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -177,11 +177,11 @@
                 {
                   "key": "archivo",
                   "type": "file",
-                  "src": "json-tests/ci-cd/output.json"
+                  "src": "json-tests/reportes-api/output.json"
                 },
                 {
                   "key": "observaciones",
-                  "value": "Ejecución del pipeline CI/CD",
+                  "value": "Ejecución de la suite de pruebas",
                   "type": "text",
                   "disabled": true
                 }
@@ -239,11 +239,11 @@
                 {
                   "key": "archivo",
                   "type": "file",
-                  "src": "json-tests/ci-cd/output.json"
+                  "src": "json-tests/reportes-api/output.json"
                 },
                 {
                   "key": "observaciones",
-                  "value": "Ejecución del pipeline CI/CD",
+                  "value": "Ejecución de la suite de pruebas",
                   "type": "text",
                   "disabled": true
                 }
@@ -913,8 +913,8 @@
       ]
     },
     {
-      "name": "Reports (Ingesta CI/CD)",
-      "description": "CU-05 de la tesis: ingesta automatizada del output.json de Robot Framework desde un pipeline CI/CD (multipart/form-data: versionId, archivo y observaciones opcionales). Comparte el mismo pipeline de ingesta que POST /api/resultadosPrueba (carga manual). El campo 'archivo' usa la ruta relativa json-tests/ci-cd/output.json: Postman la busca dentro de su carpeta de trabajo (Settings > General > Working directory, por defecto ~/Postman/files), donde debe copiarse el archivo del repositorio, y newman la resuelve desde la raíz del repositorio.",
+      "name": "Reports (carga automatizada)",
+      "description": "CU-05 de la tesis: ingesta automatizada del output.json de Robot Framework mediante la API (multipart/form-data: versionId, archivo y observaciones opcionales). Comparte el mismo flujo de ingesta que POST /api/resultadosPrueba (carga manual). El campo 'archivo' usa la ruta relativa json-tests/reportes-api/output.json: Postman la busca dentro de su carpeta de trabajo (Settings > General > Working directory, por defecto ~/Postman/files), donde debe copiarse el archivo del repositorio, y newman la resuelve desde la raíz del repositorio.",
       "item": [
         {
           "name": "POST Ingestar reporte de Robot Framework (output.json)",
@@ -947,11 +947,11 @@
                 {
                   "key": "archivo",
                   "type": "file",
-                  "src": "json-tests/ci-cd/output.json"
+                  "src": "json-tests/reportes-api/output.json"
                 },
                 {
                   "key": "observaciones",
-                  "value": "Ejecución del pipeline CI/CD",
+                  "value": "Ejecución de la suite de pruebas",
                   "type": "text",
                   "disabled": true
                 }

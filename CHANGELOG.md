@@ -13,7 +13,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es/1.0.0/)
 - Auditoría de cambios en umbrales de calidad: `ReglaEvaluacionController` ahora registra creación, actualización y eliminación de reglas (antes no auditaba nada); nuevas entidades "Regla de evaluación" y "Decisión de despliegue" en el filtro de Auditoría
 - RBAC real por permisos (`gestionar_usuarios`, `ver_proyectos`, `cargar_resultados`, `ejecutar_evaluacion`, `ver_evaluacion`, `gestionar_reglas`, `registrar_decision`, `ver_decisiones`, `ver_auditoria`, etc.), activando el claim `permission` del JWT que ya se emitía pero nunca se validaba — `[Authorize]` agregado a los 7 controllers que no lo tenían (`Proyectos`, `Versiones`, `ResultadosPrueba`, `Metricas`, `Recomendaciones`, `DecisionesDespliegue`, `Analisis`)
 - Umbrales de calidad configurables **por proyecto** (RF07/RF08/CU-03): `reglas_evaluacion.id_proyecto` (nullable, override sobre la regla global), endpoints `GET/PUT/DELETE /api/reglaEvaluacion/proyecto/{id}`, panel "Umbrales de calidad" en `DetalleProyecto.jsx`
-- Endpoint `POST /api/reports` (CU-05, ingesta CI/CD automatizada), reutilizando el pipeline de ingesta vía `IIngestaResultadosService`. Recibe el archivo `output.json` real de Robot Framework (`multipart/form-data`: `versionId`, `archivo`, `observaciones`), lo valida y extrae las métricas en el servidor (`RobotFrameworkParser`, mismas reglas que la carga manual) y responde con las métricas extraídas y la recomendación generada; antes esperaba las métricas ya calculadas por el cliente
+- Endpoint `POST /api/reports` (CU-05, ingesta automatizada por API), reutilizando el flujo de ingesta vía `IIngestaResultadosService`. Recibe el archivo `output.json` real de Robot Framework (`multipart/form-data`: `versionId`, `archivo`, `observaciones`), lo valida y extrae las métricas en el servidor (`RobotFrameworkParser`, mismas reglas que la carga manual) y responde con las métricas extraídas y la recomendación generada; antes esperaba las métricas ya calculadas por el cliente
 - Gráfico de tendencia histórica (Recharts) en Análisis y Métricas (RF10)
 - Filtros por fecha y usuario responsable en el historial de análisis (RF11); nueva columna "Responsable" (requiere trackear `UsuarioCargaId`, antes siempre nulo)
 - `docker-compose.yml` + Dockerfiles (`backend/Dockerfile`, `frontend/Dockerfile` + `nginx.conf`) — arquitectura física del Capítulo IV
@@ -29,7 +29,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es/1.0.0/)
 - La imagen de la API no incluye la carpeta `backups/` (volcados de la base con datos)
 
 ### Changed
-- La carga automática desde el pipeline CI/CD (`POST /api/reports`) queda sujeta a la funcionalidad «Carga automática desde CI/CD» del plan activo (402 si no está incluida); la carga manual desde la interfaz sigue disponible en todos los planes
+- La carga automatizada mediante la API (`POST /api/reports`) queda sujeta a la funcionalidad «Carga automatizada mediante la API» del plan activo (402 si no está incluida); la carga manual desde la interfaz sigue disponible en todos los planes
 - Se quita «Alertas Slack/Teams» de los planes: el sistema solo envía alertas por correo electrónico ante una recomendación «No desplegar» (`migration_quitar_notificaciones_slack.sql`)
 - Pantalla de inicio de sesión: aviso de privacidad visible con enlaces a la Política de Privacidad y a los Términos y Condiciones; mensaje específico «Demasiados intentos» cuando se supera el límite de intentos (HTTP 429)
 - Docker Compose: chequeos de salud de los tres servicios, arranque ordenado por estado «healthy», `pg_dump` incluido en la imagen de la API y volumen persistente para los respaldos (RNF12)
@@ -52,7 +52,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es/1.0.0/)
 - `colSpan` incorrecto en la fila vacía de la tabla de usuarios (5 en vez de 6 columnas)
 - Columna `comentario` de `decisiones_despliegue` limitada a 255 caracteres en la base de datos pero a 1000 en el frontend
 - Métricas no enteras en Análisis y en la comparativa de versiones se mostraban con tres decimales («38.500 segundos», que se lee como treinta y ocho mil); ahora usan dos decimales, igual que los porcentajes y el detalle técnico
-- Colección de Postman (`dss-roshka.postman_collection.json`): nueva primera carpeta «Casos de prueba de la tesis (CP-05 a CP-14)» con las solicitudes y los tests usados como evidencia; el form-data de ingesta usa la ruta relativa `json-tests/ci-cd/output.json`
+- Colección de Postman (`dss-roshka.postman_collection.json`): nueva primera carpeta «Casos de prueba de la tesis (CP-05 a CP-14)» con las solicitudes y los tests usados como evidencia; el form-data de ingesta usa la ruta relativa `json-tests/reportes-api/output.json`
 - Nombres de proyecto invisibles en el listado de Proyectos: `.proy-td-link` tenía `max-width: 0` (recorte total del contenido); corregido a `100%` en `Proyectos.css`, junto con el ancho de las columnas descripción/acciones en `Proyectos.jsx` que lo compensaba mal. Bug real, visible también en la evidencia de la tesis y causa de varias fallas en la suite Robot Framework
 - Checkbox de "Proyectos asignados" en la edición de usuario (`UserManagement.jsx`) desalineado con el nombre del proyecto por falta de `flex: 0 0 auto` en el input
 

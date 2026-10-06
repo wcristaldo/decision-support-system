@@ -11,7 +11,7 @@ INSERT INTO planes_suscripcion (
     historial_dias,
     exportar_pdf, exportar_excel, dashboard_avanzado, auditoria_detallada,
     notificaciones_email,
-    integracion_cicd,
+    carga_automatizada_api,
     soporte_prioritario, estado
 ) VALUES
 -- ── Plan Básico ──────────────────────────────────────────────────────────

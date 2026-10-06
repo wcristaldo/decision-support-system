@@ -425,7 +425,7 @@ export default function Suscripcion() {
                     <FeatRow label="Exportar PDF"               ok={p.funcionalidades?.exportarPdf} />
                     <FeatRow label="Exportar Excel/CSV"         ok={p.funcionalidades?.exportarExcel} />
                     <FeatRow label="Alertas por email"          ok={p.funcionalidades?.notificacionesEmail} />
-                    <FeatRow label="Carga automática desde CI/CD"   ok={p.funcionalidades?.integracionCicd} />
+                    <FeatRow label="Carga automatizada mediante la API"   ok={p.funcionalidades?.cargaAutomatizadaApi} />
                     <FeatRow label="Auditoría detallada"        ok={p.funcionalidades?.auditoriaDetallada} />
                     <FeatRow label="Soporte prioritario (24 h)" ok={p.funcionalidades?.soportePrioritario} />
                   </div>

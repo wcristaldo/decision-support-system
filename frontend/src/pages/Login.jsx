@@ -25,7 +25,7 @@ function AboutContent() {
 
       <div className="lm-section">
         <h3>¿Cómo funciona?</h3>
-        <p>El sistema analiza automáticamente los resultados de las pruebas generadas por el pipeline CI/CD y calcula métricas clave de calidad: tasa de éxito, tasa de fallo, cobertura de ejecución de pruebas (pruebas ejecutadas sobre el total) y tiempo de ejecución, además de su tendencia histórica. Estas métricas se comparan contra umbrales configurables y el sistema emite una recomendación categorizada en tres estados:</p>
+        <p>El sistema analiza automáticamente los resultados de las pruebas automatizadas (archivo output.json de Robot Framework) y calcula métricas clave de calidad: tasa de éxito, tasa de fallo, cobertura de ejecución de pruebas (pruebas ejecutadas sobre el total) y tiempo de ejecución, además de su tendencia histórica. Estas métricas se comparan contra umbrales configurables y el sistema emite una recomendación categorizada en tres estados:</p>
         <div className="lm-states">
           <div className="lm-state lm-state--green">
             <span className="lm-state-dot" />
@@ -126,7 +126,7 @@ function planToCard(p, idx) {
       { label: 'Exportar PDF',             ok: !!fn.exportarPdf },
       { label: 'Exportar Excel/CSV',       ok: !!fn.exportarExcel },
       { label: 'Alertas por email',        ok: !!fn.notificacionesEmail },
-      { label: 'Carga automática desde CI/CD', ok: !!fn.integracionCicd },
+      { label: 'Carga automatizada mediante la API', ok: !!fn.cargaAutomatizadaApi },
       { label: 'Auditoría detallada',      ok: !!fn.auditoriaDetallada },
       { label: 'Soporte prioritario',      ok: !!fn.soportePrioritario },
     ],

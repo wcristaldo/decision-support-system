@@ -75,7 +75,7 @@ public static class TestHelpers
     }
 
     /// <summary>Asigna el ClaimsPrincipal al ControllerContext, como lo haría
-    /// el pipeline real de ASP.NET Core tras la autenticación JWT.</summary>
+    /// la cadena de middleware real de ASP.NET Core tras la autenticación JWT.</summary>
     public static void SetUser(ControllerBase controller, ClaimsPrincipal user)
     {
         controller.ControllerContext = new ControllerContext

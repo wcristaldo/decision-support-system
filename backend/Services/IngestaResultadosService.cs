@@ -6,7 +6,7 @@ using DecisionSupportAPI.Models;
 namespace DecisionSupportAPI.Services;
 
 /// <summary>Resultado uniforme de un intento de ingesta, para que cada controller
-/// (carga manual desde la UI o ingesta automatizada CI/CD) lo traduzca a su propia
+/// (carga manual desde la UI o ingesta automatizada por API) lo traduzca a su propia
 /// respuesta HTTP sin duplicar la lógica de negocio.</summary>
 public record IngestaResultado(int StatusCode, object Body);
 
@@ -16,10 +16,10 @@ public interface IIngestaResultadosService
 }
 
 /// <summary>
-/// Pipeline único de ingesta de resultados de prueba (RF03-RF09): validar límites
+/// Flujo único de ingesta de resultados de prueba (RF03-RF09): validar límites
 /// de plan, persistir el resultado, calcular métricas, generar la recomendación
 /// automática y notificar por email si corresponde. Usado tanto por la carga
-/// manual (POST /api/ResultadosPrueba) como por la ingesta automatizada CI/CD
+/// manual (POST /api/ResultadosPrueba) como por la ingesta automatizada por API
 /// (POST /api/reports, CU-05 de la tesis).
 /// </summary>
 public class IngestaResultadosService : IIngestaResultadosService

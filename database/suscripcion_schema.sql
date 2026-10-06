@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS planes_suscripcion (
     auditoria_detallada     BOOLEAN         NOT NULL DEFAULT FALSE,
     -- Notificaciones e integraciones
     notificaciones_email    BOOLEAN         NOT NULL DEFAULT FALSE,
-    integracion_cicd        BOOLEAN         NOT NULL DEFAULT FALSE,
+    carga_automatizada_api  BOOLEAN         NOT NULL DEFAULT FALSE,
     -- Soporte
     soporte_prioritario     BOOLEAN         NOT NULL DEFAULT FALSE,
     -- Meta

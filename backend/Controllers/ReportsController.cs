@@ -23,11 +23,11 @@ public class IngestaReporteRequest
 }
 
 /// <summary>
-/// CU-05 de la tesis: "Ingestar reporte de prueba CI/CD". Endpoint pensado para que un pipeline de
-/// integración continua envíe, de forma automatizada y autenticada, el archivo output.json de cada
+/// CU-05 de la tesis: ingesta automatizada de reportes de prueba. Endpoint pensado para que un cliente de la API envíe,
+/// de forma automatizada y autenticada, el archivo output.json de cada
 /// ejecución de Robot Framework, sin intervención manual del Analista QA (a diferencia de
 /// POST /api/ResultadosPrueba, que es la carga manual desde la interfaz web). El backend valida y procesa
-/// el archivo (RobotFrameworkParser) y lo pasa al mismo pipeline de ingesta que la carga manual
+/// el archivo (RobotFrameworkParser) y lo pasa al mismo flujo de ingesta que la carga manual
 /// (IIngestaResultadosService): límites de plan, cálculo de métricas y recomendación automática.
 /// </summary>
 [ApiController]
@@ -60,11 +60,11 @@ public class ReportsController : ControllerBase
         if (!ModelState.IsValid)
             return UnprocessableEntity(ModelState);
 
-        // La carga automática desde el pipeline CI/CD es una funcionalidad del plan (Tabla 17);
+        // La carga automatizada mediante la API es una funcionalidad del plan (Tabla 17);
         // la carga manual desde la interfaz web está disponible en todos los planes.
-        var cicd = await _suscripcion.VerificarFeatureAsync(p => p.IntegracionCicd, "Carga automática desde CI/CD");
-        if (!cicd.Permitido)
-            return StatusCode(402, new { message = cicd.Mensaje, codigo = "FEATURE_NO_DISPONIBLE" });
+        var carga = await _suscripcion.VerificarFeatureAsync(p => p.CargaAutomatizadaApi, "Carga automatizada mediante la API");
+        if (!carga.Permitido)
+            return StatusCode(402, new { message = carga.Mensaje, codigo = "FEATURE_NO_DISPONIBLE" });
 
         var archivo = request.Archivo;
         if (archivo == null || archivo.Length == 0)

@@ -88,7 +88,7 @@ public class SuscripcionController : ControllerBase
                     p.DashboardAvanzado,
                     p.AuditoriaDetallada,
                     p.NotificacionesEmail,
-                    p.IntegracionCicd,
+                    p.CargaAutomatizadaApi,
                     p.SoportePrioritario,
                 }
             })
