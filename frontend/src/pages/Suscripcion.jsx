@@ -329,8 +329,13 @@ export default function Suscripcion() {
           {!actual?.activa ? (
             <div className="sus-sin-plan">
               <IcShield />
-              <h2>Sin suscripción activa</h2>
-              <p>Seleccioná un plan en la pestaña <strong>Planes</strong> para activar el sistema.</p>
+              <h2>{actual?.pagoPendiente ? 'Pago pendiente de confirmación' : 'Sin suscripción activa'}</h2>
+              {actual?.pagoPendiente && (
+                <p>Hay un pago iniciado que todavía no fue confirmado por la pasarela. El plan se activará en cuanto se confirme.</p>
+              )}
+              {esAdmin
+                ? <p>Seleccioná un plan en la pestaña <strong>Planes</strong> para activar el sistema.</p>
+                : <p>La suscripción pertenece a la organización y rige para todos los usuarios. Contactá al administrador del sistema para contratar o renovar el plan.</p>}
               <button className="sus-btn sus-btn--primary" onClick={() => setTab('planes')}>
                 Ver planes disponibles
               </button>

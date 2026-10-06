@@ -19,6 +19,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es/1.0.0/)
 - `docker-compose.yml` + Dockerfiles (`backend/Dockerfile`, `frontend/Dockerfile` + `nginx.conf`) — arquitectura física del Capítulo IV
 - Proyecto `DecisionSupportAPI.Tests` (xUnit) con los casos CP-U01 a CP-U04 de la Tabla 21, corriendo contra `RecommendationEngine` real
 - Columnas redimensionables (estilo Excel) en las 5 tablas del sistema, con ancho persistido en `localStorage`
+- Estado de la suscripción (`GET /api/suscripcion/actual`): cuando no hay plan activo informa `pagoPendiente` si existe un pago iniciado y sin confirmar; la pantalla Suscripción muestra a todos los perfiles «Pago pendiente de confirmación» o la indicación de contactar al Administrador (la suscripción pertenece a la organización y solo el Administrador la contrata)
+
+### Fixed
+- Análisis y Métricas: el nombre y el tipo del proyecto no se veían en el historial de evaluaciones (`max-width: 0` aplicado a un `div`)
 
 ### Security
 - HTTPS en el despliegue con Docker: el Nginx del contenedor frontend termina TLS (puerto 443) con el certificado de `./certs` (`tls.crt`/`tls.key`) o, si no se provee, con uno autofirmado generado al iniciar; el puerto HTTP solo redirige a HTTPS
