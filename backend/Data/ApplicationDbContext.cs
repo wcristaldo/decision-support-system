@@ -295,7 +295,7 @@ public class ApplicationDbContext : DbContext
             e.Property(p => p.DashboardAvanzado).HasColumnName("dashboard_avanzado");
             e.Property(p => p.AuditoriaDetallada).HasColumnName("auditoria_detallada");
             e.Property(p => p.NotificacionesEmail).HasColumnName("notificaciones_email");
-            e.Property(p => p.IntegracionCicd).HasColumnName("integracion_cicd");
+            e.Property(p => p.CargaAutomatizadaApi).HasColumnName("carga_automatizada_api");
             e.Property(p => p.SoportePrioritario).HasColumnName("soporte_prioritario");
             e.Property(p => p.Estado).HasColumnName("estado");
             e.Property(p => p.FechaCreacion).HasColumnName("fecha_creacion");

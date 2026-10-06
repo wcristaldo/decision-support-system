@@ -18,7 +18,7 @@ Navegador ──HTTPS :443──▶ dss-frontend (Nginx + SPA React)
 - **dss-api** (imagen `dotnet/aspnet:10.0`): API REST, servicio de respaldo en segundo plano e instalación de `pg_dump`. Chequeo de salud: `GET /api/health`. Los respaldos se guardan en el volumen `respaldos`.
 - **dss-db** (imagen `postgres:15`): se inicializa con `schema.sql`, `seed.sql`, `suscripcion_schema.sql` y `suscripcion_seed.sql`. Chequeo de salud: `pg_isready`. Datos en el volumen `postgres_data`.
 
-Servicios externos: servidor SMTP (alertas «No desplegar», códigos de recuperación y recibos), pasarelas de pago AdamsPay y PayPal, y `open.er-api.com` (tipo de cambio PYG/USD). Un cliente automatizado de la API (por ejemplo, un eventual pipeline de integración continua) puede enviar reportes a `POST /api/reports`; no forma parte del sistema.
+Servicios externos: servidor SMTP (alertas «No desplegar», códigos de recuperación y recibos), pasarelas de pago AdamsPay y PayPal, y `open.er-api.com` (tipo de cambio PYG/USD). Un cliente automatizado de la API puede enviar reportes a `POST /api/reports`; no forma parte del sistema.
 
 ## Capas
 

@@ -23,7 +23,7 @@ public class PlanSuscripcion
 
     // Notificaciones e integraciones
     public bool    NotificacionesEmail   { get; set; }
-    public bool    IntegracionCicd       { get; set; }
+    public bool    CargaAutomatizadaApi  { get; set; }
 
     // Soporte
     public bool    SoportePrioritario    { get; set; }

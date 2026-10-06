@@ -277,7 +277,7 @@ function CargarResultados() {
           <div>
             <h1 className="cr-title">Cargar resultados</h1>
             <p className="cr-subtitle">
-              Subí el archivo JSON generado por el pipeline CI/CD para una versión específica
+              Subí el archivo JSON generado por Robot Framework para una versión específica
             </p>
           </div>
         </div>
@@ -360,7 +360,7 @@ function CargarResultados() {
               </h3>
 
               <p className="cr-section-hint">
-                Seleccioná el <strong>output.json</strong> generado por Robot Framework (v7+) desde tu pipeline CI/CD.
+                Seleccioná el <strong>output.json</strong> generado por Robot Framework (v7+).
                 El sistema validará la estructura y extraerá automáticamente todas las métricas.
                 Campos requeridos: <code className="cr-code-inline">generator</code>,{' '}
                 <code className="cr-code-inline">suite.status</code>,{' '}

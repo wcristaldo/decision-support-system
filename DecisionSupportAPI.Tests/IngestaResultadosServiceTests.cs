@@ -7,9 +7,9 @@ using DecisionSupportAPI.Services;
 
 namespace DecisionSupportAPI.Tests;
 
-/// <summary>RNF08: cobertura de IngestaResultadosService — pipeline único de
+/// <summary>RNF08: cobertura de IngestaResultadosService — flujo único de
 /// ingesta (RF03-RF09) usado tanto por la carga manual como por CU-05
-/// (ingesta automatizada CI/CD, ReportsController).</summary>
+/// (ingesta automatizada por API, ReportsController).</summary>
 public class IngestaResultadosServiceTests
 {
     private static (ApplicationDbContext ctx, IngestaResultadosService service, int versionId) Arrange()

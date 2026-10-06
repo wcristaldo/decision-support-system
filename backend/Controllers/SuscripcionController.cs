@@ -88,7 +88,7 @@ public class SuscripcionController : ControllerBase
                     p.DashboardAvanzado,
                     p.AuditoriaDetallada,
                     p.NotificacionesEmail,
-                    p.IntegracionCicd,
+                    p.CargaAutomatizadaApi,
                     p.SoportePrioritario,
                 }
             })
@@ -105,7 +105,14 @@ public class SuscripcionController : ControllerBase
         var sub = await _suscripcionService.GetSuscripcionActivaAsync();
 
         if (sub == null)
-            return Ok(new { activa = false, mensaje = "Sin suscripción activa." });
+        {
+            // Un pago iniciado y todavía no confirmado por la pasarela (webhook) no activa el plan: se informa a
+            // todos los perfiles para que sepan que la organización está a la espera de esa confirmación.
+            var limite = DateTime.UtcNow.AddDays(-7);
+            var pagoPendiente = await _db.PagosSuscripcion
+                .AnyAsync(p => p.Estado == "pendiente" && p.FechaCreacion >= limite);
+            return Ok(new { activa = false, pagoPendiente, mensaje = "Sin suscripción activa." });
+        }
 
         var inicioMes = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         var proyectos = await _db.Proyectos.CountAsync(p => p.Estado == "activo");

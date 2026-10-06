@@ -122,7 +122,7 @@ dotnet test DecisionSupportAPI.Tests                                 # 164 prueb
 dotnet test DecisionSupportAPI.Tests --collect:"XPlat Code Coverage" # con cobertura
 ```
 
-La colección de Postman (`dss-roshka.postman_collection.json`) reúne los casos de integración y humo; el archivo `json-tests/ci-cd/output.json` es un ejemplo real de reporte de Robot Framework para probar la ingesta.
+La colección de Postman (`dss-roshka.postman_collection.json`) reúne los casos de integración y humo; el archivo `json-tests/reportes-api/output.json` es un ejemplo real de reporte de Robot Framework para probar la ingesta.
 
 ## Ramas
 

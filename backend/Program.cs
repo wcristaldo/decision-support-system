@@ -172,7 +172,7 @@ var app = builder.Build();
 if (confiarEncabezadosReenviados)
     app.UseForwardedHeaders();
 
-// Configure the HTTP request pipeline
+// Configuración del middleware HTTP
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

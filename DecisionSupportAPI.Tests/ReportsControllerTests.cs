@@ -9,7 +9,7 @@ using DecisionSupportAPI.Services;
 
 namespace DecisionSupportAPI.Tests;
 
-/// <summary>RNF08: cobertura de ReportsController (CU-05 — ingesta automatizada CI/CD del output.json).</summary>
+/// <summary>RNF08: cobertura de ReportsController (CU-05 — ingesta automatizada por API del output.json).</summary>
 public class ReportsControllerTests
 {
     internal const string OutputValido = """
@@ -22,13 +22,13 @@ public class ReportsControllerTests
         }
         """;
 
-    private static (ApplicationDbContext ctx, ReportsController controller) Arrange(bool planConCicd = true)
+    private static (ApplicationDbContext ctx, ReportsController controller) Arrange(bool planConCargaApi = true)
     {
         var ctx = TestHelpers.NewContext();
         var ingesta = new IngestaResultadosService(
             ctx, new MetricsCalculationService(ctx), new RecommendationEngine(ctx),
             TestHelpers.NewAuditoriaService(ctx), new FakeSuscripcionService(), new FakeEmailService());
-        var controller = new ReportsController(ingesta, ctx, new FakeSuscripcionService(planConCicd));
+        var controller = new ReportsController(ingesta, ctx, new FakeSuscripcionService(planConCargaApi));
         TestHelpers.SetUser(controller, TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "cargar_resultados" }));
         return (ctx, controller);
     }
@@ -60,7 +60,7 @@ public class ReportsControllerTests
         var (ctx, controller) = Arrange();
         var v = await SeedVersionAsync(ctx);
 
-        var result = await controller.Ingest(new IngestaReporteRequest { VersionId = v.Id, Archivo = Archivo(OutputValido), Observaciones = "pipeline" });
+        var result = await controller.Ingest(new IngestaReporteRequest { VersionId = v.Id, Archivo = Archivo(OutputValido), Observaciones = "carga automatizada" });
 
         Assert.Equal(201, Assert.IsAssignableFrom<ObjectResult>(result).StatusCode);
         var cuerpo = Cuerpo(result);
@@ -117,10 +117,10 @@ public class ReportsControllerTests
         Assert.Equal(404, Assert.IsAssignableFrom<ObjectResult>(result).StatusCode);
     }
 
-    [Fact(DisplayName = "Ingest rechaza con 402 la carga automática si el plan activo no incluye la integración CI/CD")]
-    public async Task Ingest_PlanSinIntegracionCicd_Devuelve402()
+    [Fact(DisplayName = "Ingest rechaza con 402 la carga automática si el plan activo no incluye la carga automatizada mediante la API")]
+    public async Task Ingest_PlanSinCargaAutomatizada_Devuelve402()
     {
-        var (ctx, controller) = Arrange(planConCicd: false);
+        var (ctx, controller) = Arrange(planConCargaApi: false);
         var v = await SeedVersionAsync(ctx);
 
         var result = await controller.Ingest(new IngestaReporteRequest { VersionId = v.Id, Archivo = Archivo(OutputValido) });
