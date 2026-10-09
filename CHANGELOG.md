@@ -21,6 +21,9 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es/1.0.0/)
 - Columnas redimensionables (estilo Excel) en las 5 tablas del sistema, con ancho persistido en `localStorage`
 - Estado de la suscripción (`GET /api/suscripcion/actual`): cuando no hay plan activo informa `pagoPendiente` si existe un pago iniciado y sin confirmar; la pantalla Suscripción muestra a todos los perfiles «Pago pendiente de confirmación» o la indicación de contactar al Administrador (la suscripción pertenece a la organización y solo el Administrador la contrata)
 
+### Changed
+- Política de Privacidad (v1.2) y Términos y Condiciones (v1.1): el Sistema se identifica como Trabajo Final de Grado de la UNIDA implementado en Roshka S.A.; se agrega la titularidad de los derechos de propiedad intelectual (UNIDA, sin perjuicio de la autoría del tesista), se aclara que Roshka S.A. conserva la titularidad de su información y actúa como responsable del tratamiento de los datos de sus usuarios, y se actualizan los pies de página (© UNIDA) del login y del panel principal
+
 ### Fixed
 - Análisis y Métricas: el nombre y el tipo del proyecto no se veían en el historial de evaluaciones (`max-width: 0` aplicado a un `div`)
 

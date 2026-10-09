@@ -288,7 +288,7 @@ function Dashboard({ onLogout }) {
       </div>
 
       <footer className="dash-footer">
-        © 2026 Roshka S.A. - Proyecto de Tesis UNIDA
+        © 2026 UNIDA - Proyecto de Tesis - Roshka S.A.
       </footer>
     </div>
   )

@@ -2,7 +2,7 @@
 
 Aplicación web que recibe los resultados de pruebas automatizadas (archivo `output.json` de Robot Framework), calcula métricas de calidad, las compara con umbrales configurables por proyecto y emite una recomendación de despliegue (**Desplegar**, **Revisar** o **No desplegar**). La decisión final la toma una persona (Líder Técnico) con una justificación registrada, y todo queda auditado.
 
-Desarrollado como trabajo final de grado (Ingeniería en Sistemas, UNIDA, 2026) para **Roshka S.A.**
+Desarrollado como trabajo final de grado (Ingeniería en Sistemas, UNIDA, 2026) e implementado en **Roshka S.A.** Los derechos de propiedad intelectual del Sistema corresponden a la UNIDA, de acuerdo con la declaración que el tesista suscribe con la Universidad y sin perjuicio del reconocimiento de su autoría; Roshka S.A. conserva la titularidad de su información y actúa como responsable del tratamiento de los datos personales de sus usuarios (ver la Política de Privacidad y los Términos y Condiciones publicados en la pantalla de inicio de sesión).
 
 ## Funcionalidades
 
