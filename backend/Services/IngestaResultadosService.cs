@@ -118,6 +118,10 @@ public class IngestaResultadosService : IIngestaResultadosService
         if (transaction != null)
             await transaction.CommitAsync();
 
+        // El detalle por prueba se guarda aparte y sin riesgo para la carga: si no se puede guardar (por ejemplo,
+        // la tabla todavía no existe en una base sin migrar), el resultado y su recomendación ya están registrados.
+        await GuardarDetalleAsync(resultado.Id, request.ContenidoReporte);
+
         // ── Notificación automática si plan lo permite ────────────────────
         try
         {
@@ -147,7 +151,7 @@ public class IngestaResultadosService : IIngestaResultadosService
                     if (adminEmails.Count > 0 && ver != null)
                     {
                         await _emailService.EnviarAlertaNoAptoAsync(
-                            ver.Proyecto?.Nombre ?? "—",
+                            ver.Proyecto?.Nombre ?? "-",
                             ver.NumeroVersion,
                             request.NombreArchivo,
                             adminEmails);
@@ -181,5 +185,25 @@ public class IngestaResultadosService : IIngestaResultadosService
         };
 
         return new IngestaResultado(201, dto);
+    }
+
+    private async Task GuardarDetalleAsync(int resultadoId, string? contenido)
+    {
+        var detalle = RobotFrameworkDetalle.Extraer(contenido);
+        if (detalle == null) return;
+
+        var fila = new ResultadoDetalle { ResultadoId = resultadoId, DetalleJson = RobotFrameworkDetalle.Serializar(detalle) };
+        try
+        {
+            _context.ResultadosDetalle.Add(fila);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _context.Entry(fila).State = EntityState.Detached;
+            var motivo = ex.GetBaseException().Message;
+            await _auditoriaService.RegistrarAsync("Error", "ResultadoPrueba", resultadoId,
+                "No se pudo guardar el detalle por prueba: " + (motivo.Length > 200 ? motivo[..200] : motivo));
+        }
     }
 }

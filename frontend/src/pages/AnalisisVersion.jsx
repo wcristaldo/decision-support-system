@@ -7,7 +7,7 @@ import FilterableTh from '../components/FilterableTh'
 import Pagination from '../components/Pagination'
 import { useResizableColumns } from '../hooks/useResizableColumns'
 import { fmtFechaCompleta } from '../utils/fecha'
-import { isAdmin, isGerenteQA, isLiderTecnico, hasPermiso } from '../utils/auth'
+import { isAdmin, isGerenteQA, isLiderTecnico, isAnalistaQA, hasPermiso } from '../utils/auth'
 import { IconCheck, IconWarning, IconX } from '../components/icons'
 import '../styles/AnalisisVersion.css'
 
@@ -261,7 +261,7 @@ function DecisionModal({ recomendaciones, onClose, onSaved }) {
                 <span className="dec-override-warning-icon"><IconWarning size={18} /></span>
                 <span>
                   Esta decisión va <strong>en contra</strong> de la recomendación del sistema.
-                  Detallá con claridad el motivo (mínimo {MIN_LARGO_JUSTIFICACION_OVERRIDE} caracteres) —
+                  Detallá con claridad el motivo (mínimo {MIN_LARGO_JUSTIFICACION_OVERRIDE} caracteres) -
                   quedará marcada como excepción en el historial.
                 </span>
               </div>
@@ -327,11 +327,14 @@ function AnalisisVersion() {
   const [recomendaciones,  setRecomendaciones]  = useState([])
   const [decisiones,       setDecisiones]       = useState([])
   const [archivoInfo,      setArchivoInfo]      = useState(null)
+  const [detallePruebas,   setDetallePruebas]   = useState(null)   // resumen técnico del output.json (si se cargó el archivo completo)
   const [adherencia,       setAdherencia]       = useState(null)
   const [loading,          setLoading]          = useState(true)
   const [error,            setError]            = useState(null)
   const [showModal,        setShowModal]        = useState(false)
   const [descargandoActaId, setDescargandoActaId] = useState(null)
+  const [descargandoReporte, setDescargandoReporte] = useState(false)
+  const [perfilReporte, setPerfilReporte] = useState('gerencia')   // solo lo elige el Administrador
   const [notification,     setNotification]     = useState(null)
 
   const { widths: decWidths, startResize: decStartResize } = useResizableColumns('analisis-version-decisiones', DECISIONES_COLUMNS)
@@ -343,6 +346,7 @@ function AnalisisVersion() {
     setLoading(true)
     setError(null)
     setArchivoInfo(null)
+    setDetallePruebas(null)
     try {
       // Si venimos desde el historial con un resultadoId específico, cargamos
       // datos de ESE resultado. Si no, cargamos el último resultado de la versión.
@@ -370,6 +374,12 @@ function AnalisisVersion() {
         try {
           const aRes = await api.get(`/resultadosprueba/${rid}`)
           setArchivoInfo(aRes.data)
+        } catch { /* no crítico si falla */ }
+
+        // Detalle por prueba: 204 (sin contenido) cuando el resultado se cargó sin el archivo completo
+        try {
+          const dRes = await api.get(`/resultadosprueba/${rid}/detalle`)
+          if (dRes.status === 200 && dRes.data) setDetallePruebas(dRes.data)
         } catch { /* no crítico si falla */ }
 
         try {
@@ -440,6 +450,38 @@ function AnalisisVersion() {
     }
   }
 
+  // Reporte ejecutivo en PDF: el backend elige el perfil según el rol (Gerencia, Líder Técnico o Analista QA);
+  // el Administrador puede pedir cualquiera de los tres.
+  const descargarReporte = async () => {
+    setDescargandoReporte(true)
+    try {
+      const params = {}
+      if (resultadoId) params.resultadoId = resultadoId
+      if (isAdmin()) params.perfil = perfilReporte
+      const res = await api.get(`/analisis/version/${id}/reporte-ejecutivo`, { params, responseType: 'blob' })
+      const disposicion = res.headers?.['content-disposition'] || ''
+      const nombre = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposicion)?.[1] || `Reporte-Ejecutivo-v${version?.numeroVersion || id}.pdf`
+      const blobUrl = window.URL.createObjectURL(res.data)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = decodeURIComponent(nombre)
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(blobUrl)
+    } catch (err) {
+      let msg = 'No se pudo generar el reporte en PDF. Intentá de nuevo.'
+      if (err.response?.data instanceof Blob) {
+        try { msg = JSON.parse(await err.response.data.text())?.message || msg } catch { /* el blob no era JSON */ }
+      }
+      setNotification({ type: 'error', title: 'No disponible', message: msg })
+    } finally {
+      setDescargandoReporte(false)
+    }
+  }
+
+  const puedeVerDetallePruebas = isAdmin() || isLiderTecnico() || isAnalistaQA()
+
   const backPath = version?.proyectoId ? `/proyectos/${version.proyectoId}` : '/proyectos'
 
   const setDecFiltro = (columna) => (valor) => {
@@ -506,7 +548,29 @@ function AnalisisVersion() {
 
         {/* ── Semáforo ── */}
         <section className="av-section">
-          <h2 className="av-section-title">Recomendación del sistema</h2>
+          <div className="av-section-head">
+            <h2 className="av-section-title">Recomendación del sistema</h2>
+            {semaforo && (
+              <div className="av-report-actions">
+                {isAdmin() && (
+                  <select
+                    className="av-report-select"
+                    value={perfilReporte}
+                    onChange={(e) => setPerfilReporte(e.target.value)}
+                    aria-label="Perfil del reporte"
+                    disabled={descargandoReporte}
+                  >
+                    <option value="gerencia">Resumen para Gerencia</option>
+                    <option value="tecnico">Informe para la decisión (Líder Técnico)</option>
+                    <option value="qa">Informe de calidad (Analista QA)</option>
+                  </select>
+                )}
+                <button type="button" className="av-report-btn" onClick={descargarReporte} disabled={descargandoReporte}>
+                  {descargandoReporte ? <><span className="btn-spinner" /> Generando…</> : 'Descargar reporte (PDF)'}
+                </button>
+              </div>
+            )}
+          </div>
           {semaforo ? (
             <div className={`av-semaforo ${semaforo.cls}`}>
               <div className={`av-sem-icon ${semaforo.iconCls}`}><semaforo.icon size={28} /></div>
@@ -552,7 +616,7 @@ function AnalisisVersion() {
                 <p className="av-negocio-texto">
                   El Líder Técnico ya {DECISION_VERBO[ultimaDecision.decisionFinal?.toLowerCase()] || 'registró una decisión sobre'} este despliegue
                   {ultimaDecision.esOverride
-                    ? <> — una decisión tomada <strong>en contra</strong> de la recomendación del sistema, bajo responsabilidad explícita del equipo técnico.</>
+                    ? <> - una decisión tomada <strong>en contra</strong> de la recomendación del sistema, bajo responsabilidad explícita del equipo técnico.</>
                     : <>, en línea con lo que sugirió el sistema.</>}
                 </p>
               )}
@@ -600,9 +664,72 @@ function AnalisisVersion() {
             </div>
             {archivoInfo && (
               <div className="av-tecnico-meta">
-                <span><strong>Formato:</strong> {archivoInfo.formatoArchivo || '—'}</span>
-                <span><strong>Estado de validación:</strong> {archivoInfo.estadoValidacion || '—'}</span>
+                <span><strong>Formato:</strong> {archivoInfo.formatoArchivo || '-'}</span>
+                <span><strong>Estado de validación:</strong> {archivoInfo.estadoValidacion || '-'}</span>
               </div>
+            )}
+          </section>
+        )}
+
+        {/* ── Detalle de las pruebas (Analista QA / Líder Técnico / Administrador) ── */}
+        {puedeVerDetallePruebas && detallePruebas && (
+          <section className="av-section">
+            <h2 className="av-section-title">Detalle de las pruebas</h2>
+            <p className="av-section-hint">
+              Resumen extraído del archivo output.json: qué pruebas fallaron y por qué, dónde se concentran y cuáles tardaron más.
+            </p>
+
+            {detallePruebas.totalFallidas === 0 ? (
+              <p className="av-empty">Ninguna prueba falló en esta ejecución.</p>
+            ) : (
+              <div className="av-det-wrap">
+                <table className="av-det-table">
+                  <thead>
+                    <tr><th>Módulo</th><th>Prueba que falló</th><th>Motivo</th></tr>
+                  </thead>
+                  <tbody>
+                    {detallePruebas.fallidas.map((f, i) => (
+                      <tr key={i}>
+                        <td>{f.modulo}</td>
+                        <td className="av-det-nombre">{f.nombre}</td>
+                        <td>{f.mensaje || <span className="av-dec-td-empty">Sin mensaje de error registrado</span>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {detallePruebas.totalFallidas > detallePruebas.fallidas.length && (
+                  <p className="av-section-hint">
+                    … y {detallePruebas.totalFallidas - detallePruebas.fallidas.length} pruebas fallidas más (el detalle completo está en el output.json).
+                  </p>
+                )}
+              </div>
+            )}
+
+            {detallePruebas.modulos?.length > 0 && (
+              <>
+                <h3 className="av-det-sub">Resultado por módulo</h3>
+                <div className="av-det-modulos">
+                  {detallePruebas.modulos.map((m, i) => (
+                    <div key={i} className={`av-det-modulo ${m.fallidas > 0 ? 'av-det-modulo--falla' : ''}`}>
+                      <span className="av-det-modulo-nombre">{m.nombre}</span>
+                      <span className="av-det-modulo-datos">
+                        {m.exitosas} pasaron · <strong>{m.fallidas} fallaron</strong> · {m.omitidas} omitidas
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {detallePruebas.masLentas?.length > 0 && (
+              <>
+                <h3 className="av-det-sub">Pruebas más lentas</h3>
+                <ul className="av-det-lentas">
+                  {detallePruebas.masLentas.map((l, i) => (
+                    <li key={i}><span>{l.nombre} <em>({l.modulo})</em></span><strong>{Number(l.segundos).toFixed(2)} s</strong></li>
+                  ))}
+                </ul>
+              </>
             )}
           </section>
         )}
@@ -614,14 +741,14 @@ function AnalisisVersion() {
             <div className="av-file-info">
               <div className="av-file-row">
                 <span className="av-file-label">Archivo</span>
-                <span className="av-file-value">{archivoInfo.nombreArchivo || '—'}</span>
+                <span className="av-file-value">{archivoInfo.nombreArchivo || '-'}</span>
               </div>
               <div className="av-file-row">
                 <span className="av-file-label">Cargado el</span>
                 <span className="av-file-value">
                   {archivoInfo.fechaCarga
                     ? new Date(archivoInfo.fechaCarga).toLocaleString('es-PY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                    : '—'}
+                    : '-'}
                 </span>
               </div>
               {archivoInfo.observaciones && (

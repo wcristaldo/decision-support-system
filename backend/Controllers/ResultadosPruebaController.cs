@@ -53,6 +53,30 @@ public class ResultadosPruebaController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// GET /api/resultadosPrueba/{id}/detalle
+    /// Resumen técnico del resultado: pruebas fallidas con su motivo, más lentas y desglose por módulo.
+    /// 204 si el resultado no tiene detalle (cargado sin el archivo completo o antes de esta función).
+    /// </summary>
+    [HttpGet("{id}/detalle")]
+    public async Task<IActionResult> GetDetalle(int id)
+    {
+        if (!await _acceso.TieneAccesoAResultadoAsync(User, id)) return Forbid();
+
+        string? json;
+        try
+        {
+            json = await _context.ResultadosDetalle.Where(d => d.ResultadoId == id).Select(d => d.DetalleJson).FirstOrDefaultAsync();
+        }
+        catch (Exception)
+        {
+            json = null;   // la tabla todavía no existe en esta base: se comporta como "sin detalle"
+        }
+
+        var detalle = RobotFrameworkDetalle.Deserializar(json);
+        return detalle == null ? NoContent() : Ok(detalle);
+    }
+
     [HttpGet("version/{versionId}")]
     public async Task<ActionResult<List<ResultadoPruebaDto>>> GetByVersion(int versionId)
     {

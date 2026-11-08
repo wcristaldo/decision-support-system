@@ -1,0 +1,218 @@
+{
+ "generator": "Robot 7.4 (Python 3.12.0 on win32)",
+ "generated": "2026-10-16T10:30:00.000000",
+ "rpa": false,
+ "suite": {
+  "id": "s1",
+  "name": "Roshka Smoke",
+  "source": "C:\\pruebas",
+  "status": "FAIL",
+  "start_time": "2026-10-16T10:29:00.000000",
+  "elapsed_time": 30.5,
+  "suites": [
+   {
+    "id": "s1-s1",
+    "name": "01-Login",
+    "source": "C:\\pruebas\\01-Login",
+    "status": "FAIL",
+    "elapsed_time": 4.13,
+    "tests": [
+     {
+      "id": "s1-s1-t1",
+      "name": "CP-LOGIN-01 Login exitoso con credenciales válidas",
+      "status": "PASS",
+      "elapsed_time": 1.14,
+      "tags": [
+       "CP-LOGIN-01"
+      ]
+     },
+     {
+      "id": "s1-s1-t2",
+      "name": "CP-LOGIN-02 Login con contraseña incorrecta",
+      "status": "PASS",
+      "elapsed_time": 0.68,
+      "tags": [
+       "CP-LOGIN-02"
+      ]
+     },
+     {
+      "id": "s1-s1-t3",
+      "name": "CP-LOGIN-03 Login con usuario bloqueado",
+      "status": "FAIL",
+      "elapsed_time": 2.31,
+      "tags": [
+       "CP-LOGIN-03"
+      ],
+      "message": "Element 'id=error-bloqueado' not found after 10 seconds."
+     }
+    ]
+   },
+   {
+    "id": "s1-s2",
+    "name": "02-Pagos",
+    "source": "C:\\pruebas\\02-Pagos",
+    "status": "FAIL",
+    "elapsed_time": 10.92,
+    "tests": [
+     {
+      "id": "s1-s2-t1",
+      "name": "CP-PAG-01 Pago con tarjeta aprobado",
+      "status": "FAIL",
+      "elapsed_time": 4.8,
+      "tags": [
+       "CP-PAG-01"
+      ],
+      "message": "AssertionError: 'Pago aprobado' not found in page text."
+     },
+     {
+      "id": "s1-s2-t2",
+      "name": "CP-PAG-02 Pago con PayPal",
+      "status": "FAIL",
+      "elapsed_time": 3.92,
+      "tags": [
+       "CP-PAG-02"
+      ],
+      "message": "TimeoutException: Message: timeout waiting for payment button"
+     },
+     {
+      "id": "s1-s2-t3",
+      "name": "CP-PAG-03 Pago con AdamsPay",
+      "status": "PASS",
+      "elapsed_time": 2.2,
+      "tags": [
+       "CP-PAG-03"
+      ]
+     },
+     {
+      "id": "s1-s2-t4",
+      "name": "CP-PAG-04 Reembolso de un pago",
+      "status": "SKIP",
+      "elapsed_time": 0.0,
+      "tags": [
+       "CP-PAG-04"
+      ],
+      "message": "Skipped: funcionalidad pendiente de implementar."
+     }
+    ]
+   },
+   {
+    "id": "s1-s3",
+    "name": "03-Proyectos",
+    "source": "C:\\pruebas\\03-Proyectos",
+    "status": "FAIL",
+    "elapsed_time": 5.5,
+    "tests": [
+     {
+      "id": "s1-s3-t1",
+      "name": "CP-PRY-01 Crear proyecto",
+      "status": "PASS",
+      "elapsed_time": 1.0,
+      "tags": [
+       "CP-PRY-01"
+      ]
+     },
+     {
+      "id": "s1-s3-t2",
+      "name": "CP-PRY-02 Editar proyecto",
+      "status": "PASS",
+      "elapsed_time": 0.9,
+      "tags": [
+       "CP-PRY-02"
+      ]
+     },
+     {
+      "id": "s1-s3-t3",
+      "name": "CP-PRY-03 Listar proyectos",
+      "status": "PASS",
+      "elapsed_time": 1.6,
+      "tags": [
+       "CP-PRY-03"
+      ]
+     },
+     {
+      "id": "s1-s3-t4",
+      "name": "CP-PRY-04 Crear proyecto con nombre duplicado",
+      "status": "FAIL",
+      "elapsed_time": 2.0,
+      "tags": [
+       "CP-PRY-04"
+      ],
+      "body": [
+       {
+        "name": "Open Browser",
+        "owner": "SeleniumLibrary",
+        "status": "PASS",
+        "elapsed_time": 0.9
+       },
+       {
+        "name": "Click Button",
+        "owner": "SeleniumLibrary",
+        "args": [
+         "id=guardar"
+        ],
+        "status": "FAIL",
+        "elapsed_time": 1.1,
+        "body": [
+         {
+          "type": "MESSAGE",
+          "message": "Clicking button 'id=guardar'.",
+          "level": "INFO"
+         },
+         {
+          "type": "MESSAGE",
+          "message": "Button with locator 'id=guardar' not found.",
+          "level": "FAIL"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "statistics": {
+  "total": {
+   "label": "All Tests",
+   "pass": 6,
+   "fail": 4,
+   "skip": 1
+  },
+  "suites": [
+   {
+    "label": "Roshka Smoke",
+    "name": "Roshka Smoke",
+    "id": "s1",
+    "pass": 6,
+    "fail": 4,
+    "skip": 1
+   },
+   {
+    "label": "Roshka Smoke.01-Login",
+    "name": "01-Login",
+    "id": "s1-s1",
+    "pass": 2,
+    "fail": 1,
+    "skip": 0
+   },
+   {
+    "label": "Roshka Smoke.02-Pagos",
+    "name": "02-Pagos",
+    "id": "s1-s2",
+    "pass": 1,
+    "fail": 2,
+    "skip": 1
+   },
+   {
+    "label": "Roshka Smoke.03-Proyectos",
+    "name": "03-Proyectos",
+    "id": "s1-s3",
+    "pass": 3,
+    "fail": 1,
+    "skip": 0
+   }
+  ],
+  "tags": []
+ },
+ "errors": []
+}

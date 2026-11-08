@@ -359,3 +359,63 @@
     padding: 0.7rem 0.8rem;
   }
 }
+
+/* -- Historial de respaldos: el nombre del archivo descarga al hacer clic, y botón de descarga -- */
+.audit-td-archivo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.audit-file-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--blue-600, #3b6c99);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.audit-file-link:hover:not(:disabled) { color: var(--text-dark); }
+.audit-file-link:disabled { opacity: 0.6; cursor: wait; }
+
+.audit-dl-btn {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: 1.5px solid var(--gray-300);
+  color: var(--text-mid);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.9rem;
+  border-radius: 50px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.audit-dl-btn:hover:not(:disabled) {
+  background: var(--gray-100);
+  border-color: var(--blue-400);
+  color: var(--text-dark);
+}
+
+.audit-dl-btn:disabled { opacity: 0.6; cursor: wait; }
+
+.audit-td-sin-resultados {
+  text-align: center;
+  color: var(--text-mid);
+  padding: 1.2rem 1rem;
+}
+
+/* -- Respaldo: estado del último y próximo respaldo -- */
+.bk-estado { margin-top: 0.9rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.bk-estado .audit-subtitle { margin: 0; }
+.bk-nota { font-style: italic; }

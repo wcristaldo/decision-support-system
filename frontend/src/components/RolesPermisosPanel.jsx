@@ -81,7 +81,7 @@ function RolesPermisosPanel({ roles }) {
   return (
     <div className="rp-wrap">
       <p className="rp-hint">
-        Los permisos se asignan al <strong>rol</strong>, no a cada usuario — así, cambiar un permiso actualiza a todos
+        Los permisos se asignan al <strong>rol</strong>, no a cada usuario - así, cambiar un permiso actualiza a todos
         los usuarios que tengan ese rol de inmediato, incluso si ya tienen la sesión abierta.
       </p>
 
@@ -129,7 +129,7 @@ function RolesPermisosPanel({ roles }) {
                           <span className="rp-nombre-label">{permisoLabel(p.nombrePermiso)}</span>
                           <span className="rp-nombre-codigo">{p.nombrePermiso}</span>
                         </td>
-                        <td className="rp-desc-cell">{p.descripcion || '—'}</td>
+                        <td className="rp-desc-cell">{p.descripcion || '-'}</td>
                       </tr>
                     ))}
                   </Fragment>

@@ -38,6 +38,7 @@ function Auditoria() {
     'Login': { label: 'Login', clase: 'audit-badge-login' },
     'Password Change': { label: 'Cambiar Contraseña', clase: 'audit-badge-password' },
     'Error': { label: 'Error', clase: 'audit-badge-delete' },
+    'Download': { label: 'Descargar', clase: 'audit-badge-default' },
   }
 
   const fetchRegistros = async () => {

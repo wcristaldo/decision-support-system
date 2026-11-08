@@ -10,6 +10,7 @@ import Pagination from '../components/Pagination'
 import { useResizableColumns } from '../hooks/useResizableColumns'
 import { fmtFechaCorta, fmtFechaCompleta } from '../utils/fecha'
 import { IconBarChart, IconCheck, IconWarning, IconX, IconFileText, IconTable } from '../components/icons'
+import { ChartHelpButton, ChartHelpPanel } from '../components/ChartHelp'
 import '../styles/AnalisisMetricas.css'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -83,6 +84,7 @@ function AnalisisMetricas() {
   const [proyectoFiltro, setProyectoFiltro] = useState('')
   const [fechaDesde,    setFechaDesde]    = useState('')
   const [fechaHasta,    setFechaHasta]    = useState('')
+  const [ayudaTendencia, setAyudaTendencia] = useState(false)
   const { widths, startResize } = useResizableColumns('analisis-historial', AM_COLUMNS)
   const [exportando, setExportando] = useState(null) // 'pdf' | 'xlsx' | 'csv' | null
 
@@ -96,8 +98,16 @@ function AnalisisMetricas() {
   const handleExport = async (tipo) => {
     setExportando(tipo)
     try {
-      const url = tipo === 'pdf' ? '/analisis/historial/exportar-pdf' : `/analisis/historial/exportar?formato=${tipo}`
-      const res = await api.get(url, { responseType: 'blob' })
+      // El archivo contiene solo lo que se ve en pantalla: se envían los filtros activos.
+      const params = {}
+      if (filtro !== 'Todos') params.recomendacion = filtro
+      if (proyectoFiltro)     params.proyecto = proyectoFiltro
+      if (usuarioFiltro)      params.responsable = usuarioFiltro
+      if (fechaDesde)         params.desde = fechaDesde
+      if (fechaHasta)         params.hasta = fechaHasta
+      const url = tipo === 'pdf' ? '/analisis/historial/exportar-pdf' : '/analisis/historial/exportar'
+      if (tipo !== 'pdf') params.formato = tipo
+      const res = await api.get(url, { params, responseType: 'blob' })
       const blobUrl = window.URL.createObjectURL(res.data)
       const a = document.createElement('a')
       const ext = tipo === 'pdf' ? 'pdf' : tipo === 'xlsx' ? 'xlsx' : 'csv'
@@ -236,8 +246,20 @@ function AnalisisMetricas() {
         {tendencia.length > 1 && (
           <div className="am-table-card am-chart-card">
             <div className="am-table-head">
-              <h2 className="am-table-head-title">Tendencia histórica</h2>
+              <h2 className="am-table-head-title">
+                Tendencia histórica
+                <ChartHelpButton open={ayudaTendencia} onToggle={() => setAyudaTendencia(v => !v)} controls="ayuda-tendencia-analisis" />
+              </h2>
             </div>
+            {ayudaTendencia && (
+              <div className="am-chart-help">
+                <ChartHelpPanel
+                  id="ayuda-tendencia-analisis"
+                  alcance="Aquí se ven todas las evaluaciones del historial, de todos los proyectos."
+                  onClose={() => setAyudaTendencia(false)}
+                />
+              </div>
+            )}
             <div className="am-chart-wrap">
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={tendencia} margin={{ top: 10, right: 24, left: 0, bottom: 0 }}>
@@ -386,7 +408,7 @@ function AnalisisMetricas() {
                         <span className="am-td-version">v{h.versionNumero}</span>
                       </td>
                       <td className="am-td-fecha">{fmtFechaCompleta(h.fechaCarga)}</td>
-                      <td className="am-td-fecha">{h.usuarioCargaNombre || '—'}</td>
+                      <td className="am-td-fecha">{h.usuarioCargaNombre || '-'}</td>
                       <td>
                         <span className={`am-td-metric ${metricColorClass(h.tasaExito, 'mayor')}`}>
                           {fmt(h.tasaExito)}%
@@ -427,14 +449,16 @@ function AnalisisMetricas() {
           )}
 
           {filas.length > 0 && (
-            <Pagination
-              page={paginaSegura}
-              totalPages={totalPaginas}
-              onPageChange={setPagina}
-              pageSize={porPagina}
-              onPageSizeChange={(n) => { setPorPagina(n); setPagina(1) }}
-              totalItems={filas.length}
-            />
+            <div className="am-pagination">
+              <Pagination
+                page={paginaSegura}
+                totalPages={totalPaginas}
+                onPageChange={setPagina}
+                pageSize={porPagina}
+                onPageSizeChange={(n) => { setPorPagina(n); setPagina(1) }}
+                totalItems={filas.length}
+              />
+            </div>
           )}
         </div>
 

@@ -174,7 +174,7 @@ public class PayPalService : IPayPalService
                         currency_code = "USD",
                         value         = montoUsd.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
                     },
-                    description = $"Roshka DSS — Plan {planNombre} (suscripción mensual)"
+                    description = $"Roshka DSS - Plan {planNombre} (suscripción mensual)"
                 }
             },
             application_context = new
@@ -227,7 +227,7 @@ public class PayPalService : IPayPalService
             return (false, null, null, "PayPal no retornó URL de aprobación.");
         }
 
-        _logger.LogInformation("Orden PayPal creada: {OrderId} — USD {Monto}", orderId, montoUsd);
+        _logger.LogInformation("Orden PayPal creada: {OrderId} - USD {Monto}", orderId, montoUsd);
         return (true, approvalUrl, orderId, null);
     }
 

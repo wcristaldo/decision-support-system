@@ -103,6 +103,7 @@ public class ReportsController : ControllerBase
             Cobertura       = metricas.Cobertura,
             TiempoEjecucion = metricas.TiempoEjecucion,
             TamanoBytes     = archivo.Length,
+            ContenidoReporte = contenido,
         }, usuarioCargaId);
 
         if (resultado.StatusCode != StatusCodes.Status201Created || resultado.Body is not ResultadoPruebaDto creado)

@@ -125,7 +125,21 @@ public class ProyectosController : ControllerBase
         _context.Versiones.Add(versionInicial);
         await _context.SaveChangesAsync();
 
-        await _auditoriaService.RegistrarAsync("Create", "Proyecto", proyecto.Id, $"Proyecto creado: {proyecto.Nombre}");
+        // RF13: el Administrador ve todos los proyectos sin asignación; los demás perfiles solo ven los que un
+        // Administrador les asigna desde "Gestión de Usuarios". La excepción es quien crea el proyecto sin ser
+        // Administrador: queda asignado automáticamente, si no, no podría ver el proyecto que acaba de crear.
+        var asignadoAlCreador = false;
+        if (!_acceso.EsIrrestricto(User)
+            && int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var creadorId)
+            && await _context.Usuarios.AnyAsync(u => u.IdUsuario == creadorId))
+        {
+            _context.UsuarioProyectos.Add(new UsuarioProyecto { IdUsuario = creadorId, IdProyecto = proyecto.Id });
+            await _context.SaveChangesAsync();
+            asignadoAlCreador = true;
+        }
+
+        await _auditoriaService.RegistrarAsync("Create", "Proyecto", proyecto.Id,
+            $"Proyecto creado: {proyecto.Nombre}" + (asignadoAlCreador ? " (acceso asignado al creador)" : ""));
 
         return CreatedAtAction(nameof(GetById), new { id = proyecto.Id }, new ProyectoDto
         {

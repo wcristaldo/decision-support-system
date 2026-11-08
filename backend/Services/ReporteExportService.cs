@@ -55,7 +55,7 @@ public class ReporteExportService : IReporteExportService
 
                 page.Header().Column(col =>
                 {
-                    col.Item().Text("Roshka DSS — Historial de Análisis").FontSize(16).Bold().FontColor(colorNav);
+                    col.Item().Text("Roshka DSS - Historial de Análisis").FontSize(16).Bold().FontColor(colorNav);
                     col.Item().Text($"Generado el {generado:dd/MM/yyyy HH:mm}").FontSize(8.5f).FontColor(colorSuave);
                     col.Item().PaddingTop(6).LineHorizontal(1).LineColor(colorBorde);
                 });

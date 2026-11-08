@@ -92,17 +92,42 @@ public class BackupControllerTests
         Assert.Empty((System.Collections.IEnumerable)ok.Value!);
     }
 
-    [Fact(DisplayName = "GetHistorial con carpeta destino inexistente en disco devuelve lista vacia")]
+    [Fact(DisplayName = "GetHistorial y Descargar: carpeta inexistente devuelve lista vacia y 404; carpeta con respaldos lista y sirve el archivo")]
     public async Task GetHistorial_CarpetaInexistente_ListaVacia()
     {
         var ctx = TestHelpers.NewContext();
-        ctx.ConfiguracionesBackup.Add(new ConfiguracionBackup { IntervaloHoras = 24, CarpetaDestino = "carpeta-que-no-existe-" + Guid.NewGuid(), Activo = true });
+        var carpeta = Path.Combine(Path.GetTempPath(), "dss-backups-" + Guid.NewGuid());
+        ctx.ConfiguracionesBackup.Add(new ConfiguracionBackup { IntervaloHoras = 24, CarpetaDestino = carpeta, Activo = true });
         await ctx.SaveChangesAsync();
         var controller = NewController(ctx, Admin());
 
-        var result = await controller.GetHistorial();
-
-        var ok = Assert.IsType<OkObjectResult>(result);
+        // la carpeta todavía no existe
+        var ok = Assert.IsType<OkObjectResult>(await controller.GetHistorial());
         Assert.Empty((System.Collections.IEnumerable)ok.Value!);
+        Assert.IsType<NotFoundObjectResult>(await controller.Descargar("backup_20261015_203236.sql"));
+
+        // nombres que no son un respaldo (o intentan salir de la carpeta) se rechazan
+        foreach (var malo in new[] { "../secreto.sql", "backup_1.txt", "otro.sql", "backup_..\\x.sql" })
+            Assert.IsType<BadRequestObjectResult>(await controller.Descargar(malo));
+
+        // con la carpeta creada y un respaldo dentro, se lista y se puede descargar
+        Directory.CreateDirectory(carpeta);
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(carpeta, "backup_20261015_203236.sql"), "-- dump");
+            var lista = Assert.IsType<OkObjectResult>(await controller.GetHistorial());
+            Assert.Single((System.Collections.IEnumerable)lista.Value!);
+
+            var file = Assert.IsType<PhysicalFileResult>(await controller.Descargar("backup_20261015_203236.sql"));
+            Assert.Equal("backup_20261015_203236.sql", file.FileDownloadName);
+            Assert.True(ctx.Auditoria.Any(a => a.Accion == "Download" && a.EntidadAfectada == "ConfiguracionBackup"));
+
+            // un respaldo que no existe en la carpeta devuelve 404
+            Assert.IsType<NotFoundObjectResult>(await controller.Descargar("backup_20000101_000000.sql"));
+        }
+        finally
+        {
+            Directory.Delete(carpeta, true);
+        }
     }
 }

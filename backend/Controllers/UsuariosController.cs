@@ -62,7 +62,7 @@ public class UsuariosController : ControllerBase
                 Rol = u.UsuarioRoles
                     .Where(ur => ur.Estado == "activo" && ur.Rol != null)
                     .Select(ur => ur.Rol!.NombreRol)
-                    .FirstOrDefault() ?? "—",
+                    .FirstOrDefault() ?? "-",
             })
             .ToList();
 
