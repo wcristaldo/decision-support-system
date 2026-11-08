@@ -2,7 +2,7 @@
 
 Aplicación web que recibe los resultados de pruebas automatizadas (archivo `output.json` de Robot Framework), calcula métricas de calidad, las compara con umbrales configurables por proyecto y emite una recomendación de despliegue (**Desplegar**, **Revisar** o **No desplegar**). La decisión final la toma una persona (Líder Técnico) con una justificación registrada, y todo queda auditado.
 
-Desarrollado como trabajo final de grado (Ingeniería en Sistemas, UNIDA, 2026) e implementado en **Roshka S.A.** Los derechos de propiedad intelectual del Sistema corresponden a la UNIDA, de acuerdo con la declaración que el tesista suscribe con la Universidad y sin perjuicio del reconocimiento de su autoría; Roshka S.A. conserva la titularidad de su información y actúa como responsable del tratamiento de los datos personales de sus usuarios (ver la Política de Privacidad y los Términos y Condiciones publicados en la pantalla de inicio de sesión).
+Desarrollado como trabajo final de grado (Ingeniería en Sistemas, UNIDA, 2026) y validado con usuarios de **Roshka S.A.** Los derechos de propiedad intelectual del Sistema corresponden a la UNIDA, de acuerdo con la declaración que el tesista suscribe con la Universidad y sin perjuicio del reconocimiento de su autoría; Roshka S.A. conserva la titularidad de su información y actúa como responsable del tratamiento de los datos personales de sus usuarios (ver la Política de Privacidad y los Términos y Condiciones publicados en la pantalla de inicio de sesión).
 
 ## Funcionalidades
 
@@ -12,7 +12,8 @@ Desarrollado como trabajo final de grado (Ingeniería en Sistemas, UNIDA, 2026) 
 - Recomendación de despliegue, registro de la decisión (con justificación de al menos 20 caracteres cuando contradice la recomendación), indicador de adherencia y acta de decisión en PDF.
 - Panel principal con tendencia de calidad, historial con filtros y exportación (PDF, Excel y CSV según el plan) y comparación de versiones.
 - Autenticación JWT, control de acceso por roles y permisos (RBAC), recuperación de contraseña con código, límite de intentos de inicio de sesión y auditoría inmutable (trigger en base de datos).
-- Respaldo periódico configurable de la base de datos, módulo de suscripción por planes (AdamsPay y PayPal) y recibo electrónico en PDF.
+- Reporte ejecutivo en PDF orientado al perfil del usuario (Gerencia, Técnico o QA) y detalle por prueba del `output.json` (pruebas fallidas con su motivo, más lentas y desglose por módulo).
+- Respaldo periódico configurable de la base de datos (con descarga de los respaldos generados), módulo de suscripción por planes (AdamsPay y PayPal) y recibo electrónico en PDF.
 
 ## Stack
 
@@ -20,11 +21,11 @@ Desarrollado como trabajo final de grado (Ingeniería en Sistemas, UNIDA, 2026) 
 |------|-----------|
 | Frontend | React 18, Vite 5, React Router 6, Recharts, Axios |
 | Backend | ASP.NET Core 10 (API REST), Entity Framework Core 8 + Npgsql |
-| Base de datos | PostgreSQL 15 (21 tablas) |
+| Base de datos | PostgreSQL 15 (22 tablas) |
 | Seguridad | JWT, BCrypt (factor de costo 12), políticas de autorización por permiso |
 | Reportes y correo | QuestPDF, ClosedXML, MailKit |
 | Despliegue | Docker Compose (frontend con Nginx, API y base de datos), HTTPS con TLS 1.2/1.3 |
-| Pruebas | xUnit (164 pruebas), Coverlet, Postman, Apache JMeter, Robot Framework |
+| Pruebas | xUnit (173 pruebas), Coverlet, Postman, Apache JMeter, Robot Framework |
 
 ## Estructura
 
@@ -118,7 +119,7 @@ El sistema tiene cuatro roles; cada uno tiene asignado un subconjunto de doce pe
 ## Pruebas
 
 ```bash
-dotnet test DecisionSupportAPI.Tests                                 # 164 pruebas unitarias
+dotnet test DecisionSupportAPI.Tests                                 # 173 pruebas unitarias
 dotnet test DecisionSupportAPI.Tests --collect:"XPlat Code Coverage" # con cobertura
 ```
 

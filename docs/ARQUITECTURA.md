@@ -28,7 +28,7 @@ SPA en React 18 con Vite. Páginas: Login (con recuperación de contraseña, avi
 ### Lógica de negocio — `backend/`
 API REST con 16 controladores: `Auth`, `Usuarios`, `Roles`, `Proyectos`, `Versiones`, `ResultadosPrueba`, `Reports`, `Metricas`, `Recomendaciones`, `ReglaEvaluacion`, `DecisionesDespliegue`, `Analisis`, `Auditoria`, `Backup`, `Suscripcion` y `Health`.
 
-15 servicios de dominio:
+16 servicios de dominio:
 
 | Servicio | Responsabilidad |
 |----------|-----------------|
@@ -39,13 +39,14 @@ API REST con 16 controladores: `Auth`, `Usuarios`, `Roles`, `Proyectos`, `Versio
 | `AuthenticationService` | Hash BCrypt, emisión de JWT y códigos de recuperación de contraseña |
 | `ProyectoAccesoService` | Control de acceso por proyecto asignado |
 | `AuditoriaService` | Registro de auditoría (usuario, acción, entidad, IP) |
-| `ActaPdfService`, `ReporteExportService`, `ReceiptService` | Acta de decisión, exportación del historial (PDF, Excel y CSV) y recibo electrónico |
+| `ActaPdfService`, `ReporteExportService`, `ReceiptService` | Acta de decisión, exportación del historial (PDF, Excel y CSV, con los filtros de la pantalla) y recibo electrónico |
+| `ReporteEjecutivoService` | Reporte ejecutivo en PDF por perfil (Gerencia, Técnico o QA); usa el detalle por prueba que extrae `RobotFrameworkDetalle` al cargar el `output.json` |
 | `DatabaseBackupService` | Respaldo periódico con `pg_dump` (tarea en segundo plano) |
 | `EmailService` | Correos mediante SMTP (MailKit) |
 | `SuscripcionService`, `AdamsPayService`, `PayPalService` | Planes, límites, pagos y confirmaciones de las pasarelas |
 
 ### Acceso a datos
-Entity Framework Core 8 con Npgsql (`ApplicationDbContext`, 21 entidades). El esquema se define con scripts SQL planos en `database/` (no se usan migraciones de EF Core).
+Entity Framework Core 8 con Npgsql (`ApplicationDbContext`, 22 entidades). El esquema se define con scripts SQL planos en `database/` (no se usan migraciones de EF Core).
 
 ## Seguridad
 
@@ -63,4 +64,4 @@ Entity Framework Core 8 con Npgsql (`ApplicationDbContext`, 21 entidades). El es
 2. El sistema valida el archivo, registra el resultado y calcula las cuatro métricas.
 3. El motor de reglas compara las métricas con los umbrales y emite la recomendación (Desplegar, Revisar o No desplegar); con «No desplegar» y un plan que lo incluya, se envía una alerta por correo.
 4. El Líder Técnico revisa el análisis y registra su decisión (Aprobado o Rechazado); si contradice la recomendación, la justificación debe tener al menos 20 caracteres y la decisión se marca como excepción.
-5. Todo queda en la auditoría; el acta de decisión puede descargarse en PDF.
+5. Todo queda en la auditoría; el acta de decisión y el reporte ejecutivo por perfil pueden descargarse en PDF.

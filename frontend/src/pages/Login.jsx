@@ -14,13 +14,13 @@ function AboutContent() {
         <div className="lm-header-icon">DSS</div>
         <div>
           <h2 className="lm-title">Sobre el sistema</h2>
-          <p className="lm-subtitle">Decision Support System — Roshka DSS</p>
+          <p className="lm-subtitle">Decision Support System - Roshka DSS</p>
         </div>
       </div>
 
       <div className="lm-section">
         <h3>¿Qué es Roshka DSS?</h3>
-        <p>Roshka DSS es un sistema desarrollado como Trabajo Final de Grado de la Universidad de la Integración de las Américas (UNIDA) e implementado en Roshka S.A., que asiste al equipo técnico en la evaluación de la calidad del software antes de autorizar su despliegue a producción, mediante el análisis automatizado de resultados de pruebas.</p>
+        <p>Roshka DSS es un sistema desarrollado como Trabajo Final de Grado de la Universidad de la Integración de las Américas (UNIDA) y validado con usuarios de Roshka S.A., que asiste al equipo técnico en la evaluación de la calidad del software antes de autorizar su despliegue a producción, mediante el análisis automatizado de resultados de pruebas.</p>
       </div>
 
       <div className="lm-section">
@@ -92,8 +92,8 @@ function AboutContent() {
 
       <div className="lm-section">
         <h3>Desarrollado por</h3>
-        <p>Willian Samuel Cristaldo — Proyecto de Tesis de Grado, Universidad de la Integración de las Américas (UNIDA), Ingeniería en Sistemas, 2026.</p>
-        <p style={{ marginTop: '0.4rem', color: 'var(--text-light)', fontSize: '0.875rem' }}>Organización donde se implementa: Roshka S.A. — Asunción, República del Paraguay.</p>
+        <p>Willian Samuel Cristaldo - Proyecto de Tesis de Grado, Universidad de la Integración de las Américas (UNIDA), Ingeniería en Sistemas, 2026.</p>
+        <p style={{ marginTop: '0.4rem', color: 'var(--text-light)', fontSize: '0.875rem' }}>Organización destinataria: Roshka S.A. - Asunción, República del Paraguay.</p>
       </div>
     </div>
   )
@@ -101,7 +101,7 @@ function AboutContent() {
 
 /* ─────────────────────────────────────────────────────────────────────
    Contenido: Planes
-   Se traen SIEMPRE desde /api/suscripcion/planes (endpoint público) —
+   Se traen SIEMPRE desde /api/suscripcion/planes (endpoint público) -
    la misma fuente que usa la pantalla de Suscripción una vez logueado.
    No hay una segunda copia hardcodeada: si cambia un límite o una
    funcionalidad en la base, se refleja acá automáticamente.
@@ -165,7 +165,7 @@ function PlansContent() {
             <ul className="lm-plan-features">
               {plan.features.map((f, i) => (
                 <li key={i} className={f.ok ? 'feat-ok' : 'feat-no'}>
-                  <span className="feat-icon">{f.ok ? '✓' : '—'}</span>
+                  <span className="feat-icon">{f.ok ? '✓' : '-'}</span>
                   <span>{f.label}</span>
                 </li>
               ))}
@@ -186,21 +186,21 @@ function PrivacyContent() {
   return (
     <div className="lm-body lm-body--privacy">
       <h2 className="lm-title">Política de Privacidad</h2>
-      <p className="lm-subtitle">Roshka DSS — Versión 1.2 · Última actualización: 9 de octubre de 2026</p>
+      <p className="lm-subtitle">Roshka DSS - Versión 1.3 · Última actualización: 7 de noviembre de 2026</p>
 
       <div className="lm-privacy-meta">
         <div><strong>Responsable del tratamiento:</strong> Roshka S.A.</div>
         <div><strong>Titular de los derechos del Sistema:</strong> Universidad de la Integración de las Américas (UNIDA)</div>
         <div><strong>Domicilio:</strong> Asunción, República del Paraguay</div>
         <div><strong>Contacto:</strong> privacidad@roshka.com.py</div>
-        <div><strong>Marco normativo:</strong> Ley N.º 7593/2025 de Protección de Datos Personales — Paraguay</div>
+        <div><strong>Marco normativo:</strong> Ley N.º 7593/2025 de Protección de Datos Personales - Paraguay</div>
       </div>
 
       <div className="lm-privacy-sections">
         <section>
           <h3>1. Objeto</h3>
-          <p>La presente Política de Privacidad regula el tratamiento de los datos personales de los usuarios de Roshka DSS, sistema de apoyo a la toma de decisiones para el despliegue de software mediante el análisis automatizado de resultados de pruebas, desarrollado como Trabajo Final de Grado de la carrera de Ingeniería en Sistemas de la Universidad de la Integración de las Américas (UNIDA) e implementado en Roshka S.A.</p>
-          <p>Roshka S.A., organización en la que el Sistema opera, actúa como responsable del tratamiento de los datos personales de sus usuarios y se compromete a tratarlos con pleno respeto a la Ley N.º 7593/2025 "De Protección de Datos Personales" de la República del Paraguay. El acceso y uso del Sistema implica la aceptación de esta Política.</p>
+          <p>La presente Política de Privacidad regula el tratamiento de los datos personales de los usuarios de Roshka DSS, sistema de apoyo a la toma de decisiones para el despliegue de software mediante el análisis automatizado de resultados de pruebas, desarrollado como Trabajo Final de Grado de la carrera de Ingeniería en Sistemas de la Universidad de la Integración de las Américas (UNIDA) y validado con usuarios de Roshka S.A.</p>
+          <p>Roshka S.A., organización a la que está destinado el Sistema, actúa como responsable del tratamiento de los datos personales de sus usuarios y se compromete a tratarlos con pleno respeto a la Ley N.º 7593/2025 "De Protección de Datos Personales" de la República del Paraguay. El acceso y uso del Sistema implica la aceptación de esta Política.</p>
         </section>
 
         <section>
@@ -265,14 +265,14 @@ function PrivacyContent() {
 
         <section>
           <h3>13. Contacto</h3>
-          <p><strong>Roshka S.A. — Área de Privacidad y Protección de Datos</strong><br />
+          <p><strong>Roshka S.A. - Área de Privacidad y Protección de Datos</strong><br />
           Correo electrónico: privacidad@roshka.com.py<br />
           Ubicación: Asunción, República del Paraguay</p>
           <p><strong>Consultas sobre la titularidad del Sistema:</strong> Facultad de Ingeniería, Universidad de la Integración de las Américas (UNIDA), Asunción, República del Paraguay.</p>
         </section>
       </div>
 
-      <p className="lm-privacy-footer">© 2026 Universidad de la Integración de las Américas (UNIDA) — Roshka DSS, Trabajo Final de Grado de Ingeniería en Sistemas, implementado en Roshka S.A. Este documento tiene carácter vinculante para todos los usuarios de Roshka DSS.</p>
+      <p className="lm-privacy-footer">© 2026 Universidad de la Integración de las Américas (UNIDA) - Roshka DSS, Trabajo Final de Grado de Ingeniería en Sistemas, validado con usuarios de Roshka S.A. Este documento tiene carácter vinculante para todos los usuarios de Roshka DSS.</p>
     </div>
   )
 }
@@ -284,7 +284,7 @@ function TermsContent() {
   return (
     <div className="lm-body lm-body--privacy">
       <h2 className="lm-title">Términos y Condiciones de Uso</h2>
-      <p className="lm-subtitle">Roshka DSS — Versión 1.1 · Vigente desde el 9 de octubre de 2026</p>
+      <p className="lm-subtitle">Roshka DSS - Versión 1.2 · Vigente desde el 7 de noviembre de 2026</p>
 
       <div className="lm-privacy-meta">
         <div><strong>Operador del servicio:</strong> Roshka S.A.</div>
@@ -342,7 +342,7 @@ function TermsContent() {
 
         <section>
           <h3>10. Propiedad intelectual</h3>
-          <p>El Sistema fue desarrollado por Willian Samuel Cristaldo González como Trabajo Final de Grado de la carrera de Ingeniería en Sistemas de la Universidad de la Integración de las Américas (UNIDA) y se implementó en Roshka S.A. Los derechos de propiedad intelectual sobre el Sistema corresponden a la UNIDA, de acuerdo con la declaración que el tesista suscribe con la Universidad y sin perjuicio del reconocimiento de su autoría; la información, los documentos, los procesos y los activos de Roshka S.A. continúan siendo de su exclusiva titularidad. Los componentes de terceros que lo integran se utilizan conforme a sus respectivas licencias de código abierto. Queda prohibida la copia, modificación o distribución del Sistema sin autorización expresa de su titular.</p>
+          <p>El Sistema fue desarrollado por Willian Samuel Cristaldo González como Trabajo Final de Grado de la carrera de Ingeniería en Sistemas de la Universidad de la Integración de las Américas (UNIDA) y se validó con usuarios de Roshka S.A. Los derechos de propiedad intelectual sobre el Sistema corresponden a la UNIDA, de acuerdo con la declaración que el tesista suscribe con la Universidad y sin perjuicio del reconocimiento de su autoría; la información, los documentos, los procesos y los activos de Roshka S.A. continúan siendo de su exclusiva titularidad. Los componentes de terceros que lo integran se utilizan conforme a sus respectivas licencias de código abierto. Queda prohibida la copia, modificación o distribución del Sistema sin autorización expresa de su titular.</p>
         </section>
 
         <section>
@@ -371,7 +371,7 @@ function TermsContent() {
         </section>
       </div>
 
-      <p className="lm-privacy-footer">© 2026 Universidad de la Integración de las Américas (UNIDA) — Roshka DSS, operado por Roshka S.A. Consultas: privacidad@roshka.com.py</p>
+      <p className="lm-privacy-footer">© 2026 Universidad de la Integración de las Américas (UNIDA) - Roshka DSS, operado por Roshka S.A. Consultas: privacidad@roshka.com.py</p>
     </div>
   )
 }
