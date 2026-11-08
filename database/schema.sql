@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS evaluacion_regla       CASCADE;
 DROP TABLE IF EXISTS recomendaciones        CASCADE;
 DROP TABLE IF EXISTS evaluaciones           CASCADE;
 DROP TABLE IF EXISTS metricas               CASCADE;
+DROP TABLE IF EXISTS resultado_detalle      CASCADE;
 DROP TABLE IF EXISTS resultados_prueba      CASCADE;
 DROP TABLE IF EXISTS reglas_evaluacion      CASCADE;
 DROP TABLE IF EXISTS versiones              CASCADE;
@@ -321,6 +322,16 @@ CREATE TABLE configuracion_backup (
 
 INSERT INTO configuracion_backup (intervalo_horas, carpeta_destino, activo)
 VALUES (24, 'backups', true);
+
+
+-- =============================================================
+-- RESULTADO_DETALLE (detalle por prueba: fallidas con su motivo, más lentas, desglose por módulo)
+-- =============================================================
+CREATE TABLE resultado_detalle (
+    id_resultado   INTEGER   PRIMARY KEY REFERENCES resultados_prueba(id_resultado) ON DELETE CASCADE,
+    detalle_json   TEXT      NOT NULL,
+    fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 
 -- =============================================================

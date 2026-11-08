@@ -12,14 +12,14 @@ public class AnalisisControllerTests
 {
     private static AnalisisController NewController(ApplicationDbContext ctx, System.Security.Claims.ClaimsPrincipal user)
     {
-        var controller = new AnalisisController(ctx, new FakeSuscripcionService(), new ReporteExportService(), new ProyectoAccesoService(ctx));
+        var controller = new AnalisisController(ctx, new FakeSuscripcionService(), new ReporteExportService(), new ProyectoAccesoService(ctx), new ReporteEjecutivoService(ctx));
         TestHelpers.SetUser(controller, user);
         return controller;
     }
 
-    private static async Task<Proyecto> SeedHistorialAsync(ApplicationDbContext ctx)
+    private static async Task<Proyecto> SeedHistorialAsync(ApplicationDbContext ctx, string nombre = "Proyecto Historial", string recomendacion = "desplegar")
     {
-        var p = new Proyecto { Nombre = "Proyecto Historial", Estado = "activo" };
+        var p = new Proyecto { Nombre = nombre, Estado = "activo" };
         ctx.Proyectos.Add(p);
         await ctx.SaveChangesAsync();
         var v = new Models.Version { ProyectoId = p.Id, NumeroVersion = "1.0.0" };
@@ -31,7 +31,7 @@ public class AnalisisControllerTests
         var eval = new Evaluacion { ResultadoId = r.Id, FechaEvaluacion = DateTime.UtcNow };
         ctx.Evaluaciones.Add(eval);
         await ctx.SaveChangesAsync();
-        ctx.Recomendaciones.Add(new Recomendacion { EvaluacionId = eval.Id, TipoRecomendacion = "desplegar", FechaGeneracion = DateTime.UtcNow });
+        ctx.Recomendaciones.Add(new Recomendacion { EvaluacionId = eval.Id, TipoRecomendacion = recomendacion, FechaGeneracion = DateTime.UtcNow });
         await ctx.SaveChangesAsync();
         return p;
     }
@@ -106,17 +106,38 @@ public class AnalisisControllerTests
         Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", file.ContentType);
     }
 
-    [Fact(DisplayName = "ExportarPlanilla en formato csv devuelve un archivo CSV")]
+    [Fact(DisplayName = "ExportarPlanilla en formato csv devuelve un archivo CSV y respeta los filtros activos")]
     public async Task ExportarPlanilla_Csv_DevuelveArchivoCsv()
     {
         var ctx = TestHelpers.NewContext();
         await SeedHistorialAsync(ctx);
+        await SeedHistorialAsync(ctx, "Otro Proyecto", "no_desplegar");
         var admin = TestHelpers.BuildUser(1, new[] { "Administrador" }, new[] { "ver_evaluacion" });
         var controller = NewController(ctx, admin);
 
-        var result = await controller.ExportarPlanilla("csv");
+        string Csv(IActionResult r) => System.Text.Encoding.UTF8.GetString(Assert.IsType<FileContentResult>(r).FileContents);
 
+        var result = await controller.ExportarPlanilla("csv");
         var file = Assert.IsType<FileContentResult>(result);
         Assert.Equal("text/csv", file.ContentType);
+
+        // sin filtros: el historial completo
+        var todo = Csv(result);
+        Assert.Contains("Proyecto Historial", todo);
+        Assert.Contains("Otro Proyecto", todo);
+
+        // filtro por proyecto: solo el elegido (lo que el usuario ve en pantalla)
+        var porProyecto = Csv(await controller.ExportarPlanilla("csv", new HistorialFiltroDto { Proyecto = "Otro Proyecto" }));
+        Assert.Contains("Otro Proyecto", porProyecto);
+        Assert.DoesNotContain("Proyecto Historial", porProyecto);
+
+        // filtro por recomendación
+        var porRec = Csv(await controller.ExportarPlanilla("csv", new HistorialFiltroDto { Recomendacion = "DESPLEGAR" }));
+        Assert.Contains("Proyecto Historial", porRec);
+        Assert.DoesNotContain("Otro Proyecto", porRec);
+
+        // filtro por fecha de carga: un rango futuro deja solo la fila de encabezado
+        var porFecha = Csv(await controller.ExportarPlanilla("csv", new HistorialFiltroDto { Desde = "2999-01-01" }));
+        Assert.Single(porFecha.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
     }
 }

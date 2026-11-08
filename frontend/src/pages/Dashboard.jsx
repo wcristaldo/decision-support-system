@@ -8,6 +8,7 @@ import { decodeJwtPayload } from '../utils/jwt'
 import { fmtFechaCorta } from '../utils/fecha'
 import { getRoles, isGerenteQA, hasPermiso } from '../utils/auth'
 import { IconFolder, IconBarChart, IconCheck, IconWarning, IconLock } from '../components/icons'
+import { ChartHelpButton, ChartHelpPanel } from '../components/ChartHelp'
 import '../styles/Dashboard.css'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -57,6 +58,7 @@ function Dashboard({ onLogout }) {
   const [proyectos, setProyectos] = useState([])
   const [historial, setHistorial] = useState([])
   const [adherencia, setAdherencia] = useState(null)
+  const [ayudaTendencia, setAyudaTendencia] = useState(false)
   const [dashboardAvanzado, setDashboardAvanzado] = useState(true)
   const [loadingDatos, setLoadingDatos] = useState(true)
   const isAdmin = getRoles().includes('Administrador')
@@ -203,7 +205,19 @@ function Dashboard({ onLogout }) {
         {/* ── Tendencia + Actividad reciente ── */}
         <div className="dash-panels">
           <div className="dash-panel dash-panel-chart">
-            <h2 className="dash-panel-title">Tendencia de calidad</h2>
+            <h2 className="dash-panel-title">
+              Tendencia de calidad
+              {dashboardAvanzado && tendencia.length > 1 && (
+                <ChartHelpButton open={ayudaTendencia} onToggle={() => setAyudaTendencia(v => !v)} controls="ayuda-tendencia-dashboard" />
+              )}
+            </h2>
+            {ayudaTendencia && dashboardAvanzado && tendencia.length > 1 && (
+              <ChartHelpPanel
+                id="ayuda-tendencia-dashboard"
+                alcance="Aquí se ven las últimas 10 evaluaciones de todos tus proyectos."
+                onClose={() => setAyudaTendencia(false)}
+              />
+            )}
             {!dashboardAvanzado ? (
               <div className="dash-feature-locked">
                 <span className="dash-feature-locked-icon"><IconLock size={22} /></span>
@@ -267,7 +281,7 @@ function Dashboard({ onLogout }) {
               <div className="dash-adherencia-bar-fill" style={{ width: `${adherencia.porcentajeAdherencia}%` }} />
             </div>
             <p className="dash-adherencia-hint">
-              El sistema asiste a la decisión — no decide por sí solo. Esta métrica mide cuánto influye realmente
+              El sistema asiste a la decisión - no decide por sí solo. Esta métrica mide cuánto influye realmente
               su recomendación en la decisión final.
             </p>
           </div>
@@ -288,7 +302,7 @@ function Dashboard({ onLogout }) {
       </div>
 
       <footer className="dash-footer">
-        © 2026 Roshka S.A. - Proyecto de Tesis UNIDA
+        © 2026 UNIDA - Proyecto de Tesis - Roshka S.A.
       </footer>
     </div>
   )

@@ -62,4 +62,11 @@ public class CreateResultadoPruebaDto
     /// Si se incluye, se valida contra el límite del plan activo.
     /// </summary>
     public long? TamanoBytes { get; set; }
+
+    /// <summary>
+    /// Texto completo del output.json de Robot Framework (opcional). Solo se usa para extraer y guardar el resumen
+    /// técnico por prueba (fallidas con su motivo, más lentas, desglose por módulo); el archivo en sí no se almacena.
+    /// </summary>
+    [MaxLength(12_000_000)]
+    public string? ContenidoReporte { get; set; }
 }

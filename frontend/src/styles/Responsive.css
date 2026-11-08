@@ -1,0 +1,139 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   Capa global de responsividad.
+   Se importa en main.jsx DESPUÉS de los estilos de cada página, para que sus reglas (mismo selector, misma
+   especificidad) tengan la última palabra sin tocar la definición de cada pantalla.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Altura de la ventana: usa la altura visible real (barras del navegador en móviles) ── */
+.app-layout { height: 100vh; height: 100dvh; }
+.app-main   { height: 100vh; height: 100dvh; }
+
+/* ── MODALES ──────────────────────────────────────────────────────────────────
+   Un modal nunca puede ser más alto que la ventana: la cabecera y los botones quedan siempre a la vista y solo el
+   contenido se desplaza. Antes, en una ventana baja (laptop con escala 200 %, o un celular horizontal), el formulario
+   quedaba cortado arriba y abajo y no se podía llegar a «Crear» ni a «Cancelar». */
+.modal-overlay,
+.um-modal-overlay,
+.lm-overlay,
+.notif-overlay,
+.pm-backdrop {
+  overflow-y: auto;                    /* red de seguridad si algún modal aún no cabe */
+  overscroll-behavior: contain;
+}
+
+.modal-box,
+.um-modal,
+.lm-modal,
+.notif-modal,
+.pm-modal {
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+}
+
+.modal-box {
+  display: flex;
+  flex-direction: column;
+}
+
+/* El <form> que envuelve cuerpo y botones debe participar de la cadena flex para que el cuerpo pueda encogerse */
+.modal-box > form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.modal-header,
+.modal-footer { flex-shrink: 0; }
+
+.modal-body {
+  overflow-y: auto;
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+
+.pm-modal    { overflow-y: auto; }
+.notif-body  { overflow-y: auto; min-height: 0; }
+
+/* Pantallas angostas: los botones del pie ocupan el ancho y se apilan si no caben */
+@media (max-width: 520px) {
+  .modal-overlay,
+  .um-modal-overlay,
+  .lm-overlay,
+  .notif-overlay,
+  .pm-backdrop { padding: 0.5rem; }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer,
+  .um-modal-header,
+  .um-modal-body,
+  .um-modal-footer { padding-left: 1.1rem; padding-right: 1.1rem; }
+
+  .modal-footer,
+  .um-modal-footer { flex-wrap: wrap; }
+
+  .modal-footer > button,
+  .um-modal-footer > button { flex: 1 1 auto; }
+}
+/* ── GRILLAS Y TARJETAS ───────────────────────────────────────────────────────
+   Un hijo de grilla o flex no se encoge por debajo de su contenido salvo que se le diga (min-width: 0): una tarjeta con
+   un gráfico o un texto largo empujaba toda la fila fuera de la pantalla. */
+.dash-stats > *,
+.dash-grid > *,
+.dash-panels > *,
+.am-stats > *,
+.cr-grid-2 > *,
+.dash-panel,
+.am-table-card,
+.am-chart-wrap { min-width: 0; }
+
+.dash-stats  { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.am-stats    { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.dash-panels { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.cr-grid-2   { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+
+.dash-panel-chart { overflow: hidden; }
+
+input, select, textarea { max-width: 100%; }
+
+/* Botones de acción agrupados: pasan a otra línea en vez de salirse */
+.am-export-group { flex-wrap: wrap; }
+.bk-acciones { display: flex; gap: 10px; flex-wrap: wrap; }
+
+@media (max-width: 900px) {
+  .dash-stats  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .am-stats    { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-panels { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .cr-grid-2   { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Teléfonos: una tarjeta por fila */
+@media (max-width: 480px) {
+  .dash-stats,
+  .am-stats { grid-template-columns: minmax(0, 1fr); }
+
+  .av-report-actions { width: 100%; }
+  .av-report-actions > * { flex: 1 1 100%; }
+  .av-report-select { max-width: 100%; }
+  .am-export-group { margin-left: 0; }
+}
+/* ── Teléfonos pequeños (hasta 380 px) y textos largos ─────────────────────── */
+.av-tecnico-obs { white-space: normal; overflow-wrap: anywhere; }
+.audit-filters-grid { grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); }
+
+@media (max-width: 480px) {
+  .dash-activity-item   { flex-wrap: wrap; }
+  .dash-activity-date   { white-space: normal; }
+  .dp-umbral-btn        { white-space: normal; max-width: 100%; text-align: left; }
+  .dp-section-title     { flex-wrap: wrap; gap: 0.6rem; }
+  .am-filter-date       { flex-wrap: wrap; max-width: 100%; }
+  .am-filter-date input { min-width: 0; flex: 1 1 8rem; }
+  .sus-plan-hero        { flex-wrap: wrap; gap: 0.75rem; padding: 1.25rem 1.1rem; }
+  .sus-plan-hero-left   { flex-wrap: wrap; min-width: 0; }
+  .um-tabs              { padding-left: 0.75rem; padding-right: 0.75rem; overflow-x: auto; }
+  .um-tab               { padding: 0.8rem 0.9rem; font-size: 0.82rem; white-space: nowrap; }
+}

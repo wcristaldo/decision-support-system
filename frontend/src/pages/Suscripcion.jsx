@@ -66,10 +66,10 @@ const formatGs = (n) =>
   new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG', maximumFractionDigits: 0 }).format(n)
 
 const fmtFecha = (f) =>
-  f ? new Date(f).toLocaleDateString('es-PY', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+  f ? new Date(f).toLocaleDateString('es-PY', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'
 
 const fmtFechaLarga = (f) =>
-  f ? new Date(f).toLocaleDateString('es-PY', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'
+  f ? new Date(f).toLocaleDateString('es-PY', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'
 
 const pct = (v, max) => (max == null ? 0 : Math.min(100, (v / max) * 100))
 
@@ -443,7 +443,7 @@ export default function Suscripcion() {
                           onClick={() => contratarPlan(p)}
                           disabled={procesando}
                         >
-                          {procesando ? 'Procesando…' : `Contratar — ${formatGs(p.precioMensual)}/mes`}
+                          {procesando ? 'Procesando…' : `Contratar - ${formatGs(p.precioMensual)}/mes`}
                         </button>
                       ) : (
                         <p className="sus-nota-admin">
@@ -516,7 +516,7 @@ export default function Suscripcion() {
 
                 <span className="sus-hist-info">
                   {pagosFiltrados.length > 0
-                    ? `Mostrando ${Math.min((paginaActual - 1) * porPagina + 1, pagosFiltrados.length)}–${Math.min(paginaActual * porPagina, pagosFiltrados.length)} de ${pagosFiltrados.length} registro${pagosFiltrados.length !== 1 ? 's' : ''}`
+                    ? `Mostrando ${Math.min((paginaActual - 1) * porPagina + 1, pagosFiltrados.length)}-${Math.min(paginaActual * porPagina, pagosFiltrados.length)} de ${pagosFiltrados.length} registro${pagosFiltrados.length !== 1 ? 's' : ''}`
                     : 'Sin resultados'}
                 </span>
               </div>
@@ -548,7 +548,7 @@ export default function Suscripcion() {
                     <tbody>
                       {pagosPagina.map(p => (
                         <tr key={p.id}>
-                          <td>{p.fechaPago ? fmtFecha(p.fechaPago) : <span className="sus-nd">—</span>}</td>
+                          <td>{p.fechaPago ? fmtFecha(p.fechaPago) : <span className="sus-nd">-</span>}</td>
                           <td>{p.plan}</td>
                           <td><strong>{formatGs(p.monto)}</strong></td>
                           <td>
@@ -557,7 +557,7 @@ export default function Suscripcion() {
                             </span>
                           </td>
                           <td>{fmtFecha(p.fechaVencimiento)}</td>
-                          <td className="sus-hash">{p.referencia ?? '—'}</td>
+                          <td className="sus-hash">{p.referencia ?? '-'}</td>
                         </tr>
                       ))}
                     </tbody>

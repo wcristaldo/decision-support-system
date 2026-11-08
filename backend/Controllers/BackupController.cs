@@ -84,15 +84,44 @@ public class BackupController : ControllerBase
         }
     }
 
+    private static string ResolverCarpeta(string carpetaDestino)
+        => Path.IsPathRooted(carpetaDestino)
+            ? carpetaDestino
+            : Path.Combine(AppContext.BaseDirectory, carpetaDestino);
+
+    /// <summary>
+    /// GET /api/backup/descargar/{nombre}
+    /// Descarga un respaldo ya generado. Solo se sirven archivos "backup_*.sql"
+    /// que estén en la carpeta destino configurada: el nombre no puede contener
+    /// rutas, así que no se puede salir de esa carpeta. Queda registrado en la
+    /// auditoría porque el archivo contiene todos los datos del sistema.
+    /// </summary>
+    [HttpGet("descargar/{nombre}")]
+    public async Task<IActionResult> Descargar(string nombre)
+    {
+        if (string.IsNullOrWhiteSpace(nombre)
+            || nombre != Path.GetFileName(nombre)
+            || !System.Text.RegularExpressions.Regex.IsMatch(nombre, @"^backup_[A-Za-z0-9_\-]+\.sql$"))
+            return BadRequest(new { message = "Nombre de respaldo inválido." });
+
+        var config = await _context.ConfiguracionesBackup.FirstOrDefaultAsync();
+        if (config == null) return NotFound(new { message = "No hay configuración de respaldo inicializada." });
+
+        var ruta = Path.Combine(ResolverCarpeta(config.CarpetaDestino), nombre);
+        if (!System.IO.File.Exists(ruta))
+            return NotFound(new { message = "El respaldo solicitado no existe." });
+
+        await _auditoriaService.RegistrarAsync("Download", "ConfiguracionBackup", config.Id, $"Respaldo descargado: {nombre}");
+        return PhysicalFile(ruta, "application/sql", nombre);
+    }
+
     [HttpGet("historial")]
     public async Task<IActionResult> GetHistorial()
     {
         var config = await _context.ConfiguracionesBackup.FirstOrDefaultAsync();
         if (config == null) return Ok(new List<object>());
 
-        var carpeta = Path.IsPathRooted(config.CarpetaDestino)
-            ? config.CarpetaDestino
-            : Path.Combine(AppContext.BaseDirectory, config.CarpetaDestino);
+        var carpeta = ResolverCarpeta(config.CarpetaDestino);
 
         if (!Directory.Exists(carpeta))
             return Ok(new List<object>());

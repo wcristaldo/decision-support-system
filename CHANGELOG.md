@@ -19,10 +19,25 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es/1.0.0/)
 - `docker-compose.yml` + Dockerfiles (`backend/Dockerfile`, `frontend/Dockerfile` + `nginx.conf`) — arquitectura física del Capítulo IV
 - Proyecto `DecisionSupportAPI.Tests` (xUnit) con los casos CP-U01 a CP-U04 de la Tabla 21, corriendo contra `RecommendationEngine` real
 - Columnas redimensionables (estilo Excel) en las 5 tablas del sistema, con ancho persistido en `localStorage`
+- Reporte ejecutivo en PDF por perfil (`GET /api/analisis/version/{id}/reporte-ejecutivo?perfil=gerencia|tecnico|qa`, QuestPDF): Gerencia (riesgo de negocio, estado de la decisión, adherencia y qué hacer; Gerente QA y Administrador), Técnico (criterio por criterio, cambios frente a la evaluación anterior y riesgos; Líder Técnico y Administrador) y QA (reparto de pruebas, cálculo de las métricas y qué corregir; cualquier perfil con acceso al proyecto). Requiere un plan con exportación a PDF; el botón «Descargar reporte (PDF)» está junto a la recomendación del sistema y no exige una decisión registrada
+- Detalle por prueba: al cargar un `output.json` se extrae y se guarda un resumen técnico (pruebas fallidas con módulo y motivo, las cinco más lentas y el desglose por módulo) en la tabla nueva `resultado_detalle` (`migration_add_resultado_detalle.sql`), expuesto por `GET /api/resultadosPrueba/{id}/detalle` y mostrado en «Detalle de las pruebas» y en los reportes ejecutivos. Si la tabla no existe, la carga funciona igual y el reporte sale sin esa sección. Ejemplo para pruebas: `json-tests/caso-detalle-fallas.json`
+- Descarga de los respaldos de la base de datos (`GET /api/backup/descargar/{nombre}`): solo sirve archivos `backup_*.sql` de la carpeta configurada, sin rutas en el nombre, y registra la descarga en la auditoría
+- Ayuda guiada «?» en los gráficos de tendencia del Dashboard y de Análisis y Métricas (`ChartHelp`), con la explicación de cómo se calculan la tasa de éxito y la cobertura de ejecución
+- Capa de estilos responsiva (`Responsive.css`): los modales no superan la altura de la ventana y quedan siempre a la vista el encabezado y los botones
 - Estado de la suscripción (`GET /api/suscripcion/actual`): cuando no hay plan activo informa `pagoPendiente` si existe un pago iniciado y sin confirmar; la pantalla Suscripción muestra a todos los perfiles «Pago pendiente de confirmación» o la indicación de contactar al Administrador (la suscripción pertenece a la organización y solo el Administrador la contrata)
+
+### Changed
+- Política de Privacidad (v1.2) y Términos y Condiciones (v1.1): el Sistema se identifica como Trabajo Final de Grado de la UNIDA implementado en Roshka S.A.; se agrega la titularidad de los derechos de propiedad intelectual (UNIDA, sin perjuicio de la autoría del tesista), se aclara que Roshka S.A. conserva la titularidad de su información y actúa como responsable del tratamiento de los datos de sus usuarios, y se actualizan los pies de página (© UNIDA) del login y del panel principal
+- Política de Privacidad (v1.3) y Términos y Condiciones (v1.2): el Sistema se identifica como Trabajo Final de Grado de la UNIDA «validado con usuarios de Roshka S.A.» (antes «implementado en Roshka S.A.»), Roshka S.A. figura como la organización a la que está destinado el Sistema y la pantalla «Sobre el sistema» pasa de «Organización donde se implementa» a «Organización destinataria», y el README adopta la misma redacción; el Sistema todavía no está instalado en la infraestructura de Roshka S.A. Se mantienen sin cambios el responsable del tratamiento y la titularidad de la UNIDA.
+
+- Respaldo de base de datos: el historial es una tabla como las demás (columnas redimensionables, filtro por columna y paginación), se descarga con un clic en el nombre o con el botón, y la pantalla informa el último respaldo (automático o manual), el próximo previsto y que el respaldo automático requiere el sistema encendido
+- Acta de decisión en PDF: «Página X de Y» real (antes fijo «1 de 1»)
 
 ### Fixed
 - Análisis y Métricas: el nombre y el tipo del proyecto no se veían en el historial de evaluaciones (`max-width: 0` aplicado a un `div`)
+- La exportación del historial (PDF, Excel y CSV) ignoraba los filtros de la pantalla Análisis y Métricas; ahora se exporta solo lo que el usuario está viendo (recomendación, proyecto, responsable y rango de fecha de carga)
+- Las fechas con hora se mostraban adelantadas 3 horas: la API las serializaba sin la «Z» de UTC y el navegador las tomaba como hora local (`UtcDateTimeJsonConverter`)
+- Botones Aprobado/Rechazado del formulario de decisión desordenados y asteriscos de campo obligatorio separados del texto en los formularios
 
 ### Security
 - HTTPS en el despliegue con Docker: el Nginx del contenedor frontend termina TLS (puerto 443) con el certificado de `./certs` (`tls.crt`/`tls.key`) o, si no se provee, con uno autofirmado generado al iniciar; el puerto HTTP solo redirige a HTTPS

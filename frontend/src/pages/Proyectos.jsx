@@ -7,7 +7,7 @@ import FilterableTh from '../components/FilterableTh'
 import Pagination from '../components/Pagination'
 import { useResizableColumns } from '../hooks/useResizableColumns'
 import { fmtFechaCompleta } from '../utils/fecha'
-import { hasPermiso } from '../utils/auth'
+import { hasPermiso, isAdmin } from '../utils/auth'
 import '../styles/Proyectos.css'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -98,7 +98,10 @@ function CreateModal({ onClose, onSaved, showNotification }) {
         tipoSolucion:     fields.tipoSolucion || null,
         versionInicial:   fields.versionInicial.trim(),
       })
-      onSaved('Proyecto creado correctamente.')
+      // RF13: los demás perfiles solo ven los proyectos que se les asignan desde Gestión de usuarios.
+      onSaved(isAdmin()
+        ? 'Proyecto creado correctamente. Por ahora solo lo ven los Administradores: para que otros perfiles lo vean, asignalo desde Admin > Gestión de usuarios.'
+        : 'Proyecto creado correctamente.')
     } catch (err) {
       const errorMsg = err.response?.data?.message || err.response?.data?.title || 'No se pudo crear el proyecto. Intentá de nuevo.'
       showNotification('error', 'Error al crear proyecto', errorMsg)
@@ -500,7 +503,7 @@ function Proyectos() {
                         <button
                           className="proy-td-link"
                           onClick={() => navigate(`/proyectos/${p.id}`)}
-                          title={`${p.nombre} — Ver versiones`}
+                          title={`${p.nombre} - Ver versiones`}
                         >
                           {p.nombre}
                         </button>

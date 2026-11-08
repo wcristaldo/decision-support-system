@@ -162,7 +162,7 @@ public class SuscripcionController : ControllerBase
             return NotFound(new { message = "Plan no encontrado." });
 
         var docId = $"DSS-{plan.Id}-{DateTime.UtcNow:yyyyMMddHHmmss}";
-        var label = $"Roshka DSS — Plan {plan.Nombre} ({DateTime.UtcNow:MM/yyyy})";
+        var label = $"Roshka DSS - Plan {plan.Nombre} ({DateTime.UtcNow:MM/yyyy})";
 
         var (success, payUrl, error) = await _adams.CreateDebtAsync(docId, label, plan.PrecioMensual, validHours: 24);
 
@@ -293,7 +293,7 @@ public class SuscripcionController : ControllerBase
                         var primerAdmin = admins.First();
                         var recibo = new ReciboData(
                             DocId:            docId!,
-                            PlanNombre:       pago.Plan?.Nombre ?? "—",
+                            PlanNombre:       pago.Plan?.Nombre ?? "-",
                             Monto:            pago.Monto,
                             FechaPago:        pago.FechaPago.Value,
                             FechaInicio:      pago.Suscripcion?.FechaInicio,
@@ -558,7 +558,7 @@ public class SuscripcionController : ControllerBase
                 var primer      = admins.First();
                 var recibo = new ReciboData(
                     DocId:            docIdPayPal,
-                    PlanNombre:       pago.Plan?.Nombre ?? "—",
+                    PlanNombre:       pago.Plan?.Nombre ?? "-",
                     Monto:            pago.Monto,
                     FechaPago:        pago.FechaPago!.Value,
                     FechaInicio:      pago.Suscripcion?.FechaInicio,
@@ -655,7 +655,7 @@ public class SuscripcionController : ControllerBase
             var (verifSuccess, estadoReal, verifError) = await _paypal.GetOrderStatusAsync(orderId);
             if (!verifSuccess || estadoReal != "COMPLETED")
             {
-                _logger.LogWarning("Webhook PayPal: orderId={OrderId} no está COMPLETED según PayPal (estado={Estado}, error={Error}) — no se activa.",
+                _logger.LogWarning("Webhook PayPal: orderId={OrderId} no está COMPLETED según PayPal (estado={Estado}, error={Error}) - no se activa.",
                     orderId, estadoReal, verifError);
                 return Ok();
             }
@@ -693,7 +693,7 @@ public class SuscripcionController : ControllerBase
                     var primer      = admins.First();
                     var recibo = new ReciboData(
                         DocId:            pago.PagoparIdPedidoComercio ?? "PP-WEBHOOK",
-                        PlanNombre:       pago.Plan?.Nombre ?? "—",
+                        PlanNombre:       pago.Plan?.Nombre ?? "-",
                         Monto:            pago.Monto,
                         FechaPago:        pago.FechaPago!.Value,
                         FechaInicio:      pago.Suscripcion?.FechaInicio,

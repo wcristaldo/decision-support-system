@@ -110,7 +110,7 @@ export default function ComparativaVersiones({ versiones, onClose }) {
                       <td>{metricLabel(nombre)}</td>
                       {datos.map(d => {
                         const m = valorMetrica(d, nombre)
-                        return <td key={d.version.id}>{m ? formatMetricValue(m) : '—'}</td>
+                        return <td key={d.version.id}>{m ? formatMetricValue(m) : '-'}</td>
                       })}
                     </tr>
                   ))}

@@ -17,6 +17,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Models.Version>   Versiones          { get; set; }
     public DbSet<ReglaEvaluacion>  ReglasEvaluacion   { get; set; }
     public DbSet<ResultadoPrueba>  ResultadosPrueba   { get; set; }
+    public DbSet<ResultadoDetalle> ResultadosDetalle  { get; set; }
     public DbSet<Metrica>          Metricas           { get; set; }
     public DbSet<Evaluacion>       Evaluaciones       { get; set; }
     public DbSet<EvaluacionRegla>  EvaluacionReglas   { get; set; }
@@ -185,6 +186,17 @@ public class ApplicationDbContext : DbContext
             e.Property(r => r.FechaCarga).HasColumnName("fecha_carga");
             e.Property(r => r.EstadoValidacion).HasColumnName("estado_validacion");
             e.Property(r => r.Observaciones).HasColumnName("observaciones");
+        });
+
+        // Resumen técnico por resultado (pruebas fallidas con su motivo, más lentas, desglose por módulo)
+        modelBuilder.Entity<ResultadoDetalle>(e =>
+        {
+            e.ToTable("resultado_detalle");
+            e.HasKey(d => d.ResultadoId);
+            e.Property(d => d.ResultadoId).HasColumnName("id_resultado");
+            e.Property(d => d.DetalleJson).HasColumnName("detalle_json");
+            e.Property(d => d.FechaCreacion).HasColumnName("fecha_creacion");
+            e.HasOne(d => d.Resultado).WithOne().HasForeignKey<ResultadoDetalle>(d => d.ResultadoId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // ── METRICAS ─────────────────────────────────────────────

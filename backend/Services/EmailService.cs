@@ -69,7 +69,7 @@ public class EmailService : IEmailService
 
         if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(password))
         {
-            _logger.LogWarning("Email no configurado — omitiendo envío de recibo.");
+            _logger.LogWarning("Email no configurado - omitiendo envío de recibo.");
             return;
         }
 
@@ -79,10 +79,10 @@ public class EmailService : IEmailService
         // Pre-computar expresiones complejas para evitar errores en el raw string literal
         var fechaInicio = recibo.FechaInicio.HasValue
             ? recibo.FechaInicio.Value.ToLocalTime().ToString("dd/MM/yyyy")
-            : "—";
+            : "-";
         var fechaVenc = recibo.FechaVencimiento.HasValue
             ? recibo.FechaVencimiento.Value.ToLocalTime().ToString("dd/MM/yyyy")
-            : "—";
+            : "-";
         var fechaPagoStr = recibo.FechaPago.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
         var anio         = DateTime.UtcNow.Year;
 
@@ -91,7 +91,7 @@ public class EmailService : IEmailService
         foreach (var dest in destinatarios)
             message.To.Add(MailboxAddress.Parse(dest));
 
-        message.Subject = $"Recibo de pago — Plan {recibo.PlanNombre} — Roshka DSS";
+        message.Subject = $"Recibo de pago - Plan {recibo.PlanNombre} - Roshka DSS";
 
         // ── Body HTML ($$""" = doble $: CSS usa { } literal, interpolaciones usan {{expr}}) ──
         var html = $$"""
@@ -236,7 +236,7 @@ public class EmailService : IEmailService
                 </p>
               </div>
               <div class="footer">
-                Roshka DSS &copy; {{anio}} &nbsp;|&nbsp; Notificación automática — no responder a este correo.
+                Roshka DSS &copy; {{anio}} &nbsp;|&nbsp; Notificación automática - no responder a este correo.
               </div>
             </div>
             </body></html>
@@ -246,7 +246,7 @@ public class EmailService : IEmailService
         message.From.Add(new MailboxAddress(fromName, from));
         foreach (var dest in destinatarios)
             message.To.Add(MailboxAddress.Parse(dest));
-        message.Subject = $"[Roshka DSS] ⚠ No Desplegar — {proyectoNombre} v{versionNumero}";
+        message.Subject = $"[Roshka DSS] ⚠ No Desplegar - {proyectoNombre} v{versionNumero}";
         message.Body = new BodyBuilder { HtmlBody = html }.ToMessageBody();
 
         using var client = new SmtpClient();
@@ -271,7 +271,7 @@ public class EmailService : IEmailService
 
         if (string.IsNullOrEmpty(user) || string.IsNullOrEmpty(password))
         {
-            _logger.LogWarning("Email no configurado — omitiendo envío de código de recuperación.");
+            _logger.LogWarning("Email no configurado - omitiendo envío de código de recuperación.");
             return;
         }
 
@@ -300,10 +300,10 @@ public class EmailService : IEmailService
               <div class="body">
                 <p class="intro">Recibimos una solicitud para restablecer tu contraseña. Usá el siguiente código en la pantalla de recuperación:</p>
                 <div class="codigo">{{codigo}}</div>
-                <p class="aviso">Este código vence en {{minutosVigencia}} minutos y solo puede usarse una vez. Si no solicitaste este cambio, ignorá este correo — tu contraseña actual sigue siendo válida.</p>
+                <p class="aviso">Este código vence en {{minutosVigencia}} minutos y solo puede usarse una vez. Si no solicitaste este cambio, ignorá este correo - tu contraseña actual sigue siendo válida.</p>
               </div>
               <div class="footer">
-                Roshka DSS &copy; {{anio}} &nbsp;|&nbsp; Notificación automática — no responder a este correo.
+                Roshka DSS &copy; {{anio}} &nbsp;|&nbsp; Notificación automática - no responder a este correo.
               </div>
             </div>
             </body></html>

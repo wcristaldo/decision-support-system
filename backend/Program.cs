@@ -16,7 +16,11 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddControllers();
+// Las fechas se guardan en UTC; Npgsql devuelve las columnas "timestamp sin zona" como Kind=Unspecified y
+// se serializaban sin la "Z", así que el navegador las interpretaba como hora local y las mostraba
+// adelantadas 3 horas. Este conversor las marca como UTC para que el navegador las convierta bien.
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new DecisionSupportAPI.Json.UtcDateTimeJsonConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -113,6 +117,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSingleton<IReceiptService, ReceiptService>();
 builder.Services.AddSingleton<IActaPdfService, ActaPdfService>();
+builder.Services.AddScoped<IReporteEjecutivoService, ReporteEjecutivoService>();
 builder.Services.AddSingleton<IReporteExportService, ReporteExportService>();
 
 // CORS configuration — lista explícita de orígenes en vez de AllowAnyOrigin.

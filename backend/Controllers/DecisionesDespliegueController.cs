@@ -258,7 +258,7 @@ public class DecisionesDespliegueController : ControllerBase
 
         var acta = new ActaData(
             DecisionId: decision.Id,
-            ProyectoNombre: proyecto?.Nombre ?? "—",
+            ProyectoNombre: proyecto?.Nombre ?? "-",
             VersionNumero: version.NumeroVersion,
             VersionDescripcion: version.Descripcion,
             ArchivoNombre: resultado.NombreArchivo,
@@ -267,11 +267,11 @@ public class DecisionesDespliegueController : ControllerBase
                 FormatearNombreMetrica(m.NombreMetrica),
                 FormatearValorMetrica(m.ValorMetrica, m.Unidad)
             )).ToList(),
-            RecomendacionTipo: decision.Recomendacion.TipoRecomendacion ?? "—",
+            RecomendacionTipo: decision.Recomendacion.TipoRecomendacion ?? "-",
             RecomendacionJustificacion: decision.Recomendacion.Justificacion,
             RecomendacionFecha: decision.Recomendacion.FechaGeneracion,
-            DecisionFinal: decision.DecisionFinal ?? "—",
-            Comentario: decision.Comentario ?? "—",
+            DecisionFinal: decision.DecisionFinal ?? "-",
+            Comentario: decision.Comentario ?? "-",
             EsOverride: decision.EsOverride,
             FechaDecision: decision.FechaDecision,
             UsuarioDecisorNombre: decision.UsuarioDecisor != null
@@ -291,7 +291,7 @@ public class DecisionesDespliegueController : ControllerBase
 
     private static string FormatearValorMetrica(decimal? valor, string? unidad)
     {
-        if (valor == null) return "—";
+        if (valor == null) return "-";
         var u = (unidad ?? "").ToLowerInvariant();
         if (u == "%" || u == "porcentaje" || u == "percent") return $"{valor:0.##}%";
         return string.IsNullOrWhiteSpace(unidad) ? $"{valor:0.###}" : $"{valor:0.###} {unidad}";

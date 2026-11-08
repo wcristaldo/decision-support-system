@@ -35,7 +35,7 @@ export default function Pagination({
     <div className="dss-pagination">
       <span className="dss-pag-info">
         {totalItems > 0
-          ? `Mostrando ${desde}–${hasta} de ${totalItems} registro${totalItems !== 1 ? 's' : ''}`
+          ? `Mostrando ${desde}-${hasta} de ${totalItems} registro${totalItems !== 1 ? 's' : ''}`
           : 'Sin resultados'}
       </span>
 

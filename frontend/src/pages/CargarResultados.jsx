@@ -114,6 +114,7 @@ function CargarResultados() {
   const [bloqueado,        setBloqueado]        = useState(!!(proyectoIdUrl && versionIdUrl))
   const [observaciones,    setObservaciones]    = useState('')
   const [archivo,          setArchivo]          = useState(null)
+  const [contenidoReporte, setContenidoReporte] = useState(null)   // texto del output.json, para guardar el detalle por prueba
   const [metricas,         setMetricas]         = useState(null)
   const [errorArchivo,     setErrorArchivo]     = useState(null)
   const [errores,          setErrores]          = useState({})
@@ -183,6 +184,7 @@ function CargarResultados() {
 
     setArchivo(null)
     setMetricas(null)
+    setContenidoReporte(null)
     setErrorArchivo(null)
     if (errores.archivo) setErrores(p => { const n = { ...p }; delete n.archivo; return n })
 
@@ -197,6 +199,8 @@ function CargarResultados() {
       const m = parsearRobotFramework(texto)
       setArchivo(file)
       setMetricas(m)
+      // Hasta 10 MB (el mismo límite de la carga automatizada): el servidor extrae un resumen (pruebas que fallaron, más lentas, módulos)
+      setContenidoReporte(file.size <= 10 * 1024 * 1024 ? texto : null)
       // Auto-completar observaciones con metadatos RF si el campo está vacío
       setObservaciones(prev => {
         if (prev.trim()) return prev
@@ -238,6 +242,7 @@ function CargarResultados() {
         cobertura:       metricas.cobertura,
         tiempoEjecucion: metricas.tiempoEjecucion,
         tamanoBytes:     archivo.size ?? null,
+        contenidoReporte,
       })
       showNotification('success', 'Éxito', 'El resultado fue registrado correctamente.', () => {
         handleNuevo()
@@ -261,6 +266,7 @@ function CargarResultados() {
     setObservaciones('')
     setArchivo(null)
     setMetricas(null)
+    setContenidoReporte(null)
     setErrorArchivo(null)
     setErrores({})
     if (fileRef.current) fileRef.current.value = ''

@@ -75,7 +75,7 @@ public class ActaPdfService : IActaPdfService
         var esPY = new System.Globalization.CultureInfo("es-PY");
         var fechaDecisionStr = acta.FechaDecision.ToLocalTime().ToString("dd/MM/yyyy HH:mm", esPY);
         var fechaRecomendacionStr = acta.RecomendacionFecha.ToLocalTime().ToString("dd/MM/yyyy HH:mm", esPY);
-        var fechaArchivoStr = acta.ArchivoFecha?.ToLocalTime().ToString("dd/MM/yyyy HH:mm", esPY) ?? "—";
+        var fechaArchivoStr = acta.ArchivoFecha?.ToLocalTime().ToString("dd/MM/yyyy HH:mm", esPY) ?? "-";
 
         var recomendacionTxt = RecomendacionLabel.GetValueOrDefault(acta.RecomendacionTipo, acta.RecomendacionTipo);
         var decisionTxt = DecisionLabel.GetValueOrDefault(acta.DecisionFinal, acta.DecisionFinal);
@@ -108,7 +108,7 @@ public class ActaPdfService : IActaPdfService
                             c.Item().Text("ACTA DE DECISIÓN DE DESPLIEGUE")
                              .FontSize(15).Bold().FontColor(ColorNav).AlignCenter();
                             c.Item().PaddingTop(2)
-                             .Text("Roshka DSS — Sistema de Apoyo a la Toma de Decisiones")
+                             .Text("Roshka DSS - Sistema de Apoyo a la Toma de Decisiones")
                              .FontSize(8f).FontColor(ColorSuave).Italic().AlignCenter();
                         });
 
@@ -258,9 +258,14 @@ public class ActaPdfService : IActaPdfService
                         r.RelativeItem()
                          .Text("Roshka DSS  ·  Roshka S.A.  ·  soporte-dss@roshka.com")
                          .FontSize(7.5f).FontColor("#aaaaaa");
-                        r.AutoItem().AlignRight()
-                         .Text("Página 1 de 1")
-                         .FontSize(7.5f).FontColor("#aaaaaa");
+                        r.AutoItem().AlignRight().Text(t =>
+                        {
+                            t.DefaultTextStyle(x => x.FontSize(7.5f).FontColor("#aaaaaa"));
+                            t.Span("Página ");
+                            t.CurrentPageNumber();
+                            t.Span(" de ");
+                            t.TotalPages();
+                        });
                     });
             });
         });

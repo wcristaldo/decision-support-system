@@ -42,8 +42,8 @@ public class ReceiptService : IReceiptService
 
         // ── Período ───────────────────────────────────────────────────────────
         var periodoStr = (recibo.FechaInicio.HasValue && recibo.FechaVencimiento.HasValue)
-            ? $"{recibo.FechaInicio.Value.ToLocalTime():dd/MM/yyyy} – {recibo.FechaVencimiento.Value.ToLocalTime():dd/MM/yyyy}"
-            : "—";
+            ? $"{recibo.FechaInicio.Value.ToLocalTime():dd/MM/yyyy} - {recibo.FechaVencimiento.Value.ToLocalTime():dd/MM/yyyy}"
+            : "-";
 
         // ── Montos ────────────────────────────────────────────────────────────
         var montoFmt     = $"Gs. {recibo.Monto.ToString("N0", esPY)}";
@@ -141,7 +141,7 @@ public class ReceiptService : IReceiptService
                                 inner.Item().Text(t =>
                                 {
                                     t.Span("Nombre / Razón Social: ").Bold();
-                                    t.Span(recibo.NombreCliente ?? "—");
+                                    t.Span(recibo.NombreCliente ?? "-");
                                 });
                                 if (!string.IsNullOrWhiteSpace(recibo.DocumentoCliente))
                                     inner.Item().PaddingTop(3).Text(t =>
@@ -185,7 +185,7 @@ public class ReceiptService : IReceiptService
                             inner.Item().Text(t =>
                             {
                                 t.Span("Concepto del pago: ").Bold();
-                                t.Span($"Suscripción mensual — Plan {recibo.PlanNombre}");
+                                t.Span($"Suscripción mensual - Plan {recibo.PlanNombre}");
                             });
                             inner.Item().PaddingTop(3).Text(t =>
                             {
@@ -245,7 +245,7 @@ public class ReceiptService : IReceiptService
 
                             table.Cell().BorderBottom(0.5f).BorderColor(ColorBorde)
                                  .PaddingVertical(10).PaddingHorizontal(6)
-                                 .Text($"Suscripción mensual — Plan {recibo.PlanNombre}").FontSize(9.5f);
+                                 .Text($"Suscripción mensual - Plan {recibo.PlanNombre}").FontSize(9.5f);
 
                             table.Cell().BorderBottom(0.5f).BorderColor(ColorBorde)
                                  .PaddingVertical(10).PaddingHorizontal(6)

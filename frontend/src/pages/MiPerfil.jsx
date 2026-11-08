@@ -161,7 +161,7 @@ function MiPerfil() {
           <div className="mp-row">
             <div className="mp-row-main">
               <span className="mp-row-label">Correo electrónico</span>
-              <span className="mp-row-value">{email || '—'}</span>
+              <span className="mp-row-value">{email || '-'}</span>
             </div>
           </div>
 

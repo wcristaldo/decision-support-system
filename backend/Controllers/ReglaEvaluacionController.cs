@@ -142,7 +142,7 @@ public class ReglaEvaluacionController : ControllerBase
 
         var accion = esNuevo ? "creado" : "actualizado";
         await _auditoriaService.RegistrarAsync("Update", "ReglaEvaluacion", regla.Id,
-            $"Umbral personalizado {accion} — Proyecto: {proyecto.Nombre}, Criterio: {request.Criterio}, Umbral: {request.Umbral}");
+            $"Umbral personalizado {accion} - Proyecto: {proyecto.Nombre}, Criterio: {request.Criterio}, Umbral: {request.Umbral}");
 
         return Ok(new { message = "Umbral del proyecto actualizado correctamente.", umbral = request.Umbral });
     }
@@ -171,7 +171,7 @@ public class ReglaEvaluacionController : ControllerBase
         await _context.SaveChangesAsync();
 
         await _auditoriaService.RegistrarAsync("Delete", "ReglaEvaluacion", reglaId,
-            $"Umbral personalizado eliminado — Proyecto: {proyecto?.Nombre ?? proyectoId.ToString()}, Criterio: {criterio} (vuelve a regir el valor global)");
+            $"Umbral personalizado eliminado - Proyecto: {proyecto?.Nombre ?? proyectoId.ToString()}, Criterio: {criterio} (vuelve a regir el valor global)");
 
         return Ok(new { message = "Umbral personalizado eliminado; vuelve a regir el valor global." });
     }
@@ -219,7 +219,7 @@ public class ReglaEvaluacionController : ControllerBase
 
         var alcance = regla.ProyectoId == null ? "global" : $"proyecto {regla.ProyectoId}";
         await _auditoriaService.RegistrarAsync("Update", "ReglaEvaluacion", regla.Id,
-            $"Regla '{regla.Nombre}' ({alcance}) — Umbral: {umbralAnterior} → {request.Umbral}");
+            $"Regla '{regla.Nombre}' ({alcance}) - Umbral: {umbralAnterior} → {request.Umbral}");
 
         return Ok(new { message = "Umbral actualizado correctamente.", umbral = regla.Umbral });
     }

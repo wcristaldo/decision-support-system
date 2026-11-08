@@ -249,4 +249,26 @@ public class ProyectosControllerTests
 
         Assert.IsType<BadRequestObjectResult>(result);
     }
+
+    [Fact(DisplayName = "RF13: Create asigna el proyecto al creador que no es Administrador y no asigna nada si lo crea el Administrador")]
+    public async Task Create_AsignaSoloAlCreadorNoAdministrador()
+    {
+        var ctx = TestHelpers.NewContext();
+        var admin = new Usuario { Nombre = "Admin", Email = "admin@x.com", PasswordHash = "x" };
+        var gestor = new Usuario { Nombre = "Gestor", Email = "gestor@x.com", PasswordHash = "x" };
+        ctx.Usuarios.AddRange(admin, gestor);
+        await ctx.SaveChangesAsync();
+
+        // el Administrador crea un proyecto: no queda ninguna asignación (él ve todo y los demás se asignan desde Gestión de Usuarios)
+        var comoAdmin = NewController(ctx, TestHelpers.BuildUser(admin.IdUsuario, new[] { "Administrador" }, new[] { "ver_proyectos", "gestionar_proyectos" }));
+        var r1 = await comoAdmin.Create(new CreateProyectoDto { Nombre = "Del administrador", VersionInicial = "1.0.0" });
+        var p1 = ((ProyectoDto)((CreatedAtActionResult)r1.Result!).Value!).Id;
+        Assert.DoesNotContain(ctx.UsuarioProyectos, x => x.IdProyecto == p1);
+
+        // un usuario que no es Administrador crea otro proyecto: queda asignado él mismo, si no, no podría verlo
+        var comoGestor = NewController(ctx, TestHelpers.BuildUser(gestor.IdUsuario, new[] { "Analista QA" }, new[] { "ver_proyectos", "gestionar_proyectos" }, new[] { p1 }));
+        var r2 = await comoGestor.Create(new CreateProyectoDto { Nombre = "Del gestor", VersionInicial = "1.0.0" });
+        var p2 = ((ProyectoDto)((CreatedAtActionResult)r2.Result!).Value!).Id;
+        Assert.Equal(new[] { gestor.IdUsuario }, ctx.UsuarioProyectos.Where(x => x.IdProyecto == p2).Select(x => x.IdUsuario).ToArray());
+    }
 }

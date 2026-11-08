@@ -401,3 +401,10 @@
   .am-title { font-size: 1.6rem; }
   .am-stats { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 }
+
+/* Ayuda guiada del gráfico de tendencia: mismo margen lateral que el gráfico */
+.am-chart-help { padding: 0 1.5rem; }
+
+/* La tarjeta tiene overflow:hidden y la paginación no traía margen lateral: los botones quedaban pegados y recortados. */
+.am-pagination { padding: 0 1.25rem 1.1rem; }
+
